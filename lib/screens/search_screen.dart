@@ -38,7 +38,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Filter state
   int _currentBudget = 25000;
-  Set<String> _currentPlaceTypes = {'Nongkrong', 'Cafe'};
+  Set<String> _currentPlaceTypes = {'Cafe', 'Warkop'};
   Set<String> _currentPreferences = {'WiFi'};
   Set<String> _favoriteIds = {};
 

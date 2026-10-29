@@ -448,11 +448,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 3. Section Kategori: 5 Tombol Lingkaran Bergradasi Emas-Oranye
   Widget _buildCategorySection() {
     final categories = [
-      {'name': 'Makan', 'icon': Icons.ramen_dining_rounded},
-      {'name': 'Nongkrong', 'icon': Icons.wine_bar_rounded},
-      {'name': 'Cafe', 'icon': Icons.coffee_rounded},
+      {'name': 'Cafe', 'icon': Icons.local_cafe_rounded},
+      {'name': 'Warkop', 'icon': Icons.emoji_food_beverage_rounded},
       {'name': 'Restoran', 'icon': Icons.restaurant_rounded},
-      {'name': 'Lainnya', 'icon': Icons.more_horiz_rounded},
     ];
 
     return Column(
@@ -468,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 14),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: categories.map((cat) {
             final name = cat['name'] as String;
             final isSelected = _selectedCategory == name;
@@ -960,7 +958,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
-                  children: ['Semua', 'Cafe', 'Restoran'].map((cat) {
+                  children: ['Semua', 'Cafe', 'Warkop', 'Restoran'].map((cat) {
                     final isSel = _selectedFavCategory == cat;
                     return GestureDetector(
                       onTap: () => setState(() => _selectedFavCategory = cat),

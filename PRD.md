@@ -145,7 +145,7 @@ Pengelola internal pariwisata kuliner yang menggunakan antarmuka web dasbor untu
 | **RECM-1** | Menjalankan algoritma rekomendasi hibrida berbasis skor budget (0-35), kemiripan fasilitas (0-45), dan rating (0-20). | Mobile & Web | **Wajib** |
 | **RECM-2** | Menampilkan tempat rekomendasi utama (*Featured Place Card*) yang paling pas dengan kriteria pengguna. | Mobile & Web | **Wajib** |
 | **RECM-3** | Menampilkan lencana alasan rekomendasi dinamis (*reason badges*) seperti *"Pas di kantong (Rp 25k) • Rating 4.8"*. | Mobile & Web | **Wajib** |
-| **RECM-4** | Menyediakan filter dropdown 7 zona Purwokerto dan filter kategori (Makan, Nongkrong, Cafe, Restoran, Warung). | Mobile & Web | **Wajib** |
+| **RECM-4** | Menyediakan filter dropdown 7 zona Purwokerto dan filter kategori (Cafe, Warkop, Restoran). | Mobile & Web | **Wajib** |
 | **RECM-5** | Pada Versi Web, menampilkan tempat rekomendasi dalam format Grid Responsif (3 sampai 4 kartu per baris). | Khusus Web | **Wajib** |
 
 ## 6.3 Pencarian & Riwayat (Mobile & Web)
@@ -304,7 +304,7 @@ sequenceDiagram
 | **places.id** | String | Memori Klien / SharedPreferences | Web Storage / REST API | ID unik tempat (contoh: `pwt-1`, `btr-1`). |
 | **places.name** | String | Objek `PlaceModel` | Objek `PlaceModel` | Nama tempat kuliner / kafe / warung. |
 | **places.city** | String | Objek `PlaceModel` | Objek `PlaceModel` | Zona wilayah (7 zona Purwokerto). |
-| **places.category** | String | Objek `PlaceModel` | Objek `PlaceModel` | Kategori (Makan, Nongkrong, Cafe, Resto). |
+| **places.category** | String | Objek `PlaceModel` | Objek `PlaceModel` | Kategori (Cafe, Warkop, Restoran). |
 | **places.avg_price** | Integer | Objek `PlaceModel` | Objek `PlaceModel` | Estimasi pengeluaran rata-rata per orang. |
 | **places.rating** | Double | Objek `PlaceModel` | Objek `PlaceModel` | Skor rating ulasan (1.0 s/d 5.0). |
 | **places.facilities** | List\<String\>| Objek `PlaceModel` | Objek `PlaceModel` | Tag fasilitas (WiFi, Colokan, Outdoor, AC). |

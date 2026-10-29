@@ -37,6 +37,20 @@ void main() {
     }
   });
 
+  test('All places strictly belong to categories Cafe, Warkop, or Restoran', () async {
+    final apiService = ApiService();
+    final places = await apiService.fetchPlaces();
+
+    const allowedCategories = {'Cafe', 'Warkop', 'Restoran'};
+    for (final p in places) {
+      expect(allowedCategories.contains(p.category), isTrue,
+          reason: 'Place ${p.name} has unexpected category: ${p.category}');
+    }
+
+    final categories = places.map((p) => p.category).toSet();
+    expect(categories, equals(allowedCategories));
+  });
+
   test('RecommendationService filters Purwokerto sub-regions accurately', () async {
     final apiService = ApiService();
     final places = await apiService.fetchPlaces();

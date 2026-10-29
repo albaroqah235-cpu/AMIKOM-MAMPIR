@@ -83,9 +83,8 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
   ];
 
   static const List<String> _allPlaceTypes = [
-    'Makan',
-    'Nongkrong',
     'Cafe',
+    'Warkop',
     'Restoran',
     'Outdoor',
     'Indoor',
@@ -111,7 +110,7 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
     _selectedPreferences = Set<String>.from(widget.initialPreferences);
 
     if (_selectedPlaceTypes.isEmpty) {
-      _selectedPlaceTypes.addAll(['Nongkrong', 'Cafe']);
+      _selectedPlaceTypes.addAll(['Cafe', 'Warkop']);
     }
     if (_selectedPreferences.isEmpty) {
       _selectedPreferences.addAll(['WiFi', 'Colokan']);

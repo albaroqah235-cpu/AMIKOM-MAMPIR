@@ -140,7 +140,7 @@ class PlaceModel {
       id: json['id']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       city: json['city'] as String? ?? '',
-      category: json['category'] as String? ?? 'Makan',
+      category: json['category'] as String? ?? 'Cafe',
       minPrice: min,
       maxPrice: max,
       avgPrice: avg,
