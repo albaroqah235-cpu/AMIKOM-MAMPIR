@@ -1086,13 +1086,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  'assets/images/app_icon.jpeg',
-                  fit: BoxFit.cover,
-                  errorBuilder: (ctx, err, stack) => const Icon(
-                    Icons.restaurant_menu_rounded,
-                    color: AppTheme.orange,
-                    size: 38,
+                child: Transform.scale(
+                  scale: 1.35,
+                  alignment: const Alignment(0, -0.04),
+                  child: Image.asset(
+                    'assets/images/app_icon.jpeg',
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, stack) => const Icon(
+                      Icons.restaurant_menu_rounded,
+                      color: AppTheme.orange,
+                      size: 38,
+                    ),
                   ),
                 ),
               ),

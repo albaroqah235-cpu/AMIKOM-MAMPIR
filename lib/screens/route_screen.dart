@@ -231,13 +231,17 @@ class _RouteScreenState extends State<RouteScreen> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(22),
-                            child: Image.asset(
-                              'assets/images/app_icon.jpeg',
-                              fit: BoxFit.cover,
-                              errorBuilder: (ctx, err, st) => const Icon(
-                                Icons.location_on,
-                                color: Colors.white,
-                                size: 24,
+                            child: Transform.scale(
+                              scale: 1.35,
+                              alignment: const Alignment(0, -0.04),
+                              child: Image.asset(
+                                'assets/images/app_icon.jpeg',
+                                fit: BoxFit.cover,
+                                errorBuilder: (ctx, err, st) => const Icon(
+                                  Icons.location_on,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                               ),
                             ),
                           ),

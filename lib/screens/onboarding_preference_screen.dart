@@ -193,20 +193,23 @@ class _OnboardingPreferenceScreenState
                           ),
                         ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(60),
-                        child: Image.asset(
-                          'assets/images/app_icon.jpeg',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            decoration: const BoxDecoration(
-                              gradient: AppTheme.primaryGradient,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.restaurant_rounded,
-                              size: 56,
-                              color: Colors.white,
+                      child: ClipOval(
+                        child: Transform.scale(
+                          scale: 1.36,
+                          alignment: const Alignment(0, -0.04),
+                          child: Image.asset(
+                            'assets/images/app_icon.jpeg',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              decoration: const BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.restaurant_rounded,
+                                size: 56,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),

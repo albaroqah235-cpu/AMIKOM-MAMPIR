@@ -210,9 +210,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(16),
                                     child: isMascot
-                                        ? Image.asset(
-                                            'assets/images/app_icon.jpeg',
-                                            fit: BoxFit.cover,
+                                        ? Transform.scale(
+                                            scale: 1.35,
+                                            alignment: const Alignment(0, -0.04),
+                                            child: Image.asset(
+                                              'assets/images/app_icon.jpeg',
+                                              fit: BoxFit.cover,
+                                            ),
                                           )
                                         : Image.network(
                                             notif['image'] as String,

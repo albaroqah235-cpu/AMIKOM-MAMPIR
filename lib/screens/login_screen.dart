@@ -223,13 +223,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            'assets/images/app_icon.jpeg',
-                            fit: BoxFit.cover,
-                            errorBuilder: (ctx, err, stack) => const Icon(
-                              Icons.restaurant_menu_rounded,
-                              size: 40,
-                              color: AppTheme.orange,
+                          child: Transform.scale(
+                            scale: 1.35,
+                            alignment: const Alignment(0, -0.04),
+                            child: Image.asset(
+                              'assets/images/app_icon.jpeg',
+                              fit: BoxFit.cover,
+                              errorBuilder: (ctx, err, stack) => const Icon(
+                                Icons.restaurant_menu_rounded,
+                                size: 40,
+                                color: AppTheme.orange,
+                              ),
                             ),
                           ),
                         ),
