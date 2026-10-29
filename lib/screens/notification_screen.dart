@@ -63,16 +63,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
-          // Background Mandala
-          Positioned(
-            top: 0,
-            right: 0,
-            width: 250,
-            height: 250,
-            child: CustomPaint(
-              painter: MandalaOrnamentPainter(scale: 0.8),
-            ),
-          ),
+          // Background Mandala & Batik Multi-Sudut
+          const AppBackgroundOrnament(),
 
           SafeArea(
             child: Column(

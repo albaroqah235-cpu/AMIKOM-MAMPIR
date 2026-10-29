@@ -275,16 +275,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Stack(
       children: [
-        // Background Mandala Batik
-        Positioned(
-          top: 0,
-          right: 0,
-          width: 280,
-          height: 280,
-          child: CustomPaint(
-            painter: MandalaOrnamentPainter(scale: 0.95),
-          ),
-        ),
+        // Background Mandala & Batik Multi-Sudut
+        const AppBackgroundOrnament(),
 
         SafeArea(
           child: RefreshIndicator(
@@ -932,16 +924,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Stack(
       children: [
-        // Background Mandala
-        Positioned(
-          top: 0,
-          right: 0,
-          width: 260,
-          height: 260,
-          child: CustomPaint(
-            painter: MandalaOrnamentPainter(scale: 0.9),
-          ),
-        ),
+        // Background Mandala & Batik Multi-Sudut
+        const AppBackgroundOrnament(),
 
         SafeArea(
           child: Column(

@@ -179,16 +179,8 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
       ),
       child: Stack(
         children: [
-          // Background Mandala
-          Positioned(
-            top: 0,
-            right: 0,
-            width: 200,
-            height: 200,
-            child: CustomPaint(
-              painter: MandalaOrnamentPainter(scale: 0.6),
-            ),
-          ),
+          // Background Mandala & Batik Multi-Sudut
+          const AppBackgroundOrnament(showBottomCorner: false, topSize: 220, topScale: 0.75),
 
           SafeArea(
             child: SingleChildScrollView(

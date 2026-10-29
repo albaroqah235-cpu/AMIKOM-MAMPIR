@@ -140,25 +140,8 @@ class _OnboardingPreferenceScreenState
       backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
-          // Mandala Batik Background Decoration
-          Positioned(
-            top: 0,
-            right: 0,
-            width: 260,
-            height: 260,
-            child: CustomPaint(
-              painter: MandalaOrnamentPainter(scale: 0.9),
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            width: 180,
-            height: 180,
-            child: CustomPaint(
-              painter: MandalaOrnamentPainter(scale: 0.6),
-            ),
-          ),
+          // Background Mandala & Batik Multi-Sudut
+          const AppBackgroundOrnament(topSize: 280, bottomSize: 240),
 
           SafeArea(
             child: PageView(

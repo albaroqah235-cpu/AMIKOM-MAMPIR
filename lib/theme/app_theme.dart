@@ -203,56 +203,242 @@ class AppTheme {
   }
 }
 
-/// Ornamen Mandala / Batik halus yang digambar pada latar belakang header
+/// ============================================================
+/// ORNAMEN LATAR BELAKANG MANDALA / BATIK HALUS MULTI-SUDUT
+/// ============================================================
+
+enum OrnamentOrigin {
+  topRight,
+  bottomLeft,
+  topLeft,
+  bottomRight,
+}
+
+/// Ornamen Mandala / Batik yang digambar pada latar belakang layar
 class MandalaOrnamentPainter extends CustomPainter {
-  final Color color;
+  final Color? color;
   final double scale;
+  final bool? isDark;
+  final double strokeWidth;
+  final OrnamentOrigin origin;
 
   MandalaOrnamentPainter({
-    this.color = const Color(0xFFFFB74D),
+    this.color,
     this.scale = 1.0,
+    this.isDark,
+    this.strokeWidth = 1.8,
+    this.origin = OrnamentOrigin.topRight,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width, 0); // Di pojok kanan atas
+    // Tentukan warna berdasarkan mode tema:
+    // Mode Gelap: Emas amber hangat (0xFFFFB74D) dengan opasitas 0.20
+    // Mode Terang: Emas tembaga terracotta (0xFFB45309) dengan opasitas 0.26
+    final bool dark = isDark ?? true;
+    final baseColor = color ??
+        (dark ? const Color(0xFFFFB74D) : const Color(0xFFB45309));
+    final double opacity = dark ? 0.20 : 0.26;
+
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.12)
+      ..color = baseColor.withValues(alpha: opacity)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+      ..strokeWidth = strokeWidth;
 
+    final fillPaint = Paint()
+      ..color = baseColor.withValues(alpha: opacity * 0.45)
+      ..style = PaintingStyle.fill;
+
+    // Tentukan titik pusat motif berdasarkan origin
+    Offset center;
+    switch (origin) {
+      case OrnamentOrigin.topRight:
+        center = Offset(size.width, 0);
+        break;
+      case OrnamentOrigin.bottomLeft:
+        center = Offset(0, size.height);
+        break;
+      case OrnamentOrigin.topLeft:
+        center = const Offset(0, 0);
+        break;
+      case OrnamentOrigin.bottomRight:
+        center = Offset(size.width, size.height);
+        break;
+    }
+
+    final maxRadius = size.width * 0.78 * scale;
     const int petals = 12;
-    final maxRadius = size.width * 0.75 * scale;
 
-    // Lingkaran konsentris
-    for (double r = 40; r <= maxRadius; r += 32) {
+    // 1. Lingkaran konsentris utama
+    for (double r = 36; r <= maxRadius; r += 28) {
       canvas.drawCircle(center, r, paint);
     }
 
-    // Pola kelopak mandala
+    // 2. Garis radial & kelopak mandala lapis luar
     for (int i = 0; i < petals; i++) {
       final angle = (i * 2 * math.pi) / petals;
-      final x = center.dx + math.cos(angle) * (maxRadius * 0.6);
-      final y = center.dy + math.sin(angle) * (maxRadius * 0.6);
+      final midR = maxRadius * 0.58;
+      final x = center.dx + math.cos(angle) * midR;
+      final y = center.dy + math.sin(angle) * midR;
 
-      canvas.drawCircle(Offset(x, y), 24, paint);
+      // Kelopak luar
+      canvas.drawCircle(Offset(x, y), 22 * scale, paint);
 
-      // Garis radial berujung halus
+      // Garis radial ke ujung luar
       final rx = center.dx + math.cos(angle) * maxRadius;
       final ry = center.dy + math.sin(angle) * maxRadius;
       canvas.drawLine(center, Offset(rx, ry), paint);
+
+      // Titik aksen ujung luar
+      canvas.drawCircle(Offset(rx, ry), 2.5 * scale, fillPaint);
     }
 
-    // Ornamen pojok kiri atas
-    final leftCenter = const Offset(0, 0);
-    final leftMax = size.width * 0.45 * scale;
-    for (double r = 30; r <= leftMax; r += 28) {
-      canvas.drawCircle(leftCenter, r, paint);
+    // 3. Kelopak lapis dalam (offset rotasi berselang-seling)
+    final innerR = maxRadius * 0.32;
+    for (int i = 0; i < petals; i++) {
+      final angle = (i * 2 * math.pi) / petals + (math.pi / petals);
+      final x = center.dx + math.cos(angle) * innerR;
+      final y = center.dy + math.sin(angle) * innerR;
+      canvas.drawCircle(Offset(x, y), 14 * scale, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant MandalaOrnamentPainter oldDelegate) => false;
+  bool shouldRepaint(covariant MandalaOrnamentPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.scale != scale ||
+        oldDelegate.isDark != isDark ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.origin != origin;
+  }
+}
+
+/// Aksen titik-titik ornamen batik & bintang mengambang halus di latar belakang
+class FloatingBatikAccentPainter extends CustomPainter {
+  final bool isDark;
+  final double strokeWidth;
+
+  FloatingBatikAccentPainter({
+    required this.isDark,
+    this.strokeWidth = 1.6,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final baseColor = isDark ? const Color(0xFFFFB74D) : const Color(0xFFB45309);
+    final double opacity = isDark ? 0.18 : 0.24;
+
+    final strokePaint = Paint()
+      ..color = baseColor.withValues(alpha: opacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final fillPaint = Paint()
+      ..color = baseColor.withValues(alpha: opacity * 0.6)
+      ..style = PaintingStyle.fill;
+
+    // Titik-titik posisi aksen floating (relatif terhadap ukuran layar)
+    final List<Offset> points = [
+      Offset(size.width * 0.16, size.height * 0.30),
+      Offset(size.width * 0.86, size.height * 0.48),
+      Offset(size.width * 0.22, size.height * 0.68),
+      Offset(size.width * 0.80, size.height * 0.82),
+      Offset(size.width * 0.50, size.height * 0.15),
+    ];
+
+    for (int i = 0; i < points.length; i++) {
+      final pt = points[i];
+      final double r = (i % 2 == 0) ? 14.0 : 10.0;
+
+      // Bentuk berlian / bunga batik 4 sisi
+      final path = Path();
+      path.moveTo(pt.dx, pt.dy - r);
+      path.quadraticBezierTo(pt.dx + r * 0.25, pt.dy - r * 0.25, pt.dx + r, pt.dy);
+      path.quadraticBezierTo(pt.dx + r * 0.25, pt.dy + r * 0.25, pt.dx, pt.dy + r);
+      path.quadraticBezierTo(pt.dx - r * 0.25, pt.dy + r * 0.25, pt.dx - r, pt.dy);
+      path.quadraticBezierTo(pt.dx - r * 0.25, pt.dy - r * 0.25, pt.dx, pt.dy - r);
+      path.close();
+
+      canvas.drawPath(path, strokePaint);
+      canvas.drawCircle(pt, 2.2, fillPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant FloatingBatikAccentPainter oldDelegate) =>
+      oldDelegate.isDark != isDark || oldDelegate.strokeWidth != strokeWidth;
+}
+
+/// Widget ornamen latar belakang menyeluruh untuk aplikasi MAMPIR.
+/// Menggambar mandala di pojok kanan atas, pojok kiri bawah, dan aksen floating halus.
+/// Otomatis beradaptasi warna dan kontras dengan Mode Gelap & Mode Terang.
+class AppBackgroundOrnament extends StatelessWidget {
+  final bool showBottomCorner;
+  final bool showFloatingAccents;
+  final double topScale;
+  final double bottomScale;
+  final double topSize;
+  final double bottomSize;
+
+  const AppBackgroundOrnament({
+    super.key,
+    this.showBottomCorner = true,
+    this.showFloatingAccents = true,
+    this.topScale = 1.0,
+    this.bottomScale = 0.85,
+    this.topSize = 300,
+    this.bottomSize = 260,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          // 1. Ornamen Mandala Pojok Kanan Atas (Besar)
+          Positioned(
+            top: 0,
+            right: 0,
+            width: topSize,
+            height: topSize,
+            child: CustomPaint(
+              painter: MandalaOrnamentPainter(
+                scale: topScale,
+                isDark: isDark,
+                origin: OrnamentOrigin.topRight,
+              ),
+            ),
+          ),
+
+          // 2. Ornamen Mandala Pojok Kiri Bawah (Sedang / Elegan)
+          if (showBottomCorner)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              width: bottomSize,
+              height: bottomSize,
+              child: CustomPaint(
+                painter: MandalaOrnamentPainter(
+                  scale: bottomScale,
+                  isDark: isDark,
+                  origin: OrnamentOrigin.bottomLeft,
+                ),
+              ),
+            ),
+
+          // 3. Aksen Motif Bunga/Batik Floating di Sisi Layar
+          if (showFloatingAccents)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: FloatingBatikAccentPainter(isDark: isDark),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 /// ============================================================

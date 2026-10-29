@@ -184,16 +184,8 @@ class _SearchScreenState extends State<SearchScreen> {
       backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
-          // Background Mandala
-          Positioned(
-            top: 0,
-            right: 0,
-            width: 260,
-            height: 260,
-            child: CustomPaint(
-              painter: MandalaOrnamentPainter(scale: 0.9),
-            ),
-          ),
+          // Background Mandala & Batik Multi-Sudut
+          const AppBackgroundOrnament(),
 
           SafeArea(
             child: Column(

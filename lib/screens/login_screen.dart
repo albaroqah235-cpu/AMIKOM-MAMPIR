@@ -193,16 +193,8 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
-          // Mandala Ornament pojok kanan atas
-          Positioned(
-            top: 0,
-            right: 0,
-            width: 280,
-            height: 280,
-            child: CustomPaint(
-              painter: MandalaOrnamentPainter(scale: 0.95),
-            ),
-          ),
+          // Background Mandala & Batik Multi-Sudut
+          const AppBackgroundOrnament(),
 
           SafeArea(
             child: Center(

@@ -144,16 +144,8 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: AppTheme.scaffoldBg,
       body: Stack(
         children: [
-          // Subtle mandala ornamentation on top right & bottom left
-          Positioned(
-            top: 0,
-            right: 0,
-            width: 300,
-            height: 300,
-            child: CustomPaint(
-              painter: MandalaOrnamentPainter(scale: 1.0),
-            ),
-          ),
+          // Background Mandala & Batik Multi-Sudut
+          const AppBackgroundOrnament(topSize: 320, bottomSize: 280),
 
           Center(
             child: FadeTransition(
