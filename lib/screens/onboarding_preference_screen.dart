@@ -177,183 +177,248 @@ class _OnboardingPreferenceScreenState
 
   /// Step 1: Halaman Selamat Datang (Sesuai SplashS contoh.jpeg)
   Widget _buildWelcomePage() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: Column(
-        children: [
-          const Spacer(flex: 1),
+    final colors = AppTheme.colors(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const SizedBox(height: 8),
 
-          // Logo Pin & Mascot
-          Center(
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(70),
-                child: Image.asset(
-                  'assets/images/app_icon.jpeg',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    decoration: const BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.restaurant_rounded,
-                      size: 64,
-                      color: Colors.white,
+                  // Logo Pin & Mascot
+                  Center(
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.gold.withAlpha(160),
+                          width: 2.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.orange.withAlpha(60),
+                            blurRadius: 24,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(60),
+                        child: Image.asset(
+                          'assets/images/app_icon.jpeg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            decoration: const BoxDecoration(
+                              gradient: AppTheme.primaryGradient,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.restaurant_rounded,
+                              size: 56,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 18),
+
+                  // Judul Utama "MAMPIR"
+                  Text(
+                    'MAMPIR',
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2.5,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Subjudul Emas
+                  const Text(
+                    'Makan, Ampir, Pilih, dan Rekomendasi',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.gold,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Deskripsi
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Tempat makan & nongkrong terbaik di Purwokerto berdasarkan budget dan preferensi kamu',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textSecondary,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 3 Kartu Fitur Unggulan (Responsif, Rapi, Tanpa Overflow)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: colors.cardNavy.withAlpha(160),
+                      border: Border.all(color: colors.borderNavy),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(15),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildFeatureMiniCard(
+                            icon: Icons.local_cafe_rounded,
+                            title: 'Cafe & Resto',
+                            colors: colors,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildFeatureMiniCard(
+                            icon: Icons.payments_rounded,
+                            title: 'Pas Budget',
+                            colors: colors,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildFeatureMiniCard(
+                            icon: Icons.map_rounded,
+                            title: 'Purwokerto & Sekitar',
+                            colors: colors,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // Tombol "Mulai"
+                  Container(
+                    width: double.infinity,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.primaryGradient,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.orange.withAlpha(90),
+                          blurRadius: 16,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _pageController.animateToPage(
+                          1,
+                          duration: const Duration(milliseconds: 350),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Mulai',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
-
-          // Judul Utama "MAMPIR"
-          const Text(
-            'MAMPIR',
-            style: TextStyle(
-              fontSize: 38,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2.0,
-              color: Colors.white,
-              fontFamily: 'serif',
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Subjudul Emas
-          const Text(
-            'Makan, Ampir, Pilih, dan Rekomendasi',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.gold,
-              letterSpacing: 0.3,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Deskripsi
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'Tempat Makan dan Nongkrong Berdasarkan Budget dan Preferensi Kamu',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: AppTheme.textSecondary,
-                height: 1.4,
-              ),
-            ),
-          ),
-
-          const Spacer(flex: 2),
-
-          // Ilustrasi Cafe / Urban Line Art
-          Container(
-            height: 160,
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: AppTheme.surfaceNavy.withValues(alpha: 0.3),
-              border: Border.all(color: AppTheme.borderNavy.withValues(alpha: 0.5)),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Icon(
-                  Icons.storefront_rounded,
-                  size: 90,
-                  color: AppTheme.borderNavy,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildFeatureMiniCard(Icons.local_cafe_rounded, 'Cafe & Resto'),
-                    _buildFeatureMiniCard(Icons.payments_rounded, 'Pas Budget'),
-                    _buildFeatureMiniCard(Icons.map_rounded, 'Purwokerto & Sekitarnya'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 28),
-
-          // Tombol "Mulai"
-          Container(
-            width: double.infinity,
-            height: 54,
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.orange.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                _pageController.animateToPage(
-                  1,
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeInOut,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-              ),
-              child: const Text(
-                'Mulai',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildFeatureMiniCard(IconData icon, String label) {
+  Widget _buildFeatureMiniCard({
+    required IconData icon,
+    required String title,
+    required AppColors colors,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.scaffoldBg.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderNavy),
+        color: colors.surfaceNavy,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.borderNavy),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: AppTheme.gold, size: 22),
-          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.orange.withAlpha(25),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppTheme.gold, size: 22),
+          ),
+          const SizedBox(height: 6),
           Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: colors.textPrimary,
+              height: 1.25,
             ),
           ),
         ],
@@ -363,6 +428,7 @@ class _OnboardingPreferenceScreenState
 
   /// Step 2: Pengaturan Awal (Wilayah, Budget & Preferensi)
   Widget _buildPreferenceSetupPage() {
+    final colors = AppTheme.colors(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 16.0),
       child: Column(
@@ -379,15 +445,15 @@ class _OnboardingPreferenceScreenState
                     curve: Curves.easeInOut,
                   );
                 },
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back, color: colors.textPrimary),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Atur Preferensi Awal',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: colors.textPrimary,
                 ),
               ),
             ],
@@ -395,37 +461,40 @@ class _OnboardingPreferenceScreenState
           const SizedBox(height: 16),
 
           // Pilih Wilayah
-          const Text(
+          Text(
             'Wilayah Utama Kamu',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: AppTheme.searchNavy,
+              color: colors.searchNavy,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.borderNavy),
+              border: Border.all(color: colors.borderNavy),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedRegion,
                 isExpanded: true,
-                dropdownColor: AppTheme.surfaceNavy,
+                dropdownColor: colors.surfaceNavy,
                 icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.gold),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
                 ),
                 items: _regions.map((region) {
                   return DropdownMenuItem<String>(
                     value: region,
-                    child: Text(region),
+                    child: Text(
+                      region,
+                      style: TextStyle(color: colors.textPrimary),
+                    ),
                   );
                 }).toList(),
                 onChanged: (newRegion) {
@@ -439,12 +508,12 @@ class _OnboardingPreferenceScreenState
           const SizedBox(height: 20),
 
           // Budget Maksimal
-          const Text(
+          Text(
             'Budget Maksimal per Orang (Rp)',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -452,24 +521,24 @@ class _OnboardingPreferenceScreenState
           // TextFormField Manual
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.searchNavy,
+              color: colors.searchNavy,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.borderNavy),
+              border: Border.all(color: colors.borderNavy),
             ),
             child: TextField(
               controller: _budgetController,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Tulis nominal budget',
-                hintStyle: TextStyle(color: AppTheme.textMuted),
+                hintStyle: TextStyle(color: colors.textMuted),
                 contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: InputBorder.none,
               ),
               onChanged: _onManualBudgetChanged,
@@ -481,9 +550,9 @@ class _OnboardingPreferenceScreenState
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: AppTheme.orange,
-              inactiveTrackColor: AppTheme.borderNavy,
+              inactiveTrackColor: colors.borderNavy,
               thumbColor: AppTheme.gold,
-              overlayColor: AppTheme.gold.withValues(alpha: 0.2),
+              overlayColor: AppTheme.gold.withAlpha(50),
               trackHeight: 4,
             ),
             child: Slider(
@@ -513,18 +582,18 @@ class _OnboardingPreferenceScreenState
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: isSelected ? AppTheme.primaryGradient : null,
-                    color: isSelected ? null : AppTheme.surfaceNavy,
+                    color: isSelected ? null : colors.surfaceNavy,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
                           ? Colors.transparent
-                          : AppTheme.borderNavy,
+                          : colors.borderNavy,
                     ),
                   ),
                   child: Text(
                     chip['label'] as String,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
+                      color: isSelected ? Colors.white : colors.textSecondary,
                       fontWeight:
                           isSelected ? FontWeight.w800 : FontWeight.w600,
                       fontSize: 13,
@@ -537,12 +606,12 @@ class _OnboardingPreferenceScreenState
           const SizedBox(height: 22),
 
           // Preferensi
-          const Text(
+          Text(
             'Fasilitas & Suasana Favorit',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -567,18 +636,18 @@ class _OnboardingPreferenceScreenState
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: isSelected ? AppTheme.primaryGradient : null,
-                    color: isSelected ? null : AppTheme.surfaceNavy,
+                    color: isSelected ? null : colors.surfaceNavy,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
                           ? Colors.transparent
-                          : AppTheme.borderNavy,
+                          : colors.borderNavy,
                     ),
                   ),
                   child: Text(
                     pref,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
+                      color: isSelected ? Colors.white : colors.textSecondary,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
                       fontSize: 13,
@@ -599,7 +668,7 @@ class _OnboardingPreferenceScreenState
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.orange.withValues(alpha: 0.4),
+                  color: AppTheme.orange.withAlpha(90),
                   blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
