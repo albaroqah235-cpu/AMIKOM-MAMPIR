@@ -80,18 +80,33 @@ class PreferenceService {
   /// Format nama tamu berdasarkan wilayah yang dipilih:
   /// - Baturraden -> Tamu Baturraden
   /// - Sokaraja -> Tamu Sokaraja
-  /// - Purwokerto (semua variasi) -> Tamu Purwokerto
+  /// - Purwokerto Utara -> Tamu Purwokerto Utara
+  /// - Purwokerto Timur -> Tamu Purwokerto Timur
+  /// - Purwokerto Barat -> Tamu Purwokerto Barat
+  /// - Purwokerto Selatan -> Tamu Purwokerto Selatan
+  /// - Semua Wilayah -> Tamu Banyumas
+  /// - Default -> Tamu Purwokerto Kota
   static String formatGuestName(String region) {
     final lower = region.toLowerCase();
     if (lower.contains('baturraden')) return 'Tamu Baturraden';
     if (lower.contains('sokaraja')) return 'Tamu Sokaraja';
-    return 'Tamu Purwokerto';
+    if (lower.contains('utara') || lower.contains('unsoed')) return 'Tamu Purwokerto Utara';
+    if (lower.contains('timur') || lower.contains('sumbang')) return 'Tamu Purwokerto Timur';
+    if (lower.contains('barat')) return 'Tamu Purwokerto Barat';
+    if (lower.contains('selatan')) return 'Tamu Purwokerto Selatan';
+    if (lower.contains('semua') || lower.contains('banyumas')) return 'Tamu Banyumas';
+    return 'Tamu Purwokerto Kota';
   }
 
   static String formatGuestEmail(String region) {
     final lower = region.toLowerCase();
     if (lower.contains('baturraden')) return 'tamu.baturraden@mampir.id';
     if (lower.contains('sokaraja')) return 'tamu.sokaraja@mampir.id';
+    if (lower.contains('utara') || lower.contains('unsoed')) return 'tamu.unsoed@mampir.id';
+    if (lower.contains('timur') || lower.contains('sumbang')) return 'tamu.purwokertotimur@mampir.id';
+    if (lower.contains('barat')) return 'tamu.purwokertobarat@mampir.id';
+    if (lower.contains('selatan')) return 'tamu.purwokertoselatan@mampir.id';
+    if (lower.contains('semua') || lower.contains('banyumas')) return 'tamu.banyumas@mampir.id';
     return 'tamu.purwokerto@mampir.id';
   }
 
@@ -102,7 +117,12 @@ class PreferenceService {
     final lower = region.toLowerCase();
     if (lower.contains('baturraden')) return '🌲 Penjelajah Baturraden';
     if (lower.contains('sokaraja')) return '🍲 Penjelajah Sokaraja';
-    return '🌟 Penjelajah Purwokerto';
+    if (lower.contains('utara') || lower.contains('unsoed')) return '🎓 Penjelajah Purwokerto Utara';
+    if (lower.contains('timur') || lower.contains('sumbang')) return '🌅 Penjelajah Purwokerto Timur';
+    if (lower.contains('barat')) return '🚂 Penjelajah Purwokerto Barat';
+    if (lower.contains('selatan')) return '🧭 Penjelajah Purwokerto Selatan';
+    if (lower.contains('semua') || lower.contains('banyumas')) return '🗺️ Penjelajah Banyumas';
+    return '🌟 Penjelajah Purwokerto Kota';
   }
 
   /// Cek apakah user sudah login

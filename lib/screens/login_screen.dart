@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/preference_service.dart';
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
+import 'region_selection_screen.dart';
 
 /// ============================================================
 /// LOGIN SCREEN — AUTENTIKASI PENGGUNA MAMPIR
@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
     );
   }
 
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
     );
   }
 
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
     );
   }
 
@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
     );
   }
 

@@ -6,9 +6,8 @@ import 'login_screen.dart';
 /// ============================================================
 /// ONBOARDING & WELCOME SCREEN — SESUAI SPESIFIKASI MAMPIR
 /// ============================================================
-/// Step 1: Layar Selamat Datang (Logo, Judul MAMPIR, Subjudul Emas, Fitur Unggulan)
-/// Step 2: Pilih Wilayah Utama Kamu (Kartu Interaktif & Tersinkronisasi Otomatis)
-/// Setelah selesai -> is_first_launch = false -> Masuk LoginScreen
+/// Halaman Selamat Datang (Logo, Judul MAMPIR, Subjudul Emas, Fitur Unggulan)
+/// Ketika diklik Mulai -> Masuk ke LoginScreen
 /// ============================================================
 class OnboardingPreferenceScreen extends StatefulWidget {
   const OnboardingPreferenceScreen({super.key});
@@ -21,85 +20,14 @@ class OnboardingPreferenceScreen extends StatefulWidget {
 class _OnboardingPreferenceScreenState
     extends State<OnboardingPreferenceScreen> {
   final PreferenceService _prefService = PreferenceService();
-  final PageController _pageController = PageController();
 
-  bool _isLoading = false;
-
-  // Wilayah utama terpilih
-  String _selectedRegion = 'Purwokerto Kota';
-
-  static const List<Map<String, dynamic>> _regionOptions = [
-    {
-      'name': 'Purwokerto Kota',
-      'desc': 'Pusat kota, alun-alun & kuliner legendaris',
-      'icon': Icons.location_city_rounded,
-    },
-    {
-      'name': 'Baturraden',
-      'desc': 'Wisata alam sejuk & cafe lereng gunung',
-      'icon': Icons.forest_rounded,
-    },
-    {
-      'name': 'Purwokerto Utara (Unsoed)',
-      'desc': 'Kawasan kampus & nongkrong mahasiswa',
-      'icon': Icons.school_rounded,
-    },
-    {
-      'name': 'Sokaraja',
-      'desc': 'Sentra kuliner getuk goreng & soto khas',
-      'icon': Icons.restaurant_rounded,
-    },
-    {
-      'name': 'Purwokerto Timur & Sumbang',
-      'desc': 'Area asri, cafe estetik & kuliner santai',
-      'icon': Icons.wb_sunny_rounded,
-    },
-    {
-      'name': 'Purwokerto Barat',
-      'desc': 'Akses stasiun, kuliner malam & sentra jajanan',
-      'icon': Icons.directions_railway_rounded,
-    },
-    {
-      'name': 'Purwokerto Selatan',
-      'desc': 'Akses terminal & tempat makan keluarga',
-      'icon': Icons.explore_rounded,
-    },
-    {
-      'name': 'Semua Wilayah',
-      'desc': 'Jelajahi seluruh tempat kuliner se-Banyumas',
-      'icon': Icons.map_rounded,
-    },
-  ];
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleFinishOnboarding() async {
-    setState(() => _isLoading = true);
-    try {
-      await _prefService.saveSelectedRegion(_selectedRegion);
-      await _prefService.setFirstLaunch(false);
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Terjadi kesalahan: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+  Future<void> _handleStart() async {
+    await _prefService.setFirstLaunch(false);
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 
   @override
@@ -113,14 +41,7 @@ class _OnboardingPreferenceScreenState
           const AppBackgroundOrnament(topSize: 280, bottomSize: 240),
 
           SafeArea(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildWelcomePage(),
-                _buildRegionSelectionPage(),
-              ],
-            ),
+            child: _buildWelcomePage(),
           ),
         ],
       ),
@@ -143,7 +64,7 @@ class _OnboardingPreferenceScreenState
                 children: [
                   const SizedBox(height: 8),
 
-                  // Logo Pin & Mascot
+                  // Logo Pin & Mascot (Kembali seperti semula tanpa over-zoom)
                   Center(
                     child: Container(
                       width: 120,
@@ -151,7 +72,7 @@ class _OnboardingPreferenceScreenState
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppTheme.gold.withAlpha(160),
+                          color: AppTheme.gold.withAlpha(180),
                           width: 2.5,
                         ),
                         boxShadow: [
@@ -163,22 +84,18 @@ class _OnboardingPreferenceScreenState
                         ],
                       ),
                       child: ClipOval(
-                        child: Transform.scale(
-                          scale: 1.36,
-                          alignment: const Alignment(0, -0.04),
-                          child: Image.asset(
-                            'assets/images/app_icon.jpeg',
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              decoration: const BoxDecoration(
-                                gradient: AppTheme.primaryGradient,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.restaurant_rounded,
-                                size: 56,
-                                color: Colors.white,
-                              ),
+                        child: Image.asset(
+                          'assets/images/app_icon.jpeg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            decoration: const BoxDecoration(
+                              gradient: AppTheme.primaryGradient,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.restaurant_rounded,
+                              size: 56,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -293,13 +210,7 @@ class _OnboardingPreferenceScreenState
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: () {
-                        _pageController.animateToPage(
-                          1,
-                          duration: const Duration(milliseconds: 350),
-                          curve: Curves.easeInOut,
-                        );
-                      },
+                      onPressed: _handleStart,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -345,7 +256,7 @@ class _OnboardingPreferenceScreenState
     required AppColors colors,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
       decoration: BoxDecoration(
         color: colors.surfaceNavy,
         borderRadius: BorderRadius.circular(14),
@@ -356,12 +267,12 @@ class _OnboardingPreferenceScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               color: AppTheme.orange.withAlpha(25),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppTheme.gold, size: 22),
+            child: Icon(icon, color: AppTheme.gold, size: 20),
           ),
           const SizedBox(height: 6),
           Text(
@@ -373,230 +284,11 @@ class _OnboardingPreferenceScreenState
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              height: 1.25,
+              height: 1.2,
             ),
           ),
         ],
       ),
-    );
-  }
-
-  /// Step 2: Halaman Pilih Wilayah Utama Kamu
-  Widget _buildRegionSelectionPage() {
-    final colors = AppTheme.colors(context);
-    return Column(
-      children: [
-        // Header Bar
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () {
-                  _pageController.animateToPage(
-                    0,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                },
-                icon: Icon(Icons.arrow_back, color: colors.textPrimary),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pilih Wilayah Utama',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Area utama untuk rekomendasi kuliner kamu',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Daftar Kartu Pilihan Wilayah Interaktif
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
-            physics: const BouncingScrollPhysics(),
-            itemCount: _regionOptions.length,
-            itemBuilder: (context, index) {
-              final opt = _regionOptions[index];
-              final isSelected = _selectedRegion == opt['name'];
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() => _selectedRegion = opt['name'] as String);
-                },
-                behavior: HitTestBehavior.opaque,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.gold.withAlpha(28)
-                        : colors.cardNavy.withAlpha(180),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.gold : colors.borderNavy,
-                      width: isSelected ? 1.8 : 1.0,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppTheme.orange.withAlpha(35),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.orange
-                              : colors.surfaceNavy,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          opt['icon'] as IconData,
-                          color: isSelected ? Colors.white : AppTheme.gold,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              opt['name'] as String,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                color: isSelected
-                                    ? AppTheme.gold
-                                    : colors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              opt['desc'] as String,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: colors.textSecondary,
-                                height: 1.25,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected
-                                ? AppTheme.gold
-                                : colors.borderNavy,
-                            width: 2,
-                          ),
-                          color: isSelected
-                              ? AppTheme.gold
-                              : Colors.transparent,
-                        ),
-                        child: isSelected
-                            ? const Icon(Icons.check, size: 14, color: Colors.black)
-                            : null,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        // Tombol Lanjut ke Masuk / Daftar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-          child: Container(
-            width: double.infinity,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.orange.withAlpha(90),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleFinishOnboarding,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Lanjut ke Masuk / Daftar',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -969,8 +969,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // Filter Chips: Semua, Cafe, Restoran
-              Padding(
+              // Filter Chips: Semua, Cafe, Restoran (Scrollable Horizontal bebas overflow)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: ['Semua', 'Cafe', 'Warkop', 'Restoran'].map((cat) {
