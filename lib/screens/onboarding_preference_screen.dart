@@ -64,7 +64,7 @@ class _OnboardingPreferenceScreenState
                 children: [
                   const SizedBox(height: 8),
 
-                  // Logo Pin & Mascot (Kembali seperti semula tanpa over-zoom)
+                  // Logo Pin & Mascot (Penuh di dalam lingkaran border tanpa space kosong & tanpa terpotong)
                   Center(
                     child: Container(
                       width: 120,
@@ -72,30 +72,34 @@ class _OnboardingPreferenceScreenState
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppTheme.gold.withAlpha(180),
+                          color: AppTheme.gold.withAlpha(200),
                           width: 2.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.orange.withAlpha(60),
+                            color: AppTheme.orange.withAlpha(70),
                             blurRadius: 24,
                             offset: const Offset(0, 6),
                           ),
                         ],
                       ),
                       child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/app_icon.jpeg',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            decoration: const BoxDecoration(
-                              gradient: AppTheme.primaryGradient,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.restaurant_rounded,
-                              size: 56,
-                              color: Colors.white,
+                        child: Transform.scale(
+                          scale: 1.45,
+                          alignment: Alignment.center,
+                          child: Image.asset(
+                            'assets/images/app_icon.jpeg',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              decoration: const BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.restaurant_rounded,
+                                size: 56,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
