@@ -95,7 +95,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onRegionChanged(String? newRegion) async {
     if (newRegion == null) return;
-    setState(() => _selectedRegion = newRegion);
     await _prefService.saveSelectedRegion(newRegion);
 
     if (await _prefService.isGuest()) {
@@ -106,6 +105,10 @@ class _HomeScreenState extends State<HomeScreen> {
         email: guestEmail,
         isGuest: true,
       );
+    }
+
+    if (mounted) {
+      setState(() => _selectedRegion = newRegion);
     }
   }
 
@@ -155,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildMapTab(),
                 SettingsScreen(
                   isRootTab: true,
+                  currentRegion: _selectedRegion,
                   key: ValueKey('settings_$_selectedRegion'),
                 ),
               ],

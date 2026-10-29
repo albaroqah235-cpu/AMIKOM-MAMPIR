@@ -95,7 +95,10 @@ class PreferenceService {
     return 'tamu.purwokerto@mampir.id';
   }
 
-  static String formatGuestBadge(String region) {
+  static String formatGuestBadge(String region) => formatExplorerBadge(region);
+
+  /// Format badge penjelajah berdasarkan wilayah aktif
+  static String formatExplorerBadge(String region) {
     final lower = region.toLowerCase();
     if (lower.contains('baturraden')) return '🌲 Penjelajah Baturraden';
     if (lower.contains('sokaraja')) return '🍲 Penjelajah Sokaraja';

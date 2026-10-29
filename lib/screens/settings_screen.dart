@@ -23,10 +23,12 @@ import 'notification_screen.dart';
 /// ============================================================
 class SettingsScreen extends StatefulWidget {
   final bool isRootTab;
+  final String? currentRegion;
 
   const SettingsScreen({
     super.key,
     this.isRootTab = false,
+    this.currentRegion,
   });
 
   @override
@@ -52,21 +54,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSettings();
   }
 
+  @override
+  void didUpdateWidget(covariant SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentRegion != widget.currentRegion) {
+      _loadSettings();
+    }
+  }
+
   Future<void> _loadSettings() async {
     final isGuest = await _prefService.isGuest();
+    final region = widget.currentRegion ?? await _prefService.getSelectedRegion();
     String name;
     String email;
-    String badge;
+    final badge = PreferenceService.formatExplorerBadge(region);
 
     if (isGuest) {
-      final region = await _prefService.getSelectedRegion();
       name = PreferenceService.formatGuestName(region);
       email = PreferenceService.formatGuestEmail(region);
-      badge = PreferenceService.formatGuestBadge(region);
     } else {
       name = await _prefService.getUserName();
       email = await _prefService.getUserEmail();
-      badge = '🌟 Penjelajah Purwokerto';
     }
 
     final notif = await _prefService.isNotificationEnabled();
