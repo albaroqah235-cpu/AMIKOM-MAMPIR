@@ -17,15 +17,18 @@ class ApiConfig {
   /// URL dasar Supabase REST API (PostgREST).
   /// Contoh: 'https://abcdefghij.supabase.co/rest/v1'
   /// Kosongkan jika belum punya — aplikasi tetap jalan dengan data bawaan.
-  static const String supabaseUrl = '';
+  static const String supabaseUrl = 'https://vdqdithxujxvzyybjtpn.supabase.co';
 
   /// Supabase Anon (Public) Key.
   /// Contoh: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
   /// Kosongkan jika belum punya — aplikasi tetap jalan dengan data bawaan.
-  static const String supabaseAnonKey = '';
+  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWRpdGh4dWp4dnp5eWJqdHBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMzA2NTIsImV4cCI6MjEwODgwNjY1Mn0.7zE0gLxh0a2DNzdVcRfTj3EZDaqXWZ09kL5gcXTETXY';
 
   /// Endpoint untuk mengambil data tempat (GET request)
-  static String get placesEndpoint => '$supabaseUrl/places';
+  static String get placesEndpoint {
+    final clean = supabaseUrl.endsWith('/') ? supabaseUrl.substring(0, supabaseUrl.length - 1) : supabaseUrl;
+    return clean.endsWith('/rest/v1') ? '$clean/places' : '$clean/rest/v1/places';
+  }
 
   /// Mengecek apakah konfigurasi Supabase sudah diisi oleh pengguna.
   /// Jika false, ApiService akan menggunakan data fallback bawaan.
