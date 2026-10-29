@@ -162,6 +162,7 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
@@ -169,11 +170,11 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
-        color: AppTheme.scaffoldBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: colors.scaffoldBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         border: Border(
-          top: BorderSide(color: AppTheme.borderNavy, width: 1.5),
+          top: BorderSide(color: colors.borderNavy, width: 1.5),
         ),
       ),
       child: Stack(
@@ -203,7 +204,7 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                       height: 5,
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.white24,
+                        color: colors.isDark ? Colors.white24 : Colors.black12,
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -214,15 +215,15 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        icon: Icon(Icons.arrow_back, color: colors.iconColor),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
+                      Text(
                         'Filter Pencarian',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: colors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
@@ -243,10 +244,10 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                   const SizedBox(height: 14),
 
                   // Section 1: Budget Maksimal
-                  const Text(
+                  Text(
                     'Budget Maksimal (Rp)',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: colors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -256,23 +257,23 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                   // Manual TextField
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.searchNavy,
+                      color: colors.searchNavy,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppTheme.borderNavy),
+                      border: Border.all(color: colors.borderNavy),
                     ),
                     child: TextField(
                       controller: _textController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colors.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Tulis nominal budget sendiri',
-                        hintStyle: TextStyle(color: AppTheme.textMuted),
-                        contentPadding: EdgeInsets.symmetric(
+                        hintStyle: TextStyle(color: colors.textMuted),
+                        contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
                         border: InputBorder.none,
                       ),
@@ -285,7 +286,7 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: AppTheme.orange,
-                      inactiveTrackColor: AppTheme.borderNavy,
+                      inactiveTrackColor: colors.borderNavy,
                       thumbColor: AppTheme.gold,
                       overlayColor: AppTheme.gold.withValues(alpha: 0.2),
                       trackHeight: 4,
@@ -321,18 +322,18 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                             gradient: isSelected
                                 ? AppTheme.primaryGradient
                                 : null,
-                            color: isSelected ? null : AppTheme.surfaceNavy,
+                            color: isSelected ? null : colors.surfaceNavy,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: isSelected
                                   ? Colors.transparent
-                                  : AppTheme.borderNavy,
+                                  : colors.borderNavy,
                             ),
                           ),
                           child: Text(
                             chip['label'] as String,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.white70,
+                              color: isSelected ? Colors.white : colors.textSecondary,
                               fontWeight: isSelected
                                   ? FontWeight.w800
                                   : FontWeight.w600,
@@ -346,10 +347,10 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                   const SizedBox(height: 22),
 
                   // Section 2: Jenis Tempat
-                  const Text(
+                  Text(
                     'Jenis Tempat',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: colors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -378,18 +379,18 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                             gradient: isSelected
                                 ? AppTheme.primaryGradient
                                 : null,
-                            color: isSelected ? null : AppTheme.surfaceNavy,
+                            color: isSelected ? null : colors.surfaceNavy,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: isSelected
                                   ? Colors.transparent
-                                  : AppTheme.borderNavy,
+                                  : colors.borderNavy,
                             ),
                           ),
                           child: Text(
                             type,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.white70,
+                              color: isSelected ? Colors.white : colors.textSecondary,
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
@@ -403,10 +404,10 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                   const SizedBox(height: 22),
 
                   // Section 3: Preferensi
-                  const Text(
+                  Text(
                     'Preferensi',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: colors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -435,18 +436,18 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                             gradient: isSelected
                                 ? AppTheme.primaryGradient
                                 : null,
-                            color: isSelected ? null : AppTheme.surfaceNavy,
+                            color: isSelected ? null : colors.surfaceNavy,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: isSelected
                                   ? Colors.transparent
-                                  : AppTheme.borderNavy,
+                                  : colors.borderNavy,
                             ),
                           ),
                           child: Text(
                             pref,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.white70,
+                              color: isSelected ? Colors.white : colors.textSecondary,
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
@@ -504,10 +505,10 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                   Center(
                     child: TextButton(
                       onPressed: _reset,
-                      child: const Text(
+                      child: Text(
                         'Reset',
                         style: TextStyle(
-                          color: AppTheme.textSecondary,
+                          color: colors.textSecondary,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),

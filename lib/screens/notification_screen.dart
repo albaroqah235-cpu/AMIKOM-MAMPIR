@@ -54,12 +54,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
     final displayedList = _selectedTabIndex == 0
         ? _allNotifications
         : _allNotifications.where((n) => n['unread'] == true).toList();
 
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
           // Background Mandala
@@ -84,15 +85,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        icon: Icon(Icons.arrow_back, color: colors.iconColor),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'Notifikasi',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: colors.textPrimary,
                         ),
                       ),
                     ],
@@ -117,19 +118,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   : null,
                               color: _selectedTabIndex == 0
                                   ? null
-                                  : Colors.transparent,
+                                  : colors.surfaceNavy,
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
                                 color: _selectedTabIndex == 0
                                     ? Colors.transparent
-                                    : AppTheme.borderNavy,
+                                    : colors.borderNavy,
                               ),
                             ),
                             alignment: Alignment.center,
                             child: Text(
                               'Semua',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: _selectedTabIndex == 0
+                                    ? Colors.white
+                                    : colors.textSecondary,
                                 fontWeight: _selectedTabIndex == 0
                                     ? FontWeight.w800
                                     : FontWeight.w600,
@@ -152,19 +155,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   : null,
                               color: _selectedTabIndex == 1
                                   ? null
-                                  : Colors.transparent,
+                                  : colors.surfaceNavy,
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
                                 color: _selectedTabIndex == 1
                                     ? Colors.transparent
-                                    : AppTheme.borderNavy,
+                                    : colors.borderNavy,
                               ),
                             ),
                             alignment: Alignment.center,
                             child: Text(
                               'Pembaruan',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: _selectedTabIndex == 1
+                                    ? Colors.white
+                                    : colors.textSecondary,
                                 fontWeight: _selectedTabIndex == 1
                                     ? FontWeight.w800
                                     : FontWeight.w600,
@@ -182,10 +187,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 // List Notifikasi
                 Expanded(
                   child: displayedList.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'Tidak ada notifikasi',
-                            style: TextStyle(color: AppTheme.textSecondary),
+                            style: TextStyle(color: colors.textSecondary),
                           ),
                         )
                       : ListView.separated(
@@ -193,7 +198,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               horizontal: 20, vertical: 8),
                           itemCount: displayedList.length,
                           separatorBuilder: (context, index) =>
-                              const Divider(color: AppTheme.borderNavy, height: 28),
+                              Divider(color: colors.borderNavy, height: 28),
                           itemBuilder: (context, index) {
                             final notif = displayedList[index];
                             final isMascot = notif['isMascot'] == true;
@@ -206,9 +211,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   width: 64,
                                   height: 64,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.surfaceNavy,
+                                    color: colors.surfaceNavy,
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: AppTheme.borderNavy),
+                                    border: Border.all(color: colors.borderNavy),
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(16),
@@ -237,8 +242,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     children: [
                                       Text(
                                         notif['title'] as String,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: colors.textPrimary,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -246,8 +251,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                       const SizedBox(height: 4),
                                       Text(
                                         notif['subtitle'] as String,
-                                        style: const TextStyle(
-                                          color: AppTheme.textSecondary,
+                                        style: TextStyle(
+                                          color: colors.textSecondary,
                                           fontSize: 13,
                                         ),
                                       ),

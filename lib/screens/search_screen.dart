@@ -179,8 +179,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
           // Background Mandala
@@ -216,13 +217,14 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchHeader() {
+    final colors = AppTheme.colors(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           if (Navigator.canPop(context)) ...[
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(Icons.arrow_back, color: colors.iconColor),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -233,23 +235,23 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: AppTheme.searchNavy,
+                color: colors.searchNavy,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppTheme.borderNavy),
+                border: Border.all(color: colors.borderNavy),
               ),
               child: Row(
                 children: [
                   const SizedBox(width: 14),
-                  const Icon(Icons.search, color: AppTheme.textMuted, size: 20),
+                  Icon(Icons.search, color: colors.textMuted, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       controller: _searchController,
                       focusNode: _focusNode,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                      decoration: InputDecoration(
                         hintText: 'Cari tempat makan / nongkrong...',
-                        hintStyle: TextStyle(color: AppTheme.textMuted),
+                        hintStyle: TextStyle(color: colors.textMuted),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
@@ -261,7 +263,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   if (_searchController.text.isNotEmpty)
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54, size: 18),
+                      icon: Icon(Icons.close, color: colors.textSecondary, size: 18),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _hasSearched = false);
@@ -270,7 +272,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   Container(
                     width: 1,
                     height: 22,
-                    color: AppTheme.borderNavy,
+                    color: colors.borderNavy,
                   ),
                   IconButton(
                     icon: const Icon(Icons.tune_rounded,
@@ -288,6 +290,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   /// Tampilan Riwayat Pencarian (riwayat pencarian_mampir.jpeg)
   Widget _buildSearchHistoryView() {
+    final colors = AppTheme.colors(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -297,10 +300,10 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Riwayat Pencarian',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.textPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
@@ -329,11 +332,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.history_rounded,
-                          size: 54, color: AppTheme.textMuted.withValues(alpha: 0.5)),
+                          size: 54, color: colors.textMuted.withValues(alpha: 0.5)),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         'Belum ada riwayat pencarian',
-                        style: TextStyle(color: AppTheme.textSecondary),
+                        style: TextStyle(color: colors.textSecondary),
                       ),
                     ],
                   ),
@@ -348,9 +351,16 @@ class _SearchScreenState extends State<SearchScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceNavy,
+                        color: colors.cardNavy,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTheme.borderNavy),
+                        border: Border.all(color: colors.borderNavy),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: colors.isDark ? 0.25 : 0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
@@ -365,8 +375,8 @@ class _SearchScreenState extends State<SearchScreen> {
                               },
                               child: Text(
                                 item,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -378,8 +388,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           const SizedBox(width: 10),
                           GestureDetector(
                             onTap: () => _deleteHistoryItem(item),
-                            child: const Icon(Icons.close,
-                                color: Colors.white38, size: 18),
+                            child: Icon(Icons.close,
+                                color: colors.textSecondary, size: 18),
                           ),
                         ],
                       ),
@@ -393,6 +403,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   /// Tampilan Hasil Pencarian (hasil pencarian_mampir.jpeg)
   Widget _buildSearchResultsView() {
+    final colors = AppTheme.colors(context);
     final count = _searchResults.length;
 
     // Filter Chips Info string (misal: "Rp 25K • WiFi • Nongkrong")
@@ -417,10 +428,10 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Hasil Pencarian',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.textPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
@@ -473,12 +484,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.search_off_rounded,
-                          size: 54, color: AppTheme.textMuted),
+                      Icon(Icons.search_off_rounded,
+                          size: 54, color: colors.textMuted),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         'Tidak ada tempat yang sesuai',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                        style: TextStyle(color: colors.textSecondary, fontSize: 16),
                       ),
                       const SizedBox(height: 6),
                       TextButton(
@@ -512,9 +523,16 @@ class _SearchScreenState extends State<SearchScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceNavy,
+                          color: colors.cardNavy,
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: AppTheme.borderNavy),
+                          border: Border.all(color: colors.borderNavy),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: colors.isDark ? 0.25 : 0.05),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
@@ -529,7 +547,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 errorBuilder: (ctx, err, st) => Container(
                                   width: 90,
                                   height: 90,
-                                  color: AppTheme.searchNavy,
+                                  color: colors.searchNavy,
                                   child: const Icon(Icons.restaurant,
                                       color: AppTheme.orange),
                                 ),
@@ -572,7 +590,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                               : Icons.favorite_border,
                                           color: isFav
                                               ? AppTheme.orange
-                                              : Colors.white54,
+                                              : colors.textSecondary,
                                           size: 20,
                                         ),
                                       ),
@@ -583,8 +601,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   // Place Name
                                   Text(
                                     place.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: colors.textPrimary,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -596,8 +614,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   // Price Range
                                   Text(
                                     place.priceRange,
-                                    style: const TextStyle(
-                                      color: Colors.white70,
+                                    style: TextStyle(
+                                      color: colors.textSecondary,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -612,8 +630,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                       const SizedBox(width: 2),
                                       Text(
                                         '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: colors.textPrimary,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -624,8 +642,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                       const SizedBox(width: 2),
                                       Text(
                                         place.formattedDistance(),
-                                        style: const TextStyle(
-                                          color: AppTheme.textSecondary,
+                                        style: TextStyle(
+                                          color: colors.textSecondary,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -646,6 +664,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSortPill(String label, int optionIndex) {
+    final colors = AppTheme.colors(context);
     final isSelected = _sortOption == optionIndex;
     return GestureDetector(
       onTap: () {
@@ -657,17 +676,17 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
         decoration: BoxDecoration(
           gradient: isSelected ? AppTheme.primaryGradient : null,
-          color: isSelected ? null : Colors.transparent,
+          color: isSelected ? null : colors.surfaceNavy,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.transparent : AppTheme.gold,
+            color: isSelected ? Colors.transparent : colors.borderNavy,
             width: 1.2,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppTheme.gold,
+            color: isSelected ? Colors.white : colors.textSecondary,
             fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
             fontSize: 13,
           ),

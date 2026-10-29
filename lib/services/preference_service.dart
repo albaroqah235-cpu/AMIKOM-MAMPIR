@@ -11,6 +11,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// d. user_preferences (`List<String>`)
 /// e. search_history (`List<String>`, max 10 tanpa duplikat)
 /// f. favorite_places (`List<String>` ID tempat)
+/// g. setting_notification_enabled (bool)
+/// h. setting_location_enabled (bool)
+/// i. setting_language (String)
+/// j. setting_theme (String)
+/// k. setting_app_rating (int)
+/// l. is_logged_in (bool)
+/// m. user_name & user_email (String)
 /// ============================================================
 class PreferenceService {
   static const String keyFirstLaunch = 'is_first_launch';
@@ -19,6 +26,19 @@ class PreferenceService {
   static const String keyPreferences = 'user_preferences';
   static const String keySearchHistory = 'search_history';
   static const String keyFavorites = 'favorite_places';
+
+  // Auth / User Profile Keys
+  static const String keyIsLoggedIn = 'is_logged_in';
+  static const String keyIsGuest = 'is_guest_mode';
+  static const String keyUserName = 'user_name';
+  static const String keyUserEmail = 'user_email';
+
+  // Settings Keys
+  static const String keyNotificationEnabled = 'setting_notification_enabled';
+  static const String keyLocationEnabled = 'setting_location_enabled';
+  static const String keyLanguage = 'setting_language';
+  static const String keyTheme = 'setting_theme';
+  static const String keyAppRating = 'setting_app_rating';
 
   // Legacy key compatibility
   static const String _legacyKeyOnboarded = 'is_onboarded';
@@ -54,6 +74,84 @@ class PreferenceService {
   /// Alias kompatibilitas
   Future<bool> isOnboarded() async => !(await isFirstLaunch());
   Future<void> setOnboarded() async => setFirstLaunch(false);
+
+  // ======================== USER AUTHENTICATION ========================
+
+  /// Format nama tamu berdasarkan wilayah yang dipilih:
+  /// - Baturraden -> Tamu Baturraden
+  /// - Sokaraja -> Tamu Sokaraja
+  /// - Purwokerto (semua variasi) -> Tamu Purwokerto
+  static String formatGuestName(String region) {
+    final lower = region.toLowerCase();
+    if (lower.contains('baturraden')) return 'Tamu Baturraden';
+    if (lower.contains('sokaraja')) return 'Tamu Sokaraja';
+    return 'Tamu Purwokerto';
+  }
+
+  static String formatGuestEmail(String region) {
+    final lower = region.toLowerCase();
+    if (lower.contains('baturraden')) return 'tamu.baturraden@mampir.id';
+    if (lower.contains('sokaraja')) return 'tamu.sokaraja@mampir.id';
+    return 'tamu.purwokerto@mampir.id';
+  }
+
+  static String formatGuestBadge(String region) {
+    final lower = region.toLowerCase();
+    if (lower.contains('baturraden')) return '🌲 Penjelajah Baturraden';
+    if (lower.contains('sokaraja')) return '🍲 Penjelajah Sokaraja';
+    return '🌟 Penjelajah Purwokerto';
+  }
+
+  /// Cek apakah user sudah login
+  Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyIsLoggedIn) ?? false;
+  }
+
+  /// Cek apakah user login sebagai tamu
+  Future<bool> isGuest() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyIsGuest) ?? false;
+  }
+
+  /// Simpan sesi login user
+  Future<void> login({
+    String name = 'Penjelajah MAMPIR',
+    String email = 'user@mampir.id',
+    bool isGuest = false,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyIsLoggedIn, true);
+    await prefs.setBool(keyIsGuest, isGuest);
+    await prefs.setString(keyUserName, name);
+    await prefs.setString(keyUserEmail, email);
+  }
+
+  /// Ambil nama pengguna
+  Future<String> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyUserName) ?? 'Penjelajah MAMPIR';
+  }
+
+  /// Ambil email pengguna
+  Future<String> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyUserEmail) ?? 'user@mampir.id';
+  }
+
+  /// Update profil pengguna
+  Future<void> updateProfile({required String name, required String email}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyUserName, name);
+    await prefs.setString(keyUserEmail, email);
+  }
+
+  /// Logout pengguna
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyIsLoggedIn, false);
+    await prefs.setBool(keyIsGuest, false);
+  }
 
   // ======================== USER BUDGET ========================
 
@@ -245,5 +343,62 @@ class PreferenceService {
   Future<bool> isFavorite(String placeId) async {
     final favorites = await getFavorites();
     return favorites.contains(placeId);
+  }
+
+  // ======================== APP SETTINGS ========================
+
+  /// Status notifikasi aktif/nonaktif
+  Future<bool> isNotificationEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyNotificationEnabled) ?? true;
+  }
+
+  Future<void> setNotificationEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyNotificationEnabled, value);
+  }
+
+  /// Status izin lokasi
+  Future<bool> isLocationEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(keyLocationEnabled) ?? true;
+  }
+
+  Future<void> setLocationEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(keyLocationEnabled, value);
+  }
+
+  /// Bahasa aplikasi terpilih (default: 'Indonesia')
+  Future<String> getLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyLanguage) ?? 'Indonesia';
+  }
+
+  Future<void> setLanguage(String language) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyLanguage, language);
+  }
+
+  /// Tema aplikasi (default: 'Gelap')
+  Future<String> getThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyTheme) ?? 'Gelap';
+  }
+
+  Future<void> setThemeMode(String theme) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyTheme, theme);
+  }
+
+  /// Rating aplikasi terakhir yang diberikan user (1 - 5)
+  Future<int> getAppRating() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(keyAppRating) ?? 5;
+  }
+
+  Future<void> saveAppRating(int rating) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(keyAppRating, rating);
   }
 }

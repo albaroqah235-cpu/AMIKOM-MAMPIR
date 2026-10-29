@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/onboarding_preference_screen.dart';
 import 'services/preference_service.dart';
 import 'theme/app_theme.dart';
@@ -11,8 +12,10 @@ import 'theme/app_theme.dart';
 /// MAMPIR: Makan, Ampir, Pilih, dan Rekomendasi
 /// Kuliner & Nongkrong • Kota Purwokerto & Sekitarnya (Baturraden, Sokaraja)
 /// ============================================================
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final savedTheme = await PreferenceService().getThemeMode();
+  AppTheme.setThemeFromString(savedTheme);
   runApp(const MampirApp());
 }
 
@@ -21,11 +24,31 @@ class MampirApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MAMPIR',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      home: const SplashScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppTheme.themeModeNotifier,
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          title: 'MAMPIR',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeMode,
+          builder: (context, child) {
+            final isDark = themeMode == ThemeMode.system
+                ? MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                : themeMode == ThemeMode.dark;
+            return Container(
+              color: isDark ? Colors.black : const Color(0xFFE2E8F0),
+              alignment: Alignment.center,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: ClipRect(child: child),
+              ),
+            );
+          },
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }
@@ -84,15 +107,24 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2500));
 
     final isFirst = await _prefService.isFirstLaunch();
+    final isLoggedIn = await _prefService.isLoggedIn();
 
     if (!mounted) return;
+
+    final Widget targetScreen;
+    if (isFirst) {
+      targetScreen = const OnboardingPreferenceScreen();
+    } else if (!isLoggedIn) {
+      targetScreen = const LoginScreen();
+    } else {
+      targetScreen = const HomeScreen();
+    }
 
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (context, anim, secondAnim) =>
-            isFirst ? const OnboardingPreferenceScreen() : const HomeScreen(),
+        pageBuilder: (context, anim, secondAnim) => targetScreen,
         transitionsBuilder: (context, anim, secondAnim, child) {
           return FadeTransition(opacity: anim, child: child);
         },

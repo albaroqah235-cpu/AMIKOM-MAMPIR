@@ -102,11 +102,12 @@ class _RouteScreenState extends State<RouteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
     final distKm = widget.place.distanceInKmFrom(_userPos.latitude, _userPos.longitude);
     final int estMinutes = (distKm * 3.5 + 2).round().clamp(3, 45);
 
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
           // 1. Peta OpenStreetMap dengan FlutterMap
@@ -259,10 +260,10 @@ class _RouteScreenState extends State<RouteScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppTheme.scaffoldBg.withValues(alpha: 0.85),
+                        backgroundColor: colors.surfaceNavy.withValues(alpha: 0.9),
                         child: IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon: Icon(Icons.arrow_back, color: colors.iconColor),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -270,12 +271,12 @@ class _RouteScreenState extends State<RouteScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.scaffoldBg.withValues(alpha: 0.92),
+                            color: colors.surfaceNavy.withValues(alpha: 0.95),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppTheme.borderNavy),
+                            border: Border.all(color: colors.borderNavy),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: Colors.black.withValues(alpha: colors.isDark ? 0.3 : 0.08),
                                 blurRadius: 10,
                               ),
                             ],
@@ -295,10 +296,10 @@ class _RouteScreenState extends State<RouteScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Text(
+                                  Text(
                                     'Lokasi Anda',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: colors.textPrimary,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -310,7 +311,7 @@ class _RouteScreenState extends State<RouteScreen> {
                                 child: Container(
                                   width: 1,
                                   height: 14,
-                                  color: Colors.white30,
+                                  color: colors.borderNavy,
                                 ),
                               ),
                               Row(
@@ -327,8 +328,8 @@ class _RouteScreenState extends State<RouteScreen> {
                                   Expanded(
                                     child: Text(
                                       widget.place.name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: colors.textPrimary,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -381,12 +382,12 @@ class _RouteScreenState extends State<RouteScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.scaffoldBg,
+                color: colors.surfaceNavy,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppTheme.orange.withValues(alpha: 0.5)),
+                border: Border.all(color: colors.borderNavy),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: Colors.black.withValues(alpha: colors.isDark ? 0.5 : 0.1),
                     blurRadius: 18,
                     offset: const Offset(0, 4),
                   ),
@@ -403,7 +404,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white24,
+                        color: colors.isDark ? Colors.white24 : Colors.black12,
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -433,7 +434,7 @@ class _RouteScreenState extends State<RouteScreen> {
                           errorBuilder: (ctx, err, st) => Container(
                             width: 60,
                             height: 60,
-                            color: AppTheme.surfaceNavy,
+                            color: colors.searchNavy,
                             child: const Icon(Icons.store, color: AppTheme.orange),
                           ),
                         ),
@@ -445,8 +446,8 @@ class _RouteScreenState extends State<RouteScreen> {
                           children: [
                             Text(
                               widget.place.name,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: colors.textPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -461,8 +462,8 @@ class _RouteScreenState extends State<RouteScreen> {
                                 const SizedBox(width: 2),
                                 Text(
                                   '${widget.place.rating.toStringAsFixed(1)} (${widget.place.formattedReviewCount})',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
+                                  style: TextStyle(
+                                    color: colors.textPrimary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -470,8 +471,8 @@ class _RouteScreenState extends State<RouteScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   '• ${widget.place.category}',
-                                  style: const TextStyle(
-                                    color: AppTheme.textSecondary,
+                                  style: TextStyle(
+                                    color: colors.textSecondary,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -532,16 +533,17 @@ class _RouteScreenState extends State<RouteScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final colors = AppTheme.colors(context);
     return Container(
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceNavy.withValues(alpha: 0.95),
+        color: colors.surfaceNavy.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderNavy),
+        border: Border.all(color: colors.borderNavy),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Colors.black.withValues(alpha: colors.isDark ? 0.3 : 0.08),
             blurRadius: 6,
           ),
         ],

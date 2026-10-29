@@ -97,6 +97,16 @@ class _HomeScreenState extends State<HomeScreen> {
     if (newRegion == null) return;
     setState(() => _selectedRegion = newRegion);
     await _prefService.saveSelectedRegion(newRegion);
+
+    if (await _prefService.isGuest()) {
+      final guestName = PreferenceService.formatGuestName(newRegion);
+      final guestEmail = PreferenceService.formatGuestEmail(newRegion);
+      await _prefService.login(
+        name: guestName,
+        email: guestEmail,
+        isGuest: true,
+      );
+    }
   }
 
   Future<void> _toggleFavorite(String placeId) async {
@@ -129,8 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppTheme.gold),
@@ -142,6 +153,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildSearchTab(),
                 _buildFavoritesTab(),
                 _buildMapTab(),
+                SettingsScreen(
+                  isRootTab: true,
+                  key: ValueKey('settings_$_selectedRegion'),
+                ),
               ],
             ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -149,18 +164,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ===========================================================================
-  // BOTTOM NAVIGATION BAR (4 TABS SESUAI SPESIFIKASI #8)
+  // BOTTOM NAVIGATION BAR (5 TABS DENGAN DUKUNGAN TEMA)
   // ===========================================================================
   Widget _buildBottomNavigationBar() {
+    final colors = AppTheme.colors(context);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1426),
-        border: const Border(
-          top: BorderSide(color: Color(0xFF1E293B), width: 1.5),
+        color: colors.bottomNavBg,
+        border: Border(
+          top: BorderSide(color: colors.bottomNavBorder, width: 1.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
+            color: Colors.black.withValues(alpha: colors.isDark ? 0.4 : 0.08),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -176,6 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildNavItem(1, Icons.search_rounded, 'Cari'),
               _buildNavItem(2, Icons.favorite_rounded, 'Favorit'),
               _buildNavItem(3, Icons.map_outlined, 'Peta'),
+              _buildNavItem(4, Icons.person_rounded, 'Akun'),
             ],
           ),
         ),
@@ -184,6 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNavItem(int index, IconData icon, String label) {
+    final colors = AppTheme.colors(context);
     final isActive = _currentTabIndex == index;
     return GestureDetector(
       onTap: () {
@@ -192,20 +210,20 @@ class _HomeScreenState extends State<HomeScreen> {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
               size: 24,
-              color: isActive ? AppTheme.gold : const Color(0xFF64748B),
+              color: isActive ? AppTheme.gold : colors.textMuted,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? AppTheme.gold : const Color(0xFF64748B),
+                color: isActive ? AppTheme.gold : colors.textMuted,
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
               ),
@@ -306,6 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 1. Top Header: Pin Oranye + Region Dropdown + Bell + Setting Icon
   Widget _buildTopHeader() {
+    final colors = AppTheme.colors(context);
     return Row(
       children: [
         // Pin Oranye
@@ -330,11 +349,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: DropdownButton<String>(
               value: _selectedRegion,
               isDense: true,
-              dropdownColor: AppTheme.surfaceNavy,
-              icon: const Icon(Icons.keyboard_arrow_down,
-                  color: Colors.white, size: 20),
-              style: const TextStyle(
-                color: Colors.white,
+              dropdownColor: colors.surfaceNavy,
+              icon: Icon(Icons.keyboard_arrow_down,
+                  color: colors.textPrimary, size: 20),
+              style: TextStyle(
+                color: colors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
               ),
@@ -343,8 +362,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: region,
                   child: Text(
                     region,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                     ),
@@ -355,7 +374,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-
 
         // Lonceng Notifikasi
         IconButton(
@@ -371,13 +389,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Pengaturan
         IconButton(
-          icon: const Icon(Icons.settings_outlined,
-              color: Colors.white70, size: 24),
+          icon: Icon(Icons.settings_outlined,
+              color: colors.iconColor, size: 24),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (ctx) => const SettingsScreen()),
-            );
+            setState(() => _currentTabIndex = 4);
           },
         ),
       ],
@@ -386,15 +401,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 2. Search Bar + Filter Button (Sesuai mockup)
   Widget _buildSearchBar() {
+    final colors = AppTheme.colors(context);
     return Container(
       height: 52,
       decoration: BoxDecoration(
-        color: AppTheme.searchNavy,
+        color: colors.searchNavy,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: AppTheme.borderNavy),
+        border: Border.all(color: colors.borderNavy),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withValues(alpha: colors.isDark ? 0.25 : 0.06),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -403,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           const SizedBox(width: 16),
-          const Icon(Icons.search, color: AppTheme.textMuted, size: 22),
+          Icon(Icons.search, color: colors.textMuted, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: GestureDetector(
@@ -419,10 +435,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
               behavior: HitTestBehavior.opaque,
-              child: const Text(
+              child: Text(
                 'Cari tempat makan / nongkrong...',
                 style: TextStyle(
-                  color: AppTheme.textMuted,
+                  color: colors.textMuted,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -432,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             width: 1,
             height: 24,
-            color: AppTheme.borderNavy,
+            color: colors.borderNavy,
           ),
           IconButton(
             icon: const Icon(Icons.tune_rounded, color: AppTheme.gold, size: 22),
@@ -447,6 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 3. Section Kategori: 5 Tombol Lingkaran Bergradasi Emas-Oranye
   Widget _buildCategorySection() {
+    final colors = AppTheme.colors(context);
     final categories = [
       {'name': 'Cafe', 'icon': Icons.local_cafe_rounded},
       {'name': 'Warkop', 'icon': Icons.emoji_food_beverage_rounded},
@@ -456,12 +473,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Kategori',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: colors.textPrimary,
           ),
         ),
         const SizedBox(height: 14),
@@ -509,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     name,
                     style: TextStyle(
-                      color: isSelected ? AppTheme.gold : Colors.white,
+                      color: isSelected ? AppTheme.gold : colors.textPrimary,
                       fontSize: 13,
                       fontWeight:
                           isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -527,18 +544,19 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 4. Section "Rekomendasi untuk kamu"
   Widget _buildRecommendationSection(
       PlaceModel? featured, List<RecommendationResult> recs) {
+    final colors = AppTheme.colors(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Rekomendasi untuk kamu',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
+                color: colors.textPrimary,
               ),
             ),
             GestureDetector(
@@ -723,6 +741,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 5. Section "Tempat Populer" (2-Column Grid)
   Widget _buildPopularSection(List<PlaceModel> places) {
+    final colors = AppTheme.colors(context);
     final list = places.take(6).toList();
 
     return Column(
@@ -731,12 +750,12 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Tempat Populer',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
+                color: colors.textPrimary,
               ),
             ),
             GestureDetector(
@@ -788,9 +807,16 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.cardNavy,
+                  color: colors.cardNavy,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.borderNavy),
+                  border: Border.all(color: colors.borderNavy),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: colors.isDark ? 0.25 : 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -806,7 +832,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         fit: BoxFit.cover,
                         errorBuilder: (ctx, err, st) => Container(
                           height: 100,
-                          color: AppTheme.surfaceNavy,
+                          color: colors.searchNavy,
                           child: const Icon(Icons.store, color: AppTheme.orange),
                         ),
                       ),
@@ -820,8 +846,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             place.name,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: colors.textPrimary,
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                             ),
@@ -831,8 +857,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 3),
                           Text(
                             '${place.category} • ${place.priceRange}',
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
+                            style: TextStyle(
+                              color: colors.textSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -847,8 +873,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(width: 2),
                               Text(
                                 '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
-                                style: const TextStyle(
-                                  color: Colors.white70,
+                                style: TextStyle(
+                                  color: colors.textSecondary,
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -856,8 +882,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               const Spacer(),
                               Text(
                                 place.formattedDistance(),
-                                style: const TextStyle(
-                                  color: AppTheme.textMuted,
+                                style: TextStyle(
+                                  color: colors.textMuted,
                                   fontSize: 10,
                                 ),
                               ),
@@ -887,6 +913,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // TAB 3: FAVORIT (SESUAI simpanFavorit_mampir.jpeg)
   // ===========================================================================
   Widget _buildFavoritesTab() {
+    final colors = AppTheme.colors(context);
     final savedPlaces = _allPlaces
         .where((place) => _favoriteIds.contains(place.id))
         .toList();
@@ -926,20 +953,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Favorit',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: colors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '${savedPlaces.length} tempat disimpan',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: AppTheme.textSecondary,
+                            color: colors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -968,16 +995,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             horizontal: 20, vertical: 8),
                         decoration: BoxDecoration(
                           gradient: isSel ? AppTheme.primaryGradient : null,
-                          color: isSel ? null : Colors.transparent,
+                          color: isSel ? null : colors.surfaceNavy,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isSel ? Colors.transparent : AppTheme.gold,
+                            color: isSel ? Colors.transparent : colors.borderNavy,
                           ),
                         ),
                         child: Text(
                           cat,
                           style: TextStyle(
-                            color: isSel ? Colors.white : AppTheme.gold,
+                            color: isSel ? Colors.white : colors.textSecondary,
                             fontWeight:
                                 isSel ? FontWeight.w800 : FontWeight.w600,
                             fontSize: 13,
@@ -1000,9 +1027,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: AppTheme.surfaceNavy,
+                                color: colors.surfaceNavy,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: AppTheme.borderNavy),
+                                border: Border.all(color: colors.borderNavy),
                               ),
                               child: const Icon(
                                 Icons.favorite_border_rounded,
@@ -1011,19 +1038,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
+                            Text(
                               'Belum ada tempat favorit',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: colors.textPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
+                            Text(
                               'Sentuh ikon hati untuk menyimpan tempat makan favoritmu.',
                               style: TextStyle(
-                                  color: AppTheme.textSecondary, fontSize: 13),
+                                  color: colors.textSecondary, fontSize: 13),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -1055,10 +1082,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppTheme.surfaceNavy,
+                                color: colors.cardNavy,
                                 borderRadius: BorderRadius.circular(18),
                                 border:
-                                    Border.all(color: AppTheme.borderNavy),
+                                    Border.all(color: colors.borderNavy),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(
+                                        alpha: colors.isDark ? 0.25 : 0.05),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: Row(
                                 children: [
@@ -1073,7 +1108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           Container(
                                         width: 85,
                                         height: 85,
-                                        color: AppTheme.searchNavy,
+                                        color: colors.searchNavy,
                                         child: const Icon(Icons.store,
                                             color: AppTheme.orange),
                                       ),
@@ -1092,8 +1127,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             Expanded(
                                               child: Text(
                                                 place.name,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
+                                                style: TextStyle(
+                                                  color: colors.textPrimary,
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w800,
                                                 ),
@@ -1122,8 +1157,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             const SizedBox(width: 2),
                                             Text(
                                               '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
-                                              style: const TextStyle(
-                                                color: Colors.white70,
+                                              style: TextStyle(
+                                                color: colors.textPrimary,
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -1131,8 +1166,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             const SizedBox(width: 8),
                                             Text(
                                               '• ${place.formattedDistance()}',
-                                              style: const TextStyle(
-                                                color: AppTheme.textSecondary,
+                                              style: TextStyle(
+                                                color: colors.textSecondary,
                                                 fontSize: 12,
                                               ),
                                             ),
@@ -1141,8 +1176,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         const SizedBox(height: 6),
                                         Text(
                                           '${place.category} • ${place.priceRange}',
-                                          style: const TextStyle(
-                                            color: Colors.white70,
+                                          style: TextStyle(
+                                            color: colors.textSecondary,
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -1168,6 +1203,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // TAB 4: PETA (OPENSTREETMAP VIA FLUTTER_MAP)
   // ===========================================================================
   Widget _buildMapTab() {
+    final colors = AppTheme.colors(context);
     return Stack(
       children: [
         FlutterMap(
@@ -1227,12 +1263,12 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: AppTheme.scaffoldBg.withValues(alpha: 0.95),
+              color: colors.surfaceNavy.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.borderNavy),
+              border: Border.all(color: colors.borderNavy),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: Colors.black.withValues(alpha: colors.isDark ? 0.3 : 0.08),
                   blurRadius: 8,
                 ),
               ],
@@ -1245,10 +1281,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: Text(
                     'Menampilkan ${_allPlaces.length} tempat di Purwokerto & Sekitarnya',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: colors.textPrimary,
                     ),
                   ),
                 ),
@@ -1266,12 +1302,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.scaffoldBg,
+                color: colors.surfaceNavy,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppTheme.orange),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
+                    color: Colors.black.withValues(alpha: colors.isDark ? 0.4 : 0.12),
                     blurRadius: 14,
                     offset: const Offset(0, 4),
                   ),
@@ -1289,7 +1325,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       errorBuilder: (ctx, err, st) => Container(
                         width: 70,
                         height: 70,
-                        color: AppTheme.surfaceNavy,
+                        color: colors.searchNavy,
                         child: const Icon(Icons.store, color: AppTheme.orange),
                       ),
                     ),
@@ -1302,10 +1338,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           _selectedMapPlace!.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                            color: colors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1313,9 +1349,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 3),
                         Text(
                           '${_selectedMapPlace!.city} • ${_selectedMapPlace!.priceRange}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppTheme.textSecondary,
+                            color: colors.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
@@ -1336,10 +1372,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.surfaceNavy,
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(
-                                    color: AppTheme.borderNavy),
+                                backgroundColor: colors.cardNavy,
+                                foregroundColor: colors.textPrimary,
+                                side: BorderSide(
+                                    color: colors.borderNavy),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 4),
                                 minimumSize: Size.zero,
@@ -1384,7 +1420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+                    icon: Icon(Icons.close, color: colors.textSecondary, size: 20),
                     onPressed: () =>
                         setState(() => _selectedMapPlace = null),
                   ),

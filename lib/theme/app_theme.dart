@@ -50,6 +50,101 @@ class AppTheme {
     end: Alignment.bottomCenter,
   );
 
+  // ==================== DYNAMIC THEME NOTIFIER ====================
+  static final ValueNotifier<ThemeMode> themeModeNotifier =
+      ValueNotifier<ThemeMode>(ThemeMode.dark);
+
+  static void setThemeFromString(String themeStr) {
+    if (themeStr == 'Terang') {
+      themeModeNotifier.value = ThemeMode.light;
+    } else if (themeStr == 'Sistem') {
+      themeModeNotifier.value = ThemeMode.system;
+    } else {
+      themeModeNotifier.value = ThemeMode.dark;
+    }
+  }
+
+  static String getThemeString() {
+    switch (themeModeNotifier.value) {
+      case ThemeMode.light:
+        return 'Terang';
+      case ThemeMode.system:
+        return 'Sistem';
+      case ThemeMode.dark:
+        return 'Gelap';
+    }
+  }
+
+  static bool isDark(BuildContext context) {
+    if (themeModeNotifier.value == ThemeMode.light) return false;
+    if (themeModeNotifier.value == ThemeMode.dark) return true;
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  static AppColors colors(BuildContext context) {
+    return AppColors(isDark: isDark(context));
+  }
+
+  // ==================== LIGHT THEME ====================
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+      primaryColor: orange,
+      colorScheme: const ColorScheme.light(
+        primary: orange,
+        secondary: gold,
+        surface: Colors.white,
+        onPrimary: Colors.white,
+        onSecondary: Colors.black,
+        onSurface: Color(0xFF0F172A),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        iconTheme: IconThemeData(color: Color(0xFF0F172A)),
+        titleTextStyle: TextStyle(
+          color: Color(0xFF0F172A),
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+      ),
+      dividerColor: const Color(0xFFE2E8F0),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFF1F5F9),
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: orange, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  // ==================== DARK THEME ====================
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
@@ -158,4 +253,31 @@ class MandalaOrnamentPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant MandalaOrnamentPainter oldDelegate) => false;
+}
+
+/// ============================================================
+/// DYNAMIC PALETTE HELPER — BERADAPTASI GELAP & TERANG
+/// ============================================================
+class AppColors {
+  final bool isDark;
+  const AppColors({required this.isDark});
+
+  Color get scaffoldBg =>
+      isDark ? const Color(0xFF0D1326) : const Color(0xFFF8FAFC);
+  Color get surfaceNavy => isDark ? const Color(0xFF1A233A) : Colors.white;
+  Color get cardNavy => isDark ? const Color(0xFF162035) : Colors.white;
+  Color get searchNavy =>
+      isDark ? const Color(0xFF131B30) : const Color(0xFFF1F5F9);
+  Color get borderNavy =>
+      isDark ? const Color(0xFF263353) : const Color(0xFFE2E8F0);
+  Color get textPrimary =>
+      isDark ? const Color(0xFFFFFFFF) : const Color(0xFF0F172A);
+  Color get textSecondary =>
+      isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  Color get textMuted =>
+      isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+  Color get iconColor => isDark ? Colors.white : const Color(0xFF1E293B);
+  Color get bottomNavBg => isDark ? const Color(0xFF0D1426) : Colors.white;
+  Color get bottomNavBorder =>
+      isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
 }

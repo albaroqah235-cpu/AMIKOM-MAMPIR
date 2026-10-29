@@ -82,9 +82,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
   @override
   Widget build(BuildContext context) {
     final place = widget.place;
+    final colors = AppTheme.colors(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
           // Background Mandala Decoration
@@ -108,19 +109,19 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppTheme.surfaceNavy,
+                        backgroundColor: colors.surfaceNavy,
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_back,
-                              color: Colors.white, size: 20),
+                          icon: Icon(Icons.arrow_back,
+                              color: colors.iconColor, size: 20),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
                       const Spacer(),
                       CircleAvatar(
-                        backgroundColor: AppTheme.surfaceNavy,
+                        backgroundColor: colors.surfaceNavy,
                         child: IconButton(
-                          icon: const Icon(Icons.share_outlined,
-                              color: Colors.white, size: 20),
+                          icon: Icon(Icons.share_outlined,
+                              color: colors.iconColor, size: 20),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -133,7 +134,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                       ),
                       const SizedBox(width: 10),
                       CircleAvatar(
-                        backgroundColor: AppTheme.surfaceNavy,
+                        backgroundColor: colors.surfaceNavy,
                         child: IconButton(
                           icon: Icon(
                             _isFavorite
@@ -141,7 +142,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                 : Icons.favorite_border,
                             color: _isFavorite
                                 ? AppTheme.orange
-                                : Colors.white,
+                                : colors.iconColor,
                             size: 20,
                           ),
                           onPressed: _toggleFavorite,
@@ -236,8 +237,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                   Expanded(
                                     child: Text(
                                       place.name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: colors.textPrimary,
                                         fontSize: 22,
                                         fontWeight: FontWeight.w900,
                                       ),
@@ -250,7 +251,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                           : Icons.bookmark_border_rounded,
                                       color: _isFavorite
                                           ? AppTheme.gold
-                                          : Colors.white70,
+                                          : colors.textSecondary,
                                     ),
                                     onPressed: _toggleFavorite,
                                   ),
@@ -265,8 +266,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                   const SizedBox(width: 3),
                                   Text(
                                     '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: colors.textPrimary,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -274,8 +275,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                   const SizedBox(width: 8),
                                   Text(
                                     '• ${place.formattedDistance()}',
-                                    style: const TextStyle(
-                                      color: AppTheme.textSecondary,
+                                    style: TextStyle(
+                                      color: colors.textSecondary,
                                       fontSize: 13,
                                     ),
                                   ),
@@ -303,15 +304,15 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 14, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.surfaceNavy,
+                                      color: colors.surfaceNavy,
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                          color: AppTheme.borderNavy),
+                                          color: colors.borderNavy),
                                     ),
                                     child: Text(
                                       fac,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: colors.textPrimary,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -327,18 +328,18 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                         // Tab Bar: Deskripsi, Menu, Ulasan
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                  color: AppTheme.borderNavy, width: 1.5),
+                                  color: colors.borderNavy, width: 1.5),
                             ),
                           ),
                           child: TabBar(
                             controller: _tabController,
                             indicatorColor: AppTheme.gold,
                             indicatorWeight: 3,
-                            labelColor: Colors.white,
-                            unselectedLabelColor: AppTheme.textSecondary,
+                            labelColor: colors.textPrimary,
+                            unselectedLabelColor: colors.textSecondary,
                             labelStyle: const TextStyle(
                                 fontWeight: FontWeight.w800, fontSize: 14),
                             tabs: const [
@@ -377,13 +378,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20, vertical: 14),
                   decoration: BoxDecoration(
-                    color: AppTheme.scaffoldBg,
-                    border: const Border(
-                      top: BorderSide(color: AppTheme.borderNavy),
+                    color: colors.scaffoldBg,
+                    border: Border(
+                      top: BorderSide(color: colors.borderNavy),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
+                        color: Colors.black.withValues(alpha: colors.isDark ? 0.5 : 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, -3),
                       ),
@@ -461,13 +462,14 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
   }
 
   Widget _buildDescriptionTab(PlaceModel place) {
+    final colors = AppTheme.colors(context);
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
         Text(
           place.description,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: colors.textPrimary,
             fontSize: 14,
             height: 1.5,
           ),
@@ -480,7 +482,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
             const SizedBox(width: 8),
             Text(
               place.openHours,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
             ),
           ],
         ),
@@ -494,7 +496,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
             Expanded(
               child: Text(
                 '${place.address}, ${place.city}',
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(color: colors.textSecondary, fontSize: 13),
               ),
             ),
           ],
@@ -506,7 +508,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
           height: 110,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.borderNavy),
+            border: Border.all(color: colors.borderNavy),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(14),
@@ -549,11 +551,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
   }
 
   Widget _buildMenuTab(PlaceModel place) {
+    final colors = AppTheme.colors(context);
     if (place.menuHighlights.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Daftar menu belum tersedia',
-          style: TextStyle(color: AppTheme.textSecondary),
+          style: TextStyle(color: colors.textSecondary),
         ),
       );
     }
@@ -562,7 +565,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       itemCount: place.menuHighlights.length,
       separatorBuilder: (context, index) =>
-          const Divider(color: AppTheme.borderNavy, height: 16),
+          Divider(color: colors.borderNavy, height: 16),
       itemBuilder: (context, index) {
         final item = place.menuHighlights[index];
         return Row(
@@ -575,8 +578,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                 const SizedBox(width: 10),
                 Text(
                   item.name,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -598,6 +601,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
   }
 
   Widget _buildReviewsTab(PlaceModel place) {
+    final colors = AppTheme.colors(context);
     final reviews = [
       {
         'user': 'Rian S.',
@@ -626,7 +630,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       itemCount: reviews.length,
       separatorBuilder: (context, index) =>
-          const Divider(color: AppTheme.borderNavy, height: 20),
+          Divider(color: colors.borderNavy, height: 20),
       itemBuilder: (context, index) {
         final rev = reviews[index];
         return Column(
@@ -648,8 +652,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                 const SizedBox(width: 8),
                 Text(
                   rev['user'] as String,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
                   ),
@@ -659,8 +663,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                 const SizedBox(width: 2),
                 Text(
                   (rev['rating'] as double).toStringAsFixed(1),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
@@ -670,8 +674,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
             const SizedBox(height: 6),
             Text(
               rev['comment'] as String,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
+              style: TextStyle(
+                color: colors.textSecondary,
                 fontSize: 13,
                 height: 1.4,
               ),

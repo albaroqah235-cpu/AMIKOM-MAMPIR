@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../services/preference_service.dart';
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
+import 'login_screen.dart';
 
 /// ============================================================
 /// ONBOARDING & WELCOME SCREEN — SESUAI SplashS contoh.jpeg
@@ -118,7 +118,7 @@ class _OnboardingPreferenceScreenState
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     } catch (e) {
       if (!mounted) return;
@@ -135,8 +135,9 @@ class _OnboardingPreferenceScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       body: Stack(
         children: [
           // Mandala Batik Background Decoration
