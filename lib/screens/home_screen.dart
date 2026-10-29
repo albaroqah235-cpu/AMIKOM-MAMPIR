@@ -7,7 +7,7 @@ import '../services/preference_service.dart';
 import '../services/recommendation_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/budget_filter_modal.dart';
-import 'add_place_screen.dart';
+
 import 'notification_screen.dart';
 import 'place_detail_screen.dart';
 import 'route_screen.dart';
@@ -356,19 +356,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // Tombol Tambah Tempat Baru (+)
-        IconButton(
-          icon: const Icon(Icons.add_circle_outline,
-              color: AppTheme.gold, size: 24),
-          tooltip: 'Tambah Tempat Baru',
-          onPressed: () async {
-            final res = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (ctx) => const AddPlaceScreen()),
-            );
-            if (res == true) _loadPreferencesAndData();
-          },
-        ),
 
         // Lonceng Notifikasi
         IconButton(

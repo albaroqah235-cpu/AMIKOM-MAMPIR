@@ -22,8 +22,8 @@ Aplikasi ini berfokus pada rekomendasi tempat berdasarkan:
   - Simpan tempat favorit dan lihat kembali di tab favorit.
 - **Peta & Rute**
   - Tampilkan marker lokasi tempat dan buka navigasi ke Google Maps.
-- **Tambah Tempat**
-  - Form input tempat baru lalu kirim ke API (jika API aktif).
+
+
 - **Pengaturan & Notifikasi**
   - Halaman pelengkap sesuai desain UI.
 

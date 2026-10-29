@@ -54,7 +54,7 @@ MAMPIR berfokus murni pada penyediaan panduan informasi, kurasi menu, dan rekome
 │ • Filter budget cepat         │ • Eksplorasi layar   │ • Kelola master data │
 │ • Simpan favorit lokal di HP  │   lebar (Split-view) │   kuliner (CRUD)     │
 │ • Buka navigasi Google Maps   │ • Akses instan tanpa │ • Pantau statistik & │
-│ • Tambah tempat kuliner baru  │   perlu install app  │   koneksi REST API   │
+│ • Navigasi rute ke lokasi     │   perlu install app  │   koneksi REST API   │
 └───────────────────────────────┴──────────────────────┴──────────────────────┘
 ```
 
@@ -81,7 +81,6 @@ Pengelola internal pariwisata kuliner yang menggunakan antarmuka web dasbor untu
 - Halaman Detail Tempat dengan Galeri Foto, Jam Buka, Fasilitas, dan Menu Andalan.
 - Halaman Rute Polyline & Tombol Navigasi Deep-Link Google Maps.
 - Tab Tempat Favorit tersimpan di memori lokal HP via `SharedPreferences`.
-- Formulir Tambah Tempat Kuliner Baru (Kirim via REST API HTTP POST).
 
 ## 4.2 Ruang Lingkup Versi Web (MVP Web)
 - Antarmuka Responsif Adaptif (*Fluid Responsive Layout*) dengan Sidebar Navigasi Kiri.
@@ -104,11 +103,11 @@ Pengelola internal pariwisata kuliner yang menggunakan antarmuka web dasbor untu
 | **Filter Anggaran** | *Modal Bottom Sheet* (geser ke atas dari bawah) | *Dropdown Panel / Filter Header Bar* di bagian atas |
 | **Navigasi Rute** | Buka rute via *Intent / Deep-link* ke aplikasi Google Maps HP | Buka tautan tab baru ke `maps.google.com` via browser |
 | **Penyimpanan Lokal** | Native Android/iOS `SharedPreferences` (Sandbox HP) | Peramban Web `LocalStorage / IndexedDB` via Web Storage API |
-| **Form Tambah Tempat** | Formulir vertikal scrollable di layar HP | Modal Dialog lebar atau Halaman Khusus Form Input Web |
 | **Dasbor Admin & Metrik** | Mode mini status pada menu Pengaturan | Dasbor Analitik layar penuh lengkap dengan tabel CRUD |
 | **Interaksi Input** | Sentuhan jari (*Touch, Swipe, Tap*) | Tetikus (*Mouse Hover, Click, Scroll Wheel*) & Papan Ketik |
 
 ## 4.4 Di Luar Lingkup (Fase Lanjutan / Non-Komersial)
+- Pengajuan/tambah tempat kuliner baru oleh pengguna publik ditiadakan secara permanen; seluruh data tempat dikurasi secara terpusat oleh pengelola guna menjaga keaslian dan validitas informasi (*curated catalog*).
 - Transaksi pemesanan makanan (*online ordering*) dan layanan pesan-antar (*food delivery*).
 - Gerbang pembayaran elektronik (*payment gateway*) dan dompet digital (*e-wallet*).
 - Reservasi meja makan secara daring.
@@ -186,15 +185,7 @@ Pengelola internal pariwisata kuliner yang menggunakan antarmuka web dasbor untu
 | **FAV-2** | Menyimpan ID tempat favorit ke memori lokal secara instan (`SharedPreferences` di Mobile, `LocalStorage` di Web). | Mobile & Web | **Wajib** |
 | **FAV-3** | Menampilkan koleksi tempat favorit di Tab/Halaman Favorit lengkap dengan filter kategori tempat yang disimpan. | Mobile & Web | **Wajib** |
 
-## 6.7 Pengajuan Tempat Kuliner Baru (Mobile & Web)
-
-| **ID** | **Kebutuhan Fungsional** | **Platform** | **Prioritas** |
-| --- | --- | --- | --- |
-| **ADD-1** | Menyediakan formulir pengajuan tempat makan baru mencakup nama, zona wilayah, kategori, rentang harga, jam buka, fasilitas, koordinat, dan URL foto. | Mobile & Web | **Wajib** |
-| **ADD-2** | Pengguna dapat menambahkan item menu andalan dan harganya secara dinamis pada formulir. | Mobile & Web | **Wajib** |
-| **ADD-3** | Memvalidasi kelengkapan data dan mengirimkan objek JSON via REST API HTTP POST ke web service. | Mobile & Web | **Wajib** |
-
-## 6.8 Dasbor Administrator & Manajemen Data (Khusus Web Desktop)
+## 6.7 Dasbor Administrator & Manajemen Data (Khusus Web Desktop)
 
 | **ID** | **Kebutuhan Fungsional** | **Platform** | **Prioritas** |
 | --- | --- | --- | --- |
