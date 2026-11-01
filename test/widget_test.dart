@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mampir_app/main.dart';
 import 'package:mampir_app/screens/home_screen.dart';
+import 'package:mampir_app/screens/notification_screen.dart';
 import 'package:mampir_app/screens/route_screen.dart';
 import 'package:mampir_app/screens/search_screen.dart';
 import 'package:mampir_app/screens/settings_screen.dart';
@@ -117,9 +118,23 @@ void main() {
     expect(find.text('Notifikasi'), findsOneWidget);
     expect(find.byType(Switch), findsOneWidget);
 
-    // Verify 'Beri Rating MAMPIR' and 'Bagikan Aplikasi' are NOT present
+    // Verify 'Beri Rating MAMPIR', 'Bagikan Aplikasi', 'Bahasa', and 'Bantuan & Hubungi Kami' are NOT present
     expect(find.text('Beri Rating MAMPIR'), findsNothing);
     expect(find.text('Bagikan Aplikasi'), findsNothing);
+    expect(find.text('Bahasa'), findsNothing);
+    expect(find.text('Bantuan & Hubungi Kami'), findsNothing);
+  });
+
+  testWidgets('NotificationScreen displays clean empty state when there are no notifications', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: NotificationScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Belum Ada Notifikasi'), findsOneWidget);
+    expect(find.text('Tempat favorit kamu sedang promo!'), findsNothing);
   });
 
   test('AuthService performs signUp, signIn, OTP recovery, and password reset', () async {

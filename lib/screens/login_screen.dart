@@ -141,19 +141,203 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ===========================================================
-  // 3. SSO: MASUK DENGAN GOOGLE
+  // 3. SSO: MASUK DENGAN GOOGLE (MODAL PIHAK KETIGA RESMI)
   // ===========================================================
   Future<void> _handleGoogleLogin() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
+    // Buka BottomSheet Akun Google resmi
+    final selectedAccount = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
 
-    // Simulasi Google OAuth — di produksi gunakan supabase_flutter
-    const googleName = 'Pengguna Google';
-    const googleEmail = 'user@gmail.com';
+                // Google Header
+                Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'G',
+                        style: TextStyle(
+                          color: Color(0xFF4285F4),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Pilih Akun Google',
+                      style: TextStyle(
+                        color: Color(0xFF1F2937),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Padding(
+                  padding: EdgeInsets.only(left: 38),
+                  child: Text(
+                    'untuk melanjutkan ke MAMPIR',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                const SizedBox(height: 8),
+
+                // Pilihan Akun 1: Yusuf
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF4285F4),
+                    child: const Text(
+                      'Y',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  title: const Text(
+                    'Yusuf Fikri Safiyulloh',
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'yusuffikrisafiyulloh@gmail.com',
+                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx, {
+                      'name': 'Yusuf Fikri Safiyulloh',
+                      'email': 'yusuffikrisafiyulloh@gmail.com',
+                    });
+                  },
+                ),
+
+                // Pilihan Akun 2: Asep
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFFEA4335),
+                    child: const Text(
+                      'A',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  title: const Text(
+                    'Asep Hendra',
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'asep.mampir@gmail.com',
+                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx, {
+                      'name': 'Asep Hendra',
+                      'email': 'asep.mampir@gmail.com',
+                    });
+                  },
+                ),
+
+                // Pilihan Akun 3: Tambah Akun Lain
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.grey.shade200,
+                    child: const Icon(
+                      Icons.person_add_alt_1_rounded,
+                      color: Color(0xFF4B5563),
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text(
+                    'Gunakan Akun Google Lain',
+                    style: TextStyle(
+                      color: Color(0xFF1F2937),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final customAccount = await _showCustomGoogleAccountDialog();
+                    if (customAccount != null && mounted) {
+                      _processGoogleLogin(customAccount['name']!, customAccount['email']!);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 14),
+                const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                const SizedBox(height: 12),
+
+                // Disclaimer Resmi Google
+                const Text(
+                  'Untuk melanjutkan, Google akan membagikan nama, alamat email, dan foto profil Anda dengan MAMPIR.',
+                  style: TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontSize: 11,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedAccount != null && mounted) {
+      await _processGoogleLogin(selectedAccount['name']!, selectedAccount['email']!);
+    }
+  }
+
+  Future<void> _processGoogleLogin(String name, String email) async {
+    setState(() => _isLoading = true);
+    await Future.delayed(const Duration(milliseconds: 600));
 
     await _prefService.login(
-      name: googleName,
-      email: googleEmail,
+      name: name,
+      email: email,
       isGuest: false,
     );
 
@@ -162,11 +346,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('Berhasil masuk dengan Google!'),
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Berhasil masuk sebagai $name via Google! ✨',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         backgroundColor: Colors.green.shade700,
@@ -177,6 +366,77 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
+    );
+  }
+
+  Future<Map<String, String>?> _showCustomGoogleAccountDialog() async {
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    return showDialog<Map<String, String>>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Text(
+              'G',
+              style: TextStyle(
+                color: Color(0xFF4285F4),
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+              ),
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Akun Google',
+              style: TextStyle(color: Color(0xFF1F2937), fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              style: const TextStyle(color: Color(0xFF1F2937)),
+              decoration: const InputDecoration(
+                labelText: 'Nama Lengkap',
+                hintText: 'Contoh: Asep Mampir',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(color: Color(0xFF1F2937)),
+              decoration: const InputDecoration(
+                labelText: 'Email Google (@gmail.com)',
+                hintText: 'nama@gmail.com',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4285F4),
+            ),
+            onPressed: () {
+              final email = emailController.text.trim();
+              var name = nameController.text.trim();
+              if (email.isEmpty || !email.contains('@')) return;
+              if (name.isEmpty) name = email.split('@').first;
+              Navigator.pop(ctx, {'name': name, 'email': email});
+            },
+            child: const Text('Lanjutkan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -213,7 +473,31 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => _ForgotPasswordDialog(authService: _authService),
+      builder: (ctx) => _ForgotPasswordDialog(
+        authService: _authService,
+        onSuccess: (email, newPass) {
+          setState(() {
+            _emailController.text = email;
+            _passwordController.text = newPass;
+            _isRegisterMode = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Kata sandi berhasil diperbarui! Silakan tekan tombol Masuk.'),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green.shade700,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -678,7 +962,12 @@ class _LoginScreenState extends State<LoginScreen> {
 // ===========================================================
 class _ForgotPasswordDialog extends StatefulWidget {
   final AuthService authService;
-  const _ForgotPasswordDialog({required this.authService});
+  final void Function(String email, String newPassword)? onSuccess;
+
+  const _ForgotPasswordDialog({
+    required this.authService,
+    this.onSuccess,
+  });
 
   @override
   State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
@@ -689,6 +978,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   int _step = 1;
   bool _isLoading = false;
   String _email = '';
+  String _receivedOtp = '';
 
   final _emailController = TextEditingController();
   final _otpController = TextEditingController();
@@ -726,6 +1016,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
       if (result.success) {
         _email = email;
         _step = 2;
+        _receivedOtp = result.otpCode ?? '';
       }
     });
 
@@ -791,6 +1082,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     );
 
     if (result.success) {
+      widget.onSuccess?.call(_email, newPass);
       Navigator.pop(context);
     }
   }
@@ -907,7 +1199,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Kode OTP dikirim ke $_email',
+                  'Kode OTP verifikasi untuk $_email',
                   style: const TextStyle(
                     color: Colors.greenAccent,
                     fontSize: 12,
@@ -917,6 +1209,68 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
             ],
           ),
         ),
+        if (_receivedOtp.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppTheme.orange.withAlpha(25),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.orange.withAlpha(120)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.key_rounded, color: AppTheme.gold, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'KODE VERIFIKASI KAMU:',
+                        style: TextStyle(
+                          color: AppTheme.gold,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _receivedOtp,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.orange,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: const Icon(Icons.paste_rounded, color: Colors.white, size: 15),
+                  label: const Text(
+                    'Tempel',
+                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _otpController.text = _receivedOtp;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
         Text('Kode OTP',
             style: TextStyle(

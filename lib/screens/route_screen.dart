@@ -88,15 +88,22 @@ class _RouteScreenState extends State<RouteScreen> {
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-      if (mounted) {
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.best,
+            timeLimit: Duration(seconds: 12),
+          ),
+        );
+      } catch (_) {
+        position = await Geolocator.getLastKnownPosition();
+      }
+
+      final p = position;
+      if (p != null && mounted) {
         setState(() {
-          _userPos = LatLng(position.latitude, position.longitude);
+          _userPos = LatLng(p.latitude, p.longitude);
           _isLocating = false;
         });
         _buildRoute();
@@ -107,6 +114,8 @@ class _RouteScreenState extends State<RouteScreen> {
           ),
           14.2,
         );
+      } else if (mounted) {
+        setState(() => _isLocating = false);
       }
     } catch (_) {
       if (mounted) {

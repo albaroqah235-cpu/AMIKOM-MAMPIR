@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../services/preference_service.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
@@ -11,11 +10,9 @@ import 'login_screen.dart';
 /// 1. Profil Pengguna (Avatar, Nama, Email, Edit Profil)
 /// 2. Notifikasi (Direct switch toggle notifikasi)
 /// 3. Izin Lokasi (Status GPS & penjelasan akses wilayah Purwokerto)
-/// 4. Bahasa (Pilihan Indonesia, English, Basa Banyumasan/Ngapak)
-/// 5. Tema (Pilihan Gelap, Terang, Ikuti Sistem)
-/// 6. Bantuan & Hubungi Kami (WhatsApp CS, Email, FAQ)
-/// 7. Tentang MAMPIR (Informasi versi, deskripsi, & tim pengembang)
-/// 8. Keluar Akun (Logout dengan konfirmasi)
+/// 4. Tema (Pilihan Gelap, Terang, Ikuti Sistem)
+/// 5. Tentang MAMPIR (Informasi versi, deskripsi, & tim pengembang)
+/// 6. Keluar Akun (Logout dengan konfirmasi)
 /// ============================================================
 class SettingsScreen extends StatefulWidget {
   final bool isRootTab;
@@ -40,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isGuest = false;
   bool _isNotificationEnabled = true;
   bool _isLocationEnabled = true;
-  String _selectedLanguage = 'Indonesia';
   String _selectedTheme = 'Gelap';
 
   @override
@@ -74,7 +70,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final notif = await _prefService.isNotificationEnabled();
     final loc = await _prefService.isLocationEnabled();
-    final lang = await _prefService.getLanguage();
     final theme = await _prefService.getThemeMode();
 
     if (mounted) {
@@ -85,24 +80,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _userBadge = badge;
         _isNotificationEnabled = notif;
         _isLocationEnabled = loc;
-        _selectedLanguage = lang;
         _selectedTheme = theme;
       });
-    }
-  }
-
-  Future<void> _openUrl(String urlString) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      final uri = Uri.parse(urlString);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Tidak dapat membuka tautan: $urlString'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
     }
   }
 
@@ -311,16 +290,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       _buildDivider(),
 
-                      // 3. Bahasa
-                      _buildSettingItem(
-                        icon: Icons.language_rounded,
-                        title: 'Bahasa',
-                        trailingText: _selectedLanguage,
-                        onTap: _showLanguageSelectorModal,
-                      ),
-                      _buildDivider(),
-
-                      // 4. Tema
+                      // 3. Tema
                       _buildSettingItem(
                         icon: Icons.nightlight_round,
                         title: 'Tema',
@@ -329,15 +299,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       _buildDivider(),
 
-                      // 5. Bantuan & Hubungi Kami
-                      _buildSettingItem(
-                        icon: Icons.help_outline_rounded,
-                        title: 'Bantuan & Hubungi Kami',
-                        onTap: _showHelpAndContactModal,
-                      ),
-                      _buildDivider(),
-
-                      // 6. Tentang MAMPIR
+                      // 4. Tentang MAMPIR
                       _buildSettingItem(
                         icon: Icons.info_outline_rounded,
                         title: 'Tentang MAMPIR',
@@ -572,107 +534,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ======================== MODAL: PILIH BAHASA ========================
-  void _showLanguageSelectorModal() {
-    final colors = AppTheme.colors(context);
-    final languages = [
-      {'code': 'Indonesia', 'title': 'Bahasa Indonesia', 'subtitle': 'Bahasa Resmi'},
-      {'code': 'English', 'title': 'English', 'subtitle': 'International Language'},
-      {'code': 'Basa Ngapak', 'title': 'Basa Banyumasan', 'subtitle': 'Basa Khas Wong Purwokerto'},
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: colors.surfaceNavy,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.isDark ? Colors.white24 : Colors.black12,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.language_rounded, color: AppTheme.orange, size: 24),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Pilih Bahasa Aplikasi',
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              ...languages.map((lang) {
-                final isSelected = _selectedLanguage == lang['code'];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? (colors.isDark ? AppTheme.cardNavy : const Color(0xFFFFF7ED))
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.gold : colors.borderNavy,
-                    ),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      lang['title']!,
-                      style: TextStyle(
-                        color: isSelected ? AppTheme.gold : colors.textPrimary,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      lang['subtitle']!,
-                      style: TextStyle(color: colors.textSecondary, fontSize: 12),
-                    ),
-                    trailing: isSelected
-                        ? const Icon(Icons.check_circle_rounded, color: AppTheme.gold)
-                        : null,
-                    onTap: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      final newLang = lang['code']!;
-                      Navigator.pop(ctx);
-                      setState(() => _selectedLanguage = newLang);
-                      await _prefService.setLanguage(newLang);
-
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text('Bahasa diubah ke ${lang['title']}'),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              }),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   // ======================== MODAL: PILIH TEMA ========================
   void _showThemeSelectorModal() {
     final colors = AppTheme.colors(context);
@@ -772,189 +633,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
       },
-    );
-  }
-
-  // ======================== MODAL: BANTUAN & HUBUNGI KAMI ========================
-  void _showHelpAndContactModal() {
-    final colors = AppTheme.colors(context);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: colors.surfaceNavy,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.65,
-          minChildSize: 0.4,
-          maxChildSize: 0.85,
-          expand: false,
-          builder: (_, scrollController) {
-            return ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              children: [
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: colors.isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.support_agent_rounded, color: AppTheme.orange, size: 26),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Bantuan & Hubungi Kami',
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Ada pertanyaan atau kendala seputar aplikasi MAMPIR? Hubungi kami langsung:',
-                  style: TextStyle(color: colors.textSecondary, fontSize: 13),
-                ),
-                const SizedBox(height: 16),
-
-                // Kontak WhatsApp
-                _buildContactCard(
-                  icon: Icons.chat_bubble_rounded,
-                  iconColor: Colors.greenAccent,
-                  title: 'WhatsApp CS MAMPIR',
-                  subtitle: '+62 812-3456-7890 (Respon Cepat)',
-                  onTap: () {
-                    _openUrl(
-                      'https://wa.me/6281234567890?text=Halo%20Admin%20MAMPIR,%20saya%20butuh%20bantuan%20terkait%20aplikasi%20MAMPIR',
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                // Kontak Email
-                _buildContactCard(
-                  icon: Icons.email_rounded,
-                  iconColor: Colors.lightBlueAccent,
-                  title: 'Email Dukungan',
-                  subtitle: 'support@mampir.id',
-                  onTap: () {
-                    _openUrl('mailto:support@mampir.id?subject=Bantuan%20Aplikasi%20MAMPIR');
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                // Website Resmi
-                _buildContactCard(
-                  icon: Icons.public_rounded,
-                  iconColor: AppTheme.gold,
-                  title: 'Situs Resmi MAMPIR',
-                  subtitle: 'https://mampir.id',
-                  onTap: () {
-                    _openUrl('https://mampir.id');
-                  },
-                ),
-
-                const SizedBox(height: 20),
-                Text(
-                  'Pertanyaan Sering Diajukan (FAQ)',
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                _buildFaqItem(
-                  'Bagaimana cara memfilter tempat sesuai budget?',
-                  'Klik tombol filter budget (ikon Rp) pada Beranda atau Pencarian, lalu geser pengatur budget sesuai batas per orang yang diinginkan.',
-                ),
-                _buildFaqItem(
-                  'Apakah data cafe dan restoran akurat?',
-                  'Data diverifikasi secara berkala berdasarkan titik koordinat dan profil kuliner nyata di wilayah Purwokerto, Baturraden, dan Sokaraja.',
-                ),
-                _buildFaqItem(
-                  'Bagaimana cara membuka panduan rute?',
-                  'Pilih salah satu tempat makan, lalu tekan tombol "Buka Rute" di bagian bawah layar untuk melihat peta dan navigasi Google Maps.',
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildContactCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final colors = AppTheme.colors(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.cardNavy,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.borderNavy),
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: iconColor.withAlpha(38),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: iconColor, size: 20),
-        ),
-        title: Text(title,
-            style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
-        subtitle: Text(subtitle,
-            style: TextStyle(color: colors.textSecondary, fontSize: 12)),
-        trailing: Icon(Icons.arrow_forward_ios_rounded, color: colors.textSecondary, size: 14),
-        onTap: onTap,
-      ),
-    );
-  }
-
-  Widget _buildFaqItem(String question, String answer) {
-    final colors = AppTheme.colors(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: colors.cardNavy,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colors.borderNavy),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
-        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-        iconColor: AppTheme.gold,
-        collapsedIconColor: colors.textSecondary,
-        title: Text(
-          question,
-          style: TextStyle(color: colors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-        children: [
-          Text(
-            answer,
-            style: TextStyle(color: colors.textSecondary, fontSize: 12, height: 1.4),
-          ),
-        ],
-      ),
     );
   }
 

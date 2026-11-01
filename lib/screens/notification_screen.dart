@@ -14,43 +14,7 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   int _selectedTabIndex = 0; // 0: Semua, 1: Pembaruan
 
-  final List<Map<String, dynamic>> _allNotifications = [
-    {
-      'title': 'Tempat favorit kamu sedang promo!',
-      'subtitle': 'The Local Space, diskon 20%',
-      'time': '2 jam yang lalu',
-      'unread': true,
-      'image':
-          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80',
-      'isMascot': false,
-    },
-    {
-      'title': 'Rekomendasi baru untuk kamu',
-      'subtitle': '3 tempat sesuai budget 50rb',
-      'time': '5 jam yang lalu',
-      'unread': true,
-      'image': 'assets/images/app_icon.jpeg',
-      'isMascot': true,
-    },
-    {
-      'title': 'Tempat yang kamu simpan',
-      'subtitle': 'ada update menu terbaru!',
-      'time': '1 hari yang lalu',
-      'unread': false,
-      'image':
-          'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=400&q=80',
-      'isMascot': false,
-    },
-    {
-      'title': 'Kuliner Baru di Baturraden',
-      'subtitle': 'Kopi Keprok & Massapi Baturraden kini tersedia di MAMPIR',
-      'time': '3 hari yang lalu',
-      'unread': false,
-      'image':
-          'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=400&q=80',
-      'isMascot': false,
-    },
-  ];
+  final List<Map<String, dynamic>> _allNotifications = [];
 
   @override
   Widget build(BuildContext context) {
@@ -180,9 +144,46 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 Expanded(
                   child: displayedList.isEmpty
                       ? Center(
-                          child: Text(
-                            'Tidak ada notifikasi',
-                            style: TextStyle(color: colors.textSecondary),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 36),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 76,
+                                  height: 76,
+                                  decoration: BoxDecoration(
+                                    color: colors.cardNavy,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: colors.borderNavy),
+                                  ),
+                                  child: const Icon(
+                                    Icons.notifications_none_rounded,
+                                    size: 38,
+                                    color: AppTheme.gold,
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                Text(
+                                  'Belum Ada Notifikasi',
+                                  style: TextStyle(
+                                    color: colors.textPrimary,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Kamu belum memiliki notifikasi baru. Pembaruan promo dan rekomendasi kuliner Purwokerto akan muncul di sini!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: colors.textSecondary,
+                                    fontSize: 13,
+                                    height: 1.45,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         )
                       : ListView.separated(

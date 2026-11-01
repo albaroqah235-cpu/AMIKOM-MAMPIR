@@ -69,9 +69,29 @@ class _SearchScreenState extends State<SearchScreen> {
     final favs = await _preferenceService.getFavorites();
 
     try {
-      final lastPos = await Geolocator.getLastKnownPosition();
-      if (lastPos != null && mounted) {
-        setState(() => _userLocation = LatLng(lastPos.latitude, lastPos.longitude));
+      Position? pos;
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        var perm = await Geolocator.checkPermission();
+        if (perm == LocationPermission.denied) {
+          perm = await Geolocator.requestPermission();
+        }
+        if (perm == LocationPermission.whileInUse || perm == LocationPermission.always) {
+          try {
+            pos = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.best,
+                timeLimit: Duration(seconds: 8),
+              ),
+            );
+          } catch (_) {
+            pos = await Geolocator.getLastKnownPosition();
+          }
+        }
+      }
+      final p = pos;
+      if (p != null && mounted) {
+        setState(() => _userLocation = LatLng(p.latitude, p.longitude));
       }
     } catch (_) {}
 

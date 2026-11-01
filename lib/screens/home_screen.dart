@@ -165,13 +165,20 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-      if (mounted) {
+      Position? bestPos;
+      try {
+        bestPos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.best,
+            timeLimit: Duration(seconds: 12),
+          ),
+        );
+      } catch (_) {
+        bestPos = await Geolocator.getLastKnownPosition();
+      }
+
+      if (bestPos != null && mounted) {
+        final pos = bestPos;
         PlaceModel? nearest;
         if (_allPlaces.isNotEmpty) {
           nearest = _allPlaces.reduce((a, b) {
@@ -186,8 +193,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectedMapPlace ??= nearest;
         });
         if (moveMap) {
-          _mapTabController.move(_userLocation!, 14.5);
+          _mapTabController.move(_userLocation!, 15.0);
         }
+      } else if (mounted) {
+        setState(() => _isFetchingLocation = false);
       }
     } catch (_) {
       if (mounted) {
