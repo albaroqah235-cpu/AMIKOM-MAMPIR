@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/place_model.dart';
+import 'google_places_service.dart';
 
 /// ============================================================================
 /// API SERVICE — IMPLEMENTASI WEB SERVICE (REST API) MAMPIR APP
@@ -27,9 +28,18 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = jsonDecode(response.body);
-        return jsonData
+        final places = jsonData
             .map((json) => PlaceModel.fromJson(json as Map<String, dynamic>))
             .toList();
+        if (places.isNotEmpty) return places;
+
+        // A newly configured project can have an empty table. Use live Google
+        // results rather than presenting an invented catalog in that case.
+        final livePlaces = await GooglePlacesService().searchPlaces(
+          'tempat makan',
+          region: 'Purwokerto',
+        );
+        return livePlaces.isNotEmpty ? livePlaces : _getFallbackPlaces();
       } else {
         return _getFallbackPlaces();
       }

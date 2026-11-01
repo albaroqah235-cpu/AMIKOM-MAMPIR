@@ -27,6 +27,162 @@ CREATE TABLE IF NOT EXISTS public.places (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
+-- Baseline dari Google Places dan override yang dikelola admin.
+ALTER TABLE public.places
+    ADD COLUMN IF NOT EXISTS google_place_id TEXT,
+    ADD COLUMN IF NOT EXISTS google_snapshot JSONB DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS google_synced_at TIMESTAMP WITH TIME ZONE,
+    ADD COLUMN IF NOT EXISTS override_fields JSONB DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS data_source TEXT DEFAULT 'google';
+
+CREATE UNIQUE INDEX IF NOT EXISTS places_google_place_id_idx
+    ON public.places (google_place_id)
+    WHERE google_place_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS public.user_profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    display_name TEXT DEFAULT '',
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS public.categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT UNIQUE NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS public.preferences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT UNIQUE NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS public.place_categories (
+    place_id TEXT PRIMARY KEY REFERENCES public.places(id) ON DELETE CASCADE,
+    category_id UUID NOT NULL REFERENCES public.categories(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS public.place_preferences (
+    place_id TEXT NOT NULL REFERENCES public.places(id) ON DELETE CASCADE,
+    preference_id UUID NOT NULL REFERENCES public.preferences(id) ON DELETE CASCADE,
+    PRIMARY KEY (place_id, preference_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.place_reviews (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    place_id TEXT NOT NULL REFERENCES public.places(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    rating NUMERIC(2, 1) NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    body TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS public.analytics_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    event_name TEXT NOT NULL,
+    place_id TEXT REFERENCES public.places(id) ON DELETE SET NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.place_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.place_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.place_reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM public.user_profiles
+        WHERE id = auth.uid() AND role = 'admin'
+    );
+$$;
+
+DROP POLICY IF EXISTS "Public can read categories" ON public.categories;
+CREATE POLICY "Public can read categories" ON public.categories
+    FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "Public can read preferences" ON public.preferences;
+CREATE POLICY "Public can read preferences" ON public.preferences
+    FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "Public can read place categories" ON public.place_categories;
+CREATE POLICY "Public can read place categories" ON public.place_categories
+    FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "Public can read place preferences" ON public.place_preferences;
+CREATE POLICY "Public can read place preferences" ON public.place_preferences
+    FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "Public can read notifications" ON public.notifications;
+CREATE POLICY "Public can read notifications" ON public.notifications
+    FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can read profiles" ON public.user_profiles;
+CREATE POLICY "Authenticated users can read profiles" ON public.user_profiles
+    FOR SELECT TO authenticated USING (id = auth.uid() OR public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage places" ON public.places;
+CREATE POLICY "Admins manage places" ON public.places
+    FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage categories" ON public.categories;
+CREATE POLICY "Admins manage categories" ON public.categories
+    FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage preferences" ON public.preferences;
+CREATE POLICY "Admins manage preferences" ON public.preferences
+    FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage place categories" ON public.place_categories;
+CREATE POLICY "Admins manage place categories" ON public.place_categories
+    FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage place preferences" ON public.place_preferences;
+CREATE POLICY "Admins manage place preferences" ON public.place_preferences
+    FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Users create own reviews" ON public.place_reviews;
+CREATE POLICY "Users create own reviews" ON public.place_reviews
+    FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "Public read reviews" ON public.place_reviews;
+CREATE POLICY "Public read reviews" ON public.place_reviews
+    FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "Admins manage notifications" ON public.notifications;
+CREATE POLICY "Admins manage notifications" ON public.notifications
+    FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Users insert analytics" ON public.analytics_events;
+CREATE POLICY "Users insert analytics" ON public.analytics_events
+    FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "Admins read analytics" ON public.analytics_events;
+CREATE POLICY "Admins read analytics" ON public.analytics_events
+    FOR SELECT TO authenticated USING (public.is_admin());
+
 -- 2. Aktifkan Row Level Security (RLS) dan Berikan Izin Baca Publik (Anon)
 ALTER TABLE public.places ENABLE ROW LEVEL SECURITY;
 
@@ -37,13 +193,13 @@ TO anon, authenticated
 USING (true);
 
 DROP POLICY IF EXISTS "Allow public insert access" ON public.places;
-CREATE POLICY "Allow public insert access" 
-ON public.places FOR INSERT 
-TO anon, authenticated 
-WITH CHECK (true);
 
--- 3. Hapus Data Lama Jika Ada (Opsional)
-TRUNCATE TABLE public.places;
+-- 3. Seed data awal.
+-- Jangan menjalankan TRUNCATE di sini karena places direferensikan oleh
+-- place_categories, place_preferences, place_reviews, dan analytics_events.
+-- Jika memang ingin mengosongkan seluruh katalog secara sengaja, jalankan
+-- perintah berikut secara terpisah setelah memastikan data sudah dicadangkan:
+-- TRUNCATE TABLE public.places CASCADE;
 
 -- 4. Masukkan 25 Data Autentik Purwokerto & Sekitarnya
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
@@ -545,4 +701,3 @@ latitude = EXCLUDED.latitude,
 longitude = EXCLUDED.longitude,
 image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
-

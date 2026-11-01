@@ -57,23 +57,61 @@ UIdanFitur/      # referensi tampilan/desain
    ```bash
    flutter pub get
    ```
-3. Jalankan aplikasi:
+3. Jalankan aplikasi dengan konfigurasi runtime:
    ```bash
-   flutter run
+   flutter run \
+     --dart-define=SUPABASE_URL=https://PROJECT.supabase.co \
+     --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY \
+     --dart-define=GOOGLE_MAPS_API_KEY=YOUR_RESTRICTED_GOOGLE_KEY
    ```
 
-## Konfigurasi API (Opsional)
+## Konfigurasi Google Maps dan Supabase
 
-Secara default aplikasi tetap berjalan dengan **data fallback lokal**.
+Google Places dan Google Routes memerlukan API key Google Cloud. Aktifkan
+Places API (New) dan Routes API, lalu batasi key berdasarkan API dan platform.
+Jangan menulis key langsung ke source code. Key yang pernah tertanam di source
+sebaiknya segera di-rotate dari Google Cloud Console.
 
-Jika ingin mengaktifkan backend Supabase:
-1. Buka file: `lib/config/api_config.dart`
-2. Isi nilai:
-   - `supabaseUrl`
-   - `supabaseAnonKey`
-3. Pastikan endpoint tabel `places` sesuai format data yang dipakai aplikasi.
+Untuk Android, tambahkan key yang sudah dibatasi ke `android/gradle.properties`
+sebagai `GOOGLE_MAPS_API_KEY=...`; manifest mengambilnya melalui placeholder.
 
-> Jika konfigurasi API kosong/salah, aplikasi akan otomatis memakai data fallback dan tidak crash.
+Jalankan [supabase_setup.sql](supabase_setup.sql) pada SQL Editor Supabase.
+Katalog mobile membaca tabel `places`; nilai Google menjadi baseline dan
+perubahan admin disimpan sebagai override. Operasi admin dilindungi Supabase
+Auth dan role `admin` di tabel `user_profiles`.
+
+Jika konfigurasi belum diisi atau jaringan gagal, aplikasi tetap menampilkan
+data cache/fallback lokal dan pencarian Google menghasilkan kosong, bukan
+mengarang koordinat, rating, menu, atau jam buka.
+
+## Menjalankan Admin Desktop
+
+Aplikasi admin terpisah berada di [desktop/](desktop/). Jalankan:
+
+```bash
+cd desktop
+flutter pub get
+flutter run -d linux \
+  --dart-define=SUPABASE_URL=https://vdqdithxujxvzyybjtpn.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWRpdGh4dWp4dnp5eWJqdHBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMzA2NTIsImV4cCI6MjEwODgwNjY1Mn0.7zE0gLxh0a2DNzdVcRfTj3EZDaqXWZ09kL5gcXTETXY
+```
+
+Ganti `-d linux` dengan `-d windows` atau `-d macos`. Login memakai akun
+Supabase Auth yang sudah diberi `role = 'admin'`. Sinkronisasi Google terjadwal
+memakai [Edge Function sync-places](supabase/functions/sync-places/index.ts)
+agar secret tidak masuk aplikasi. Deploy dan isi secret function dari Supabase
+CLI:
+
+```bash
+supabase functions deploy sync-places
+supabase secrets set GOOGLE_MAPS_API_KEY=YOUR_SERVER_KEY
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+```
+
+Jalankan function secara manual dari tombol `Sinkron Google`; untuk jadwal,
+hubungkan function tersebut ke Supabase Cron/Edge Function schedule. Nilai
+yang pernah diubah admin disimpan di `override_fields` dan tidak ditimpa saat
+sinkronisasi berikutnya.
 
 ## Alur Penggunaan Singkat
 

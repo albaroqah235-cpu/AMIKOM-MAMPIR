@@ -56,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final MapController _mapTabController = MapController();
   LatLng? _userLocation;
   bool _isFetchingLocation = false;
+  double? _nearbyRadiusKm = 5;
 
   // Favorit tab category filter
   String _selectedFavCategory = 'Semua';
@@ -70,6 +71,81 @@ class _HomeScreenState extends State<HomeScreen> {
     'Purwokerto Barat',
     'Purwokerto Selatan',
   ];
+
+  List<PlaceModel> get _nearbyPlaces {
+    final places = List<PlaceModel>.from(_allPlaces);
+    if (_userLocation == null &&
+        _selectedRegion.isNotEmpty &&
+        !_selectedRegion.toLowerCase().contains('semua')) {
+      final region = _selectedRegion.split('(').first.trim().toLowerCase();
+      places.removeWhere(
+        (place) =>
+            !place.city.toLowerCase().contains(region) &&
+            !place.address.toLowerCase().contains(region),
+      );
+    }
+    if (_userLocation != null) {
+      places.removeWhere((place) {
+        final distance = place.distanceInKmFrom(
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+        );
+        return !distance.isFinite ||
+            (_nearbyRadiusKm != null && distance > _nearbyRadiusKm!);
+      });
+      places.sort(
+        (a, b) => a
+            .distanceInKmFrom(_userLocation!.latitude, _userLocation!.longitude)
+            .compareTo(
+              b.distanceInKmFrom(
+                _userLocation!.latitude,
+                _userLocation!.longitude,
+              ),
+            ),
+      );
+    }
+    return places;
+  }
+
+  String _formatDistance(PlaceModel place) {
+    if (_userLocation == null) return 'Jarak GPS belum tersedia';
+    return place.formattedDistance(
+      _userLocation!.latitude,
+      _userLocation!.longitude,
+    );
+  }
+
+  Future<void> _openNearbyFilter() async {
+    final selected = await showModalBottomSheet<double>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              title: Text('Jarak tempat terdekat'),
+              subtitle: Text('GPS dipakai bila lokasi sudah diizinkan'),
+            ),
+            ...<double>[1, 3, 5, 10, -1].map(
+              (radius) => RadioListTile<double>(
+                value: radius,
+                // TODO: Migrate to RadioGroup when the minimum Flutter version
+                // supports the replacement API.
+                // ignore: deprecated_member_use
+                groupValue: _nearbyRadiusKm,
+                title: Text(radius < 0 ? 'Semua jarak' : '<= $radius km'),
+                // ignore: deprecated_member_use
+                onChanged: (value) => Navigator.pop(context, value),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted && selected != null) {
+      setState(() => _nearbyRadiusKm = selected < 0 ? null : selected);
+    }
+  }
 
   @override
   void initState() {
@@ -318,8 +394,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // ===========================================================================
   Widget _buildHomeTab() {
     // Jalankan Algoritma Rekomendasi Cerdas Hybrid
+    final visiblePlaces = _nearbyPlaces;
     final recommendations = RecommendationService.getRecommendations(
-      allPlaces: _allPlaces,
+      allPlaces: visiblePlaces,
       userBudget: _userBudget,
       selectedRegion: _selectedRegion,
       selectedCategory: _selectedCategory,
@@ -327,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     // Tempat Populer di wilayah terpilih
-    List<PlaceModel> popularPlaces = _allPlaces.where((p) {
+    List<PlaceModel> popularPlaces = visiblePlaces.where((p) {
       if (_selectedRegion.isNotEmpty &&
           !_selectedRegion.toLowerCase().contains('semua')) {
         final regClean = _selectedRegion.split('(')[0].trim().toLowerCase();
@@ -340,13 +417,13 @@ class _HomeScreenState extends State<HomeScreen> {
       return true;
     }).toList();
     if (popularPlaces.isEmpty) {
-      popularPlaces = List.from(_allPlaces);
+      popularPlaces = List.from(visiblePlaces);
     }
     popularPlaces.sort((a, b) => b.reviewCount.compareTo(a.reviewCount));
 
     final featured = recommendations.isNotEmpty
         ? recommendations.first.place
-        : (_allPlaces.isNotEmpty ? _allPlaces.first : null);
+        : (visiblePlaces.isNotEmpty ? visiblePlaces.first : null);
 
     return Stack(
       children: [
@@ -496,9 +573,7 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               color: AppTheme.orange.withValues(alpha: 0.15),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: AppTheme.orange.withValues(alpha: 0.5),
-              ),
+              border: Border.all(color: AppTheme.orange.withValues(alpha: 0.5)),
             ),
             child: const Icon(
               Icons.person_rounded,
@@ -585,6 +660,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Container(width: 1, height: 24, color: colors.borderNavy),
+          IconButton(
+            icon: const Icon(
+              Icons.near_me_rounded,
+              color: AppTheme.orange,
+              size: 22,
+            ),
+            onPressed: () async {
+              if (_userLocation == null) {
+                await _fetchUserGpsLocation();
+              }
+              if (mounted) await _openNearbyFilter();
+            },
+            tooltip: 'Tempat terdekat dan radius',
+          ),
           IconButton(
             icon: const Icon(
               Icons.tune_rounded,
@@ -856,12 +945,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     size: 18,
                                   ),
                                   const SizedBox(width: 3),
-                                  Text(
-                                    '${featured.rating.toStringAsFixed(1)} (${featured.formattedReviewCount})',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
+                                  Flexible(
+                                    child: Text(
+                                      '${featured.rating.toStringAsFixed(1)} (${featured.formattedReviewCount})',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -871,11 +964,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                     size: 14,
                                   ),
                                   const SizedBox(width: 2),
-                                  Text(
-                                    featured.formattedDistance(),
-                                    style: const TextStyle(
-                                      color: AppTheme.textSecondary,
-                                      fontSize: 12,
+                                  Flexible(
+                                    child: Text(
+                                      _formatDistance(featured),
+                                      style: const TextStyle(
+                                        color: AppTheme.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -1098,11 +1195,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                place.formattedDistance(),
-                                style: TextStyle(
-                                  color: colors.textMuted,
-                                  fontSize: 10,
+                              Flexible(
+                                child: Text(
+                                  _formatDistance(place),
+                                  style: TextStyle(
+                                    color: colors.textMuted,
+                                    fontSize: 10,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -1407,7 +1508,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              '• ${place.formattedDistance()}',
+                                              '• ${_formatDistance(place)}',
                                               style: TextStyle(
                                                 color: colors.textSecondary,
                                                 fontSize: 12,
@@ -1459,8 +1560,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           children: [
             TileLayer(
-              urlTemplate:
-                  'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+              urlTemplate: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
               subdomains: const ['mt0', 'mt1', 'mt2', 'mt3'],
               userAgentPackageName: 'com.mampir.mampir_app',
             ),
@@ -1523,7 +1623,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                 // Marker Tempat Kuliner
-                ..._allPlaces.map((place) {
+                ..._nearbyPlaces.map((place) {
                   final isSelected = _selectedMapPlace?.id == place.id;
                   return Marker(
                     point: LatLng(place.latitude, place.longitude),
@@ -1591,8 +1691,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     _isFetchingLocation
                         ? 'Mencari lokasi GPS kamu...'
                         : (_userLocation != null
-                              ? 'Menampilkan ${_allPlaces.length} tempat • GPS Terhubung'
-                              : 'Menampilkan ${_allPlaces.length} tempat di Purwokerto'),
+                              ? 'Menampilkan ${_nearbyPlaces.length} tempat • GPS Terhubung'
+                              : 'Menampilkan ${_allPlaces.length} tempat di $_selectedRegion'),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,

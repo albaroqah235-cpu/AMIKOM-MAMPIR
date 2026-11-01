@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import '../config/api_config.dart';
 
 /// Model hasil kalkulasi rute jalan raya resmi dari Google Routes API
 class GoogleRouteResult {
@@ -27,7 +28,6 @@ class GoogleRouteResult {
 /// turn-by-turn nyata, jarak tempuh akurat dalam meter, dan estimasi waktu berkendara.
 /// ============================================================
 class GoogleRoutesService {
-  static const String _apiKey = 'AIzaSyCJ6hO-pL41mG2ZSOKAiL6ZTVS1p1kndeg';
   static const String _endpoint =
       'https://routes.googleapis.com/directions/v2:computeRoutes';
 
@@ -67,7 +67,7 @@ class GoogleRoutesService {
         Uri.parse(_endpoint),
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-Api-Key': _apiKey,
+          'X-Goog-Api-Key': ApiConfig.googleMapsApiKey,
           'X-Goog-FieldMask':
               'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline',
         },

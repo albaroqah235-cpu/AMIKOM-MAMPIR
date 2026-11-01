@@ -210,6 +210,7 @@ class PlaceModel {
 
   /// Hitung estimasi jarak dari koordinat referensi dalam kilometer
   double distanceInKmFrom(double refLat, double refLng) {
+    if (!hasValidCoordinates) return double.infinity;
     const double p = 0.017453292519943295; // Math.PI / 180
     final double a =
         0.5 -
@@ -221,12 +222,20 @@ class PlaceModel {
     return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
   }
 
+  bool get hasValidCoordinates =>
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180 &&
+      !(latitude == 0 && longitude == 0);
+
   /// Format teks jarak (contoh: '1.2 km' atau '800 m')
   String formattedDistance([
     double refLat = -7.4244,
     double refLng = 109.2302,
   ]) {
     final dist = distanceInKmFrom(refLat, refLng);
+    if (!dist.isFinite) return 'Jarak tidak tersedia';
     if (dist < 1.0) {
       final m = (dist * 1000).round();
       return '$m m';

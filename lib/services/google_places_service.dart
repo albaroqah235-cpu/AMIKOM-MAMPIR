@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../models/place_model.dart';
 
 /// ============================================================
@@ -12,7 +13,6 @@ import '../models/place_model.dart';
 /// jumlah ulasan nyata, alamat jalan asli, dan koordinat GPS asli.
 /// ============================================================
 class GooglePlacesService {
-  static const String _apiKey = 'AIzaSyCJ6hO-pL41mG2ZSOKAiL6ZTVS1p1kndeg';
   static const String _endpoint =
       'https://places.googleapis.com/v1/places:searchText';
 
@@ -32,7 +32,6 @@ class GooglePlacesService {
   }) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return [];
-
     final cacheKey =
         '${trimmed.toLowerCase()}_${region ?? ''}_${lat ?? ''}_${lng ?? ''}';
     if (_cache.containsKey(cacheKey)) {
@@ -73,9 +72,9 @@ class GooglePlacesService {
         Uri.parse(_endpoint),
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-Api-Key': _apiKey,
+          'X-Goog-Api-Key': ApiConfig.googleMapsApiKey,
           'X-Goog-FieldMask':
-              'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.editorialSummary',
+              'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.editorialSummary,places.regularOpeningHours.weekdayDescriptions,places.photos',
         },
         body: body,
       );
@@ -126,7 +125,11 @@ class GooglePlacesService {
       final summaryObj = item['editorialSummary'] as Map<String, dynamic>?;
       final description =
           summaryObj?['text'] as String? ??
-          'Tempat makan populer di Purwokerto dengan rating Google $rating ($userRatingCount ulasan). Menyajikan aneka kuliner lezat khas Banyumas.';
+          'Data tempat dari Google Maps dengan rating $rating dan $userRatingCount ulasan.';
+      final openingObj = item['regularOpeningHours'] as Map<String, dynamic>?;
+      final openingDays = (openingObj?['weekdayDescriptions'] as List<dynamic>?)
+          ?.whereType<String>()
+          .toList();
 
       // Deteksi Wilayah Kota/Kecamatan dari Alamat Asli
       String city = 'Purwokerto Kota';
@@ -191,12 +194,6 @@ class GooglePlacesService {
           break;
       }
 
-      // Pilih foto kuliner berkualitas tinggi sesuai nama & jenis makanan
-      final imageUrl = _getFoodImageUrl(nameLower, category);
-
-      // Menu Highlights turunan nama tempat
-      final menuHighlights = _generateMenuHighlights(name, category, minPrice);
-
       return PlaceModel(
         id: id,
         name: name,
@@ -209,75 +206,18 @@ class GooglePlacesService {
         reviewCount: userRatingCount,
         address: formattedAddress,
         description: description,
-        openHours: '09:00 - 22:00 WIB',
+        openHours: openingDays == null || openingDays.isEmpty
+            ? 'Jam buka tidak tersedia di Google Maps'
+            : openingDays.join('; '),
         latitude: lat,
         longitude: lng,
-        imageUrl: imageUrl,
-        facilities: ['Parkir', 'Toilet', 'Area Duduk', 'Wi-Fi'],
-        tags: [category, city, 'Google Maps Asli'],
-        menuHighlights: menuHighlights,
+        imageUrl: '',
+        facilities: const [],
+        tags: [category, city, 'Google Maps'],
+        menuHighlights: const [],
       );
     } catch (_) {
       return null;
-    }
-  }
-
-  /// Menghasilkan foto kuliner relevan beresolusi tinggi
-  String _getFoodImageUrl(String nameLower, String category) {
-    if (nameLower.contains('ayam') ||
-        nameLower.contains('penyet') ||
-        nameLower.contains('geprek')) {
-      return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&fit=crop';
-    } else if (nameLower.contains('soto') ||
-        nameLower.contains('sop') ||
-        nameLower.contains('bakso')) {
-      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&fit=crop';
-    } else if (nameLower.contains('mendoan') ||
-        nameLower.contains('gorengan')) {
-      return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&fit=crop';
-    } else if (nameLower.contains('sate')) {
-      return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&fit=crop';
-    } else if (nameLower.contains('bebek')) {
-      return 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&fit=crop';
-    } else if (category == 'Cafe') {
-      return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&fit=crop';
-    } else if (category == 'Warkop') {
-      return 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&fit=crop';
-    } else {
-      return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&fit=crop';
-    }
-  }
-
-  /// Membuat menu andalan realistis berdasarkan jenis tempat
-  List<MenuHighlight> _generateMenuHighlights(
-    String name,
-    String category,
-    int basePrice,
-  ) {
-    if (name.toLowerCase().contains('penyet')) {
-      return [
-        MenuHighlight(name: 'Ayam Penyet Sambel Spesial', price: basePrice),
-        MenuHighlight(name: 'Nasi Putih Pulen', price: 5000),
-        MenuHighlight(name: 'Es Teh Manis', price: 4000),
-      ];
-    } else if (name.toLowerCase().contains('soto')) {
-      return [
-        MenuHighlight(name: 'Soto Daging Sapi Khas Sokaraja', price: basePrice),
-        MenuHighlight(name: 'Mendoan Hangat (Isi 3)', price: 10000),
-        MenuHighlight(name: 'Es Jeruk Peras', price: 5000),
-      ];
-    } else if (category == 'Cafe') {
-      return [
-        MenuHighlight(name: 'Kopi Susu Gula Aren', price: basePrice),
-        MenuHighlight(name: 'French Fries', price: 15000),
-        MenuHighlight(name: 'Croissant Butter', price: 20000),
-      ];
-    } else {
-      return [
-        MenuHighlight(name: 'Menu Spesial Rumah Makan', price: basePrice),
-        MenuHighlight(name: 'Mendoan Purwokerto', price: 12000),
-        MenuHighlight(name: 'Es Teh Manis', price: 4000),
-      ];
     }
   }
 }
