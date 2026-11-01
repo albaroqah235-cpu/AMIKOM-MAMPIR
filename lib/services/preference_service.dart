@@ -275,13 +275,8 @@ class PreferenceService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(keySearchHistory);
     if (raw == null) {
-      // Default riwayat awal seperti di mockup jika kosong
-      return [
-        'cafe di purwokerto',
-        'makan malam budget 50rb',
-        'tempat nongkrong + wifi',
-        'restoran seafood',
-      ];
+      // Kembalikan list kosong jika pengguna belum pernah melakukan pencarian
+      return [];
     }
     try {
       final decoded = jsonDecode(raw) as List;

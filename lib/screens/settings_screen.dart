@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/preference_service.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
-import 'notification_screen.dart';
 
 /// ============================================================
 /// SETTINGS & USER PROFILE SCREEN — PENGATURAN MAMPIR APP
 /// ============================================================
 /// Mengelola profil pengguna dan seluruh menu pengaturan:
 /// 1. Profil Pengguna (Avatar, Nama, Email, Edit Profil)
-/// 2. Notifikasi (Switch preferensi notifikasi & akses ke layar riwayat)
+/// 2. Notifikasi (Direct switch toggle notifikasi)
 /// 3. Izin Lokasi (Status GPS & penjelasan akses wilayah Purwokerto)
 /// 4. Bahasa (Pilihan Indonesia, English, Basa Banyumasan/Ngapak)
 /// 5. Tema (Pilihan Gelap, Terang, Ikuti Sistem)
 /// 6. Bantuan & Hubungi Kami (WhatsApp CS, Email, FAQ)
 /// 7. Tentang MAMPIR (Informasi versi, deskripsi, & tim pengembang)
-/// 8. Bagikan Aplikasi (Salin tautan ke clipboard & bagikan ke WhatsApp)
-/// 9. Beri Rating MAMPIR (Bintang 1-5 interaktif & input saran/ulasan)
-/// 10. Keluar Akun (Logout dengan konfirmasi)
+/// 8. Keluar Akun (Logout dengan konfirmasi)
 /// ============================================================
 class SettingsScreen extends StatefulWidget {
   final bool isRootTab;
@@ -46,7 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLocationEnabled = true;
   String _selectedLanguage = 'Indonesia';
   String _selectedTheme = 'Gelap';
-  int _appRating = 5;
 
   @override
   void initState() {
@@ -81,7 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final loc = await _prefService.isLocationEnabled();
     final lang = await _prefService.getLanguage();
     final theme = await _prefService.getThemeMode();
-    final rating = await _prefService.getAppRating();
 
     if (mounted) {
       setState(() {
@@ -93,7 +87,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _isLocationEnabled = loc;
         _selectedLanguage = lang;
         _selectedTheme = theme;
-        _appRating = rating;
       });
     }
   }
@@ -294,12 +287,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildUserProfileCard(),
                       const SizedBox(height: 16),
 
-                      // 1. Notifikasi
-                      _buildSettingItem(
+                      // 1. Notifikasi (Direct Switch Toggle)
+                      _buildSwitchSettingItem(
                         icon: Icons.notifications_none_rounded,
                         title: 'Notifikasi',
-                        trailingText: _isNotificationEnabled ? 'Aktif' : 'Nonaktif',
-                        onTap: _showNotificationSettingsModal,
+                        subtitle: _isNotificationEnabled
+                            ? 'Notifikasi rekomendasi & promo aktif'
+                            : 'Notifikasi dimatikan',
+                        value: _isNotificationEnabled,
+                        onChanged: (val) async {
+                          setState(() => _isNotificationEnabled = val);
+                          await _prefService.setNotificationEnabled(val);
+                        },
                       ),
                       _buildDivider(),
 
@@ -344,24 +343,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: 'Tentang MAMPIR',
                         subtitle: 'Versi 1.0.0',
                         onTap: _showAboutMampirDialog,
-                      ),
-                      _buildDivider(),
-
-                      // 7. Bagikan Aplikasi
-                      _buildSettingItem(
-                        icon: Icons.share_rounded,
-                        title: 'Bagikan Aplikasi',
-                        onTap: _showShareAppModal,
-                      ),
-                      _buildDivider(),
-
-                      // 8. Beri Rating MAMPIR
-                      _buildSettingItem(
-                        icon: Icons.star_rounded,
-                        title: 'Beri Rating MAMPIR',
-                        subtitle: '$_appRating Bintang',
-                        iconColor: AppTheme.gold,
-                        onTap: _showRatingDialog,
                       ),
                       const SizedBox(height: 24),
 
@@ -502,94 +483,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
         ],
       ),
-    );
-  }
-
-  // ======================== MODAL: NOTIFIKASI ========================
-  void _showNotificationSettingsModal() {
-    final colors = AppTheme.colors(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: colors.surfaceNavy,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: colors.isDark ? Colors.white24 : Colors.black12,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.notifications_active_rounded,
-                          color: AppTheme.orange, size: 24),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Pengaturan Notifikasi',
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  SwitchListTile(
-                    activeThumbColor: AppTheme.orange,
-                    activeTrackColor: AppTheme.orange.withAlpha(120),
-                    contentPadding: EdgeInsets.zero,
-                    title: Text('Izinkan Notifikasi',
-                        style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600)),
-                    subtitle: Text('Rekomendasi kuliner & pembaruan tempat nongkrong',
-                        style: TextStyle(color: colors.textSecondary, fontSize: 13)),
-                    value: _isNotificationEnabled,
-                    onChanged: (val) async {
-                      setModalState(() => _isNotificationEnabled = val);
-                      setState(() => _isNotificationEnabled = val);
-                      await _prefService.setNotificationEnabled(val);
-                    },
-                  ),
-                  Divider(color: colors.borderNavy),
-
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.inbox_rounded, color: AppTheme.gold),
-                    title: Text('Buka Riwayat Notifikasi',
-                        style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600)),
-                    subtitle: Text('Lihat pesan promo dan rekomendasi yang masuk',
-                        style: TextStyle(color: colors.textSecondary, fontSize: 13)),
-                    trailing: Icon(Icons.chevron_right, color: colors.textSecondary),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -1162,254 +1055,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ======================== MODAL: BAGIKAN APLIKASI ========================
-  void _showShareAppModal() {
-    final colors = AppTheme.colors(context);
-    const shareUrl = 'https://mampir.id/download';
-    const shareMessage =
-        'Yuk cari tempat makan & cafe nongkrong asik di Purwokerto dengan aplikasi MAMPIR! Download di: $shareUrl';
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: colors.surfaceNavy,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.isDark ? Colors.white24 : Colors.black12,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.share_rounded, color: AppTheme.orange, size: 24),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Bagikan Aplikasi MAMPIR',
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Ajak teman dan keluarga untuk mengeksplorasi kuliner lezat & tempat nongkrong asik di Purwokerto!',
-                style: TextStyle(color: colors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-
-              // Kotak Tautan
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: colors.cardNavy,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colors.borderNavy),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link_rounded, color: AppTheme.gold, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        shareUrl,
-                        style: TextStyle(color: colors.textPrimary, fontSize: 13),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.copy_rounded, color: AppTheme.gold, size: 18),
-                      tooltip: 'Salin Tautan',
-                      onPressed: () {
-                        Clipboard.setData(const ClipboardData(text: shareUrl));
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Tautan aplikasi berhasil disalin ke clipboard!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Tombol Bagikan WhatsApp
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366), // WhatsApp Green
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Icon(Icons.chat_rounded, color: Colors.white),
-                  label: const Text(
-                    'Bagikan via WhatsApp',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    final encoded = Uri.encodeComponent(shareMessage);
-                    _openUrl('https://wa.me/?text=$encoded');
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // ======================== DIALOG: BERI RATING ========================
-  void _showRatingDialog() {
-    final colors = AppTheme.colors(context);
-    int currentRating = _appRating;
-    final reviewController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final labels = [
-              '',
-              'Kurang Puas 😞',
-              'Cukup 😐',
-              'Bagus! 😊',
-              'Sangat Bagus! 😃',
-              'Luar Biasa Memuaskan! 🌟',
-            ];
-
-            return AlertDialog(
-              backgroundColor: colors.surfaceNavy,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Row(
-                children: [
-                  const Icon(Icons.star_rounded, color: AppTheme.gold, size: 26),
-                  const SizedBox(width: 8),
-                  Text('Beri Rating MAMPIR', style: TextStyle(color: colors.textPrimary, fontSize: 18)),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Berapa bintang untuk pengalaman Anda memakai MAMPIR?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: colors.textSecondary, fontSize: 13),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Bintang Interaktif
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      final starNum = index + 1;
-                      return IconButton(
-                        iconSize: 34,
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        icon: Icon(
-                          starNum <= currentRating
-                              ? Icons.star_rounded
-                              : Icons.star_border_rounded,
-                          color: AppTheme.gold,
-                        ),
-                        onPressed: () {
-                          setDialogState(() => currentRating = starNum);
-                        },
-                      );
-                    }),
-                  ),
-
-                  // Label Bintang
-                  Text(
-                    labels[currentRating],
-                    style: const TextStyle(
-                      color: AppTheme.gold,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // TextField Ulasan
-                  TextField(
-                    controller: reviewController,
-                    maxLines: 3,
-                    style: TextStyle(color: colors.textPrimary, fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'Tuliskan ulasan atau saran Anda untuk MAMPIR...',
-                      hintStyle: TextStyle(color: colors.textMuted, fontSize: 12),
-                      filled: true,
-                      fillColor: colors.cardNavy,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: colors.borderNavy),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: colors.borderNavy),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text('Batal', style: TextStyle(color: colors.textSecondary)),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.orange,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    Navigator.pop(ctx);
-                    setState(() => _appRating = currentRating);
-                    await _prefService.saveAppRating(currentRating);
-
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Terima kasih telah memberi rating $currentRating bintang untuk MAMPIR! ⭐',
-                        ),
-                        backgroundColor: Colors.green.shade700,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  child: const Text('Kirim Penilaian',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
   // ======================== WIDGET HELPER ========================
   Widget _buildSettingItem({
     required IconData icon,
@@ -1471,6 +1116,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildSwitchSettingItem({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Color iconColor = AppTheme.orange,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final colors = AppTheme.colors(context);
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colors.surfaceNavy,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.borderNavy),
+        ),
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: colors.textPrimary,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 12,
+              ),
+            )
+          : null,
+      trailing: Switch.adaptive(
+        value: value,
+        activeThumbColor: AppTheme.orange,
+        activeTrackColor: AppTheme.orange.withAlpha(120),
+        onChanged: onChanged,
+      ),
     );
   }
 

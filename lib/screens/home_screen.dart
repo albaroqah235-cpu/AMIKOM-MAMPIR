@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/place_model.dart';
 import '../services/api_service.dart';
@@ -51,6 +52,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Map state
   PlaceModel? _selectedMapPlace;
+  final MapController _mapTabController = MapController();
+  LatLng? _userLocation;
+  bool _isFetchingLocation = false;
 
   // Favorit tab category filter
   String _selectedFavCategory = 'Semua';
@@ -59,10 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
     'Semua Wilayah',
     'Purwokerto Kota',
     'Baturraden',
-    'Purwokerto Utara (Unsoed)',
+    'Purwokerto Utara',
     'Sokaraja',
-    'Purwokerto Timur & Sumbang',
-    'Purwokerto Barat & Selatan',
+    'Purwokerto Timur',
+    'Purwokerto Barat',
+    'Purwokerto Selatan',
   ];
 
   @override
@@ -140,6 +145,57 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _fetchUserGpsLocation({bool moveMap = false}) async {
+    if (_isFetchingLocation) return;
+    setState(() => _isFetchingLocation = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) setState(() => _isFetchingLocation = false);
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        if (mounted) setState(() => _isFetchingLocation = false);
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      if (mounted) {
+        PlaceModel? nearest;
+        if (_allPlaces.isNotEmpty) {
+          nearest = _allPlaces.reduce((a, b) {
+            final distA = a.distanceInKmFrom(pos.latitude, pos.longitude);
+            final distB = b.distanceInKmFrom(pos.latitude, pos.longitude);
+            return distA < distB ? a : b;
+          });
+        }
+        setState(() {
+          _userLocation = LatLng(pos.latitude, pos.longitude);
+          _isFetchingLocation = false;
+          _selectedMapPlace ??= nearest;
+        });
+        if (moveMap) {
+          _mapTabController.move(_userLocation!, 14.5);
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isFetchingLocation = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
@@ -192,11 +248,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_rounded, 'Beranda'),
-              _buildNavItem(1, Icons.search_rounded, 'Cari'),
-              _buildNavItem(2, Icons.favorite_rounded, 'Favorit'),
-              _buildNavItem(3, Icons.map_outlined, 'Peta'),
-              _buildNavItem(4, Icons.person_rounded, 'Akun'),
+              Expanded(child: _buildNavItem(0, Icons.home_rounded, 'Beranda')),
+              Expanded(child: _buildNavItem(1, Icons.search_rounded, 'Cari')),
+              Expanded(child: _buildNavItem(2, Icons.favorite_rounded, 'Favorit')),
+              Expanded(child: _buildNavItem(3, Icons.map_outlined, 'Peta')),
+              Expanded(child: _buildNavItem(4, Icons.person_rounded, 'Akun')),
             ],
           ),
         ),
@@ -208,13 +264,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final colors = AppTheme.colors(context);
     final isActive = _currentTabIndex == index;
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         setState(() => _currentTabIndex = index);
+        // Reload favorit setiap pindah tab agar sinkronisasi selalu up-to-date
+        final favs = await _prefService.getFavorites();
+        if (mounted) {
+          setState(() => _favoriteIds = favs.toSet());
+        }
+        if (index == 3 && _userLocation == null) {
+          _fetchUserGpsLocation(moveMap: true);
+        }
       },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -224,12 +288,15 @@ class _HomeScreenState extends State<HomeScreen> {
               color: isActive ? AppTheme.gold : colors.textMuted,
             ),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? AppTheme.gold : colors.textMuted,
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isActive ? AppTheme.gold : colors.textMuted,
+                  fontSize: 12,
+                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+                ),
               ),
             ),
           ],
@@ -345,12 +412,13 @@ class _HomeScreenState extends State<HomeScreen> {
             child: DropdownButton<String>(
               value: _selectedRegion,
               isDense: true,
+              isExpanded: true,
               dropdownColor: colors.surfaceNavy,
               icon: Icon(Icons.keyboard_arrow_down,
                   color: colors.textPrimary, size: 20),
               style: TextStyle(
                 color: colors.textPrimary,
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
               ),
               items: _purwokertoRegions.map((region) {
@@ -358,9 +426,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: region,
                   child: Text(
                     region,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                     style: TextStyle(
                       color: colors.textPrimary,
-                      fontSize: 17,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -419,8 +489,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (ctx) => SearchScreen(
@@ -429,6 +499,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
+                if (mounted) {
+                  final favs = await _prefService.getFavorites();
+                  setState(() => _favoriteIds = favs.toSet());
+                }
               },
               behavior: HitTestBehavior.opaque,
               child: Text(
@@ -547,22 +621,34 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Rekomendasi untuk kamu',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: colors.textPrimary,
+            Expanded(
+              child: Text(
+                'Rekomendasi untuk kamu',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: colors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
             GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (ctx) => SearchScreen(allPlaces: _allPlaces),
+                    builder: (ctx) => SearchScreen(
+                      allPlaces: _allPlaces,
+                      showAll: true,
+                    ),
                   ),
                 );
+                if (mounted) {
+                  final favs = await _prefService.getFavorites();
+                  setState(() => _favoriteIds = favs.toSet());
+                }
               },
               child: const Text(
                 'Lihat Semua',
@@ -586,8 +672,8 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         else
           GestureDetector(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (ctx) => PlaceDetailScreen(
@@ -596,6 +682,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               );
+              if (mounted) {
+                final favs = await _prefService.getFavorites();
+                setState(() => _favoriteIds = favs.toSet());
+              }
             },
             child: Stack(
               children: [
@@ -746,22 +836,34 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Tempat Populer',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: colors.textPrimary,
+            Expanded(
+              child: Text(
+                'Tempat Populer',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: colors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
             GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (ctx) => SearchScreen(allPlaces: _allPlaces),
+                    builder: (ctx) => SearchScreen(
+                      allPlaces: _allPlaces,
+                      showAll: true,
+                    ),
                   ),
                 );
+                if (mounted) {
+                  final favs = await _prefService.getFavorites();
+                  setState(() => _favoriteIds = favs.toSet());
+                }
               },
               child: const Text(
                 'Lihat Semua',
@@ -783,15 +885,15 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 14,
-            childAspectRatio: 0.82,
+            childAspectRatio: 0.68,
           ),
           itemCount: list.length,
           itemBuilder: (context, index) {
             final place = list[index];
 
             return GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (ctx) => PlaceDetailScreen(
@@ -800,6 +902,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
+                if (mounted) {
+                  final favs = await _prefService.getFavorites();
+                  setState(() => _favoriteIds = favs.toSet());
+                }
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -867,15 +973,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               const Icon(Icons.star_rounded,
                                   color: AppTheme.gold, size: 14),
                               const SizedBox(width: 2),
-                              Text(
-                                '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
-                                style: TextStyle(
-                                  color: colors.textSecondary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
+                              Flexible(
+                                child: Text(
+                                  '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
+                                  style: TextStyle(
+                                    color: colors.textSecondary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 4),
                               Text(
                                 place.formattedDistance(),
                                 style: TextStyle(
@@ -1197,6 +1307,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Stack(
       children: [
         FlutterMap(
+          mapController: _mapTabController,
           options: const MapOptions(
             initialCenter: LatLng(-7.3850, 109.2380), // Poros Purwokerto - Baturraden
             initialZoom: 12.0,
@@ -1207,40 +1318,94 @@ class _HomeScreenState extends State<HomeScreen> {
               userAgentPackageName: 'com.mampir.mampir_app',
             ),
             MarkerLayer(
-              markers: _allPlaces.map((place) {
-                final isSelected = _selectedMapPlace?.id == place.id;
-                return Marker(
-                  point: LatLng(place.latitude, place.longitude),
-                  width: isSelected ? 52 : 42,
-                  height: isSelected ? 52 : 42,
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedMapPlace = place);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: isSelected
-                            ? AppTheme.warmGradient
-                            : AppTheme.primaryGradient,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
+              markers: [
+                // Marker GPS Lokasi Pengguna
+                if (_userLocation != null)
+                  Marker(
+                    point: _userLocation!,
+                    width: 80,
+                    height: 80,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: colors.surfaceNavy,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.blueAccent),
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.restaurant_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                          child: const Text(
+                            'Lokasi Kamu',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: Colors.blueAccent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blueAccent.withValues(alpha: 0.5),
+                                blurRadius: 6,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.my_location,
+                                size: 12, color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              }).toList(),
+
+                // Marker Tempat Kuliner
+                ..._allPlaces.map((place) {
+                  final isSelected = _selectedMapPlace?.id == place.id;
+                  return Marker(
+                    point: LatLng(place.latitude, place.longitude),
+                    width: isSelected ? 52 : 42,
+                    height: isSelected ? 52 : 42,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedMapPlace = place);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: isSelected
+                              ? AppTheme.warmGradient
+                              : AppTheme.primaryGradient,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.restaurant_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
             ),
           ],
         ),
@@ -1270,7 +1435,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Menampilkan ${_allPlaces.length} tempat di Purwokerto & Sekitarnya',
+                    _isFetchingLocation
+                        ? 'Mencari lokasi GPS kamu...'
+                        : (_userLocation != null
+                            ? 'Menampilkan ${_allPlaces.length} tempat • GPS Terhubung'
+                            : 'Menampilkan ${_allPlaces.length} tempat di Purwokerto'),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -1278,7 +1447,51 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+                if (_isFetchingLocation)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTheme.gold,
+                    ),
+                  ),
               ],
+            ),
+          ),
+        ),
+
+        // Tombol Floating GPS Re-center
+        Positioned(
+          right: 16,
+          bottom: _selectedMapPlace != null ? 144 : 24,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colors.surfaceNavy.withValues(alpha: 0.95),
+              shape: BoxShape.circle,
+              border: Border.all(color: colors.borderNavy),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: colors.isDark ? 0.35 : 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: _isFetchingLocation
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.gold,
+                      ),
+                    )
+                  : const Icon(Icons.my_location_rounded,
+                      color: AppTheme.gold, size: 22),
+              tooltip: 'Lokasi Saya',
+              onPressed: () => _fetchUserGpsLocation(moveMap: true),
             ),
           ),
         ),
@@ -1338,7 +1551,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${_selectedMapPlace!.city} • ${_selectedMapPlace!.priceRange}',
+                          _userLocation != null
+                              ? '${_selectedMapPlace!.city} • ${_selectedMapPlace!.priceRange} • ${_selectedMapPlace!.distanceInKmFrom(_userLocation!.latitude, _userLocation!.longitude).toStringAsFixed(1)} km dari kamu'
+                              : '${_selectedMapPlace!.city} • ${_selectedMapPlace!.priceRange}',
                           style: TextStyle(
                             fontSize: 11,
                             color: colors.textSecondary,
@@ -1350,8 +1565,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           children: [
                             ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
+                              onPressed: () async {
+                                await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (ctx) => PlaceDetailScreen(
@@ -1360,6 +1575,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 );
+                                if (mounted) {
+                                  final favs = await _prefService.getFavorites();
+                                  setState(() => _favoriteIds = favs.toSet());
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: colors.cardNavy,
@@ -1385,7 +1604,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (ctx) => RouteScreen(
-                                        place: _selectedMapPlace!),
+                                      place: _selectedMapPlace!,
+                                      userLocation: _userLocation,
+                                    ),
                                   ),
                                 );
                               },

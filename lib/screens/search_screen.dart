@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/place_model.dart';
 import '../services/preference_service.dart';
 import '../services/recommendation_service.dart';
@@ -14,12 +16,14 @@ class SearchScreen extends StatefulWidget {
   final List<PlaceModel> allPlaces;
   final String? initialQuery;
   final bool autoFocus;
+  final bool showAll;
 
   const SearchScreen({
     super.key,
     required this.allPlaces,
     this.initialQuery,
     this.autoFocus = false,
+    this.showAll = false,
   });
 
   @override
@@ -35,10 +39,11 @@ class _SearchScreenState extends State<SearchScreen> {
   List<PlaceModel> _searchResults = [];
   bool _hasSearched = false;
   int _sortOption = 0; // 0: Terdekat, 1: Rating Tertinggi
+  LatLng? _userLocation;
 
   // Filter state
   int _currentBudget = 25000;
-  Set<String> _currentPlaceTypes = {'Cafe', 'Warkop'};
+  Set<String> _currentPlaceTypes = {};
   Set<String> _currentPreferences = {'WiFi'};
   Set<String> _favoriteIds = {};
 
@@ -47,7 +52,9 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     _loadInitialData();
 
-    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+    if (widget.showAll) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showAllPlaces());
+    } else if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       _searchController.text = widget.initialQuery!;
       _performSearch(widget.initialQuery!);
     } else if (widget.autoFocus) {
@@ -61,6 +68,13 @@ class _SearchScreenState extends State<SearchScreen> {
     final prefs = await _preferenceService.getUserPreferences();
     final favs = await _preferenceService.getFavorites();
 
+    try {
+      final lastPos = await Geolocator.getLastKnownPosition();
+      if (lastPos != null && mounted) {
+        setState(() => _userLocation = LatLng(lastPos.latitude, lastPos.longitude));
+      }
+    } catch (_) {}
+
     if (mounted) {
       setState(() {
         _history = history;
@@ -73,14 +87,42 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  void _sortResults(List<PlaceModel> list) {
+    final lat = _userLocation?.latitude ?? -7.4244;
+    final lng = _userLocation?.longitude ?? 109.2302;
+    if (_sortOption == 0) {
+      list.sort((a, b) => a
+          .distanceInKmFrom(lat, lng)
+          .compareTo(b.distanceInKmFrom(lat, lng)));
+    } else {
+      list.sort((a, b) => b.rating.compareTo(a.rating));
+    }
+  }
+
+  void _showAllPlaces() {
+    // Tampilkan semua tempat tanpa filter kategori saat showAll=true
+    List<PlaceModel> results = List.from(widget.allPlaces);
+    _sortResults(results);
+    setState(() {
+      _hasSearched = true;
+      _searchResults = results;
+    });
+  }
+
   void _performSearch(String query) {
     final trimmed = query.trim();
-    if (trimmed.isEmpty && !_hasSearched) {
-      setState(() {
-        _hasSearched = false;
-        _searchResults = [];
-      });
-      return;
+    if (trimmed.isEmpty) {
+      if (widget.showAll) {
+        _showAllPlaces();
+        return;
+      }
+      if (!_hasSearched) {
+        setState(() {
+          _hasSearched = false;
+          _searchResults = [];
+        });
+        return;
+      }
     }
 
     // Simpan kata kunci ke riwayat jika ada
@@ -111,14 +153,8 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     }
 
-    // Urutkan berdasarkan sortOption (0: Terdekat, 1: Rating Tertinggi)
-    if (_sortOption == 0) {
-      results.sort((a, b) => a
-          .distanceInKmFrom(-7.4244, 109.2302)
-          .compareTo(b.distanceInKmFrom(-7.4244, 109.2302)));
-    } else {
-      results.sort((a, b) => b.rating.compareTo(a.rating));
-    }
+    // Urutkan berdasarkan sortOption (0: Terdekat via GPS / Alun-alun, 1: Rating Tertinggi)
+    _sortResults(results);
 
     setState(() {
       _hasSearched = true;
@@ -500,8 +536,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     final isFav = _favoriteIds.contains(place.id);
 
                     return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (ctx) => PlaceDetailScreen(
@@ -510,6 +546,10 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                           ),
                         );
+                        if (mounted) {
+                          final favs = await _preferenceService.getFavorites();
+                          setState(() => _favoriteIds = favs.toSet());
+                        }
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -661,7 +701,13 @@ class _SearchScreenState extends State<SearchScreen> {
     return GestureDetector(
       onTap: () {
         setState(() => _sortOption = optionIndex);
-        _performSearch(_searchController.text);
+        if (_hasSearched && _searchController.text.trim().isEmpty) {
+          setState(() {
+            _sortResults(_searchResults);
+          });
+        } else {
+          _performSearch(_searchController.text);
+        }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

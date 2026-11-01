@@ -109,9 +109,6 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
     _selectedPlaceTypes = Set<String>.from(widget.initialPlaceTypes);
     _selectedPreferences = Set<String>.from(widget.initialPreferences);
 
-    if (_selectedPlaceTypes.isEmpty) {
-      _selectedPlaceTypes.addAll(['Cafe', 'Warkop']);
-    }
     if (_selectedPreferences.isEmpty) {
       _selectedPreferences.addAll(['WiFi', 'Colokan']);
     }
@@ -154,7 +151,7 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
   void _reset() {
     setState(() {
       _selectedBudget = 25000;
-      _selectedPlaceTypes = {'Nongkrong', 'Cafe'};
+      _selectedPlaceTypes = {};
       _selectedPreferences = {'WiFi', 'Colokan'};
       _textController.text = _currencyFormatter.format(25000);
     });

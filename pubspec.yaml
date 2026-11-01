@@ -37,6 +37,8 @@ dependencies:
   # Package untuk membuka Google Maps dari aplikasi
   # Digunakan di place_detail_screen.dart tombol "Buka Rute"
   url_launcher: ^6.3.1
+  google_maps_flutter: ^2.18.1
+  geolocator: ^14.1.2
 
 dev_dependencies:
   flutter_test:

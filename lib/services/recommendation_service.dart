@@ -247,14 +247,16 @@ class RecommendationService {
     final r = region.toLowerCase();
     if (r.contains('baturraden')) {
       return ['baturraden', 'karanggintung', 'rempoah', 'ketenger', 'palawi', 'curug', 'limpakuwus'];
-    } else if (r.contains('unsoed') || r.contains('utara')) {
+    } else if (r.contains('utara')) {
       return ['unsoed', 'bunyamin', 'grendeng', 'purwokerto utara', 'pabuaran', 'karangwangkal'];
     } else if (r.contains('sokaraja')) {
       return ['sokaraja', 'soto sokaraja', 'getuk'];
-    } else if (r.contains('sumbang') || r.contains('timur') || r.contains('kembaran')) {
+    } else if (r.contains('timur')) {
       return ['sumbang', 'kembaran', 'arcawinangun', 'dukuhwaluh', 'ump', 'ledug', 'purwokerto timur'];
-    } else if (r.contains('barat') || r.contains('selatan') || r.contains('stasiun')) {
-      return ['purwokerto barat', 'purwokerto selatan', 'stasiun', 'kober', 'gerilya', 'andhang', 'tanjung'];
+    } else if (r.contains('barat')) {
+      return ['purwokerto barat', 'stasiun', 'kober', 'gerilya', 'andhang'];
+    } else if (r.contains('selatan')) {
+      return ['purwokerto selatan', 'tanjung', 'terminal', 'karangpucung'];
     } else if (r.contains('purwokerto kota') || r.contains('kota') || r.contains('pusat')) {
       return ['purwokerto kota', 'alun-alun', 'gor', 'sudirman', 'dr. angka', 'isdiman', 'sukun', 'pramuka'];
     }

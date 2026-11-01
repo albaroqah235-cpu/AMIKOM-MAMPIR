@@ -336,7 +336,7 @@ class ApiService {
       {
         'id': 'uns-1',
         'name': 'Warung Makan Bu Sari',
-        'city': 'Purwokerto Utara (Unsoed)',
+        'city': 'Purwokerto Utara',
         'category': 'Restoran',
         'min_price': 10000,
         'max_price': 25000,
@@ -355,7 +355,7 @@ class ApiService {
       {
         'id': 'uns-2',
         'name': 'Table Nine Kitchen & Resto',
-        'city': 'Purwokerto Utara (Unsoed)',
+        'city': 'Purwokerto Utara',
         'category': 'Restoran',
         'min_price': 30000,
         'max_price': 120000,
@@ -374,7 +374,7 @@ class ApiService {
       {
         'id': 'uns-3',
         'name': 'Serabine.co Unsoed',
-        'city': 'Purwokerto Utara (Unsoed)',
+        'city': 'Purwokerto Utara',
         'category': 'Warkop',
         'min_price': 8000,
         'max_price': 25000,
@@ -450,7 +450,7 @@ class ApiService {
       {
         'id': 'tim-1',
         'name': 'Warung Djoglo Arcawinangun',
-        'city': 'Purwokerto Timur & Sumbang',
+        'city': 'Purwokerto Timur',
         'category': 'Restoran',
         'min_price': 18000,
         'max_price': 55000,
@@ -469,7 +469,7 @@ class ApiService {
       {
         'id': 'tim-2',
         'name': 'Kopi Sadarwana Kembaran',
-        'city': 'Purwokerto Timur & Sumbang',
+        'city': 'Purwokerto Timur',
         'category': 'Warkop',
         'min_price': 12000,
         'max_price': 35000,
@@ -488,7 +488,7 @@ class ApiService {
       {
         'id': 'tim-3',
         'name': 'Lesehan Ikan Bakar Sekar Surya',
-        'city': 'Purwokerto Timur & Sumbang',
+        'city': 'Purwokerto Timur',
         'category': 'Restoran',
         'min_price': 20000,
         'max_price': 60000,
@@ -507,7 +507,7 @@ class ApiService {
       {
         'id': 'brt-1',
         'name': 'D\'Java Cafe & Bistro Stasiun',
-        'city': 'Purwokerto Barat & Selatan',
+        'city': 'Purwokerto Barat',
         'category': 'Cafe',
         'min_price': 20000,
         'max_price': 60000,
@@ -526,7 +526,7 @@ class ApiService {
       {
         'id': 'brt-2',
         'name': 'Restoran Pringsewu Purwokerto',
-        'city': 'Purwokerto Barat & Selatan',
+        'city': 'Purwokerto Selatan',
         'category': 'Restoran',
         'min_price': 25000,
         'max_price': 85000,

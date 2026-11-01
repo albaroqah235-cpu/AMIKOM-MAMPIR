@@ -33,7 +33,7 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
       'icon': Icons.forest_rounded,
     },
     {
-      'name': 'Purwokerto Utara (Unsoed)',
+      'name': 'Purwokerto Utara',
       'desc': 'Kawasan kampus & nongkrong mahasiswa',
       'icon': Icons.school_rounded,
     },
@@ -43,7 +43,7 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
       'icon': Icons.restaurant_rounded,
     },
     {
-      'name': 'Purwokerto Timur & Sumbang',
+      'name': 'Purwokerto Timur',
       'desc': 'Area asri, cafe estetik & kuliner santai',
       'icon': Icons.wb_sunny_rounded,
     },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/place_model.dart';
@@ -30,46 +31,103 @@ class RouteScreen extends StatefulWidget {
 
 class _RouteScreenState extends State<RouteScreen> {
   late final MapController _mapController;
-  late final LatLng _userPos;
-  late final LatLng _destPos;
-  late final List<LatLng> _routePoints;
+  late LatLng _destPos;
+  late LatLng _userPos;
+  List<LatLng> _routePoints = [];
+  bool _isLocating = true;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
-
-    // Lokasi tujuan
     _destPos = LatLng(widget.place.latitude, widget.place.longitude);
+    // Jika ada lokasi dari parameter, gunakan langsung
+    if (widget.userLocation != null) {
+      _userPos = widget.userLocation!;
+      _isLocating = false;
+      _buildRoute();
+    } else {
+      // Titik awal sementara di dekat Purwokerto / lokasi tujuan
+      _userPos = LatLng(
+        widget.place.latitude - 0.009,
+        widget.place.longitude - 0.008,
+      );
+      _buildRoute();
+      _fetchUserLocation();
+    }
+  }
 
-    // Lokasi awal (default ke titik pusat kota terdekat dengan offset kecil untuk simulasi rute)
-    _userPos = widget.userLocation ??
-        LatLng(
-          widget.place.latitude - 0.0095,
-          widget.place.longitude - 0.0085,
+  void _buildRoute() {
+    setState(() {
+      _routePoints = [
+        _userPos,
+        LatLng(_userPos.latitude + 0.0015, _userPos.longitude + 0.001),
+        LatLng(_userPos.latitude + 0.003, _userPos.longitude + 0.002),
+        LatLng(_userPos.latitude + 0.005, _userPos.longitude + 0.0035),
+        LatLng(_destPos.latitude - 0.001, _destPos.longitude - 0.0005),
+        _destPos,
+      ];
+    });
+  }
+
+  Future<void> _fetchUserLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) setState(() => _isLocating = false);
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        if (mounted) setState(() => _isLocating = false);
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _userPos = LatLng(position.latitude, position.longitude);
+          _isLocating = false;
+        });
+        _buildRoute();
+        _mapController.move(
+          LatLng(
+            (_userPos.latitude + _destPos.latitude) / 2,
+            (_userPos.longitude + _destPos.longitude) / 2,
+          ),
+          14.2,
         );
-
-    // Titik jalur rute polyline yang berbelok realistis mengikuti jalan raya
-    _routePoints = [
-      _userPos,
-      LatLng(_userPos.latitude + 0.002, _userPos.longitude + 0.0015),
-      LatLng(_userPos.latitude + 0.004, _userPos.longitude + 0.0025),
-      LatLng(_userPos.latitude + 0.006, _userPos.longitude + 0.004),
-      LatLng(_userPos.latitude + 0.0075, _destPos.longitude - 0.001),
-      _destPos,
-    ];
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
   }
 
   Future<void> _launchGoogleMaps() async {
     final lat = widget.place.latitude;
     final lng = widget.place.longitude;
-    final url = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    final navUri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
+    final webUri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (await canLaunchUrl(navUri)) {
+        await launchUrl(navUri, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
       } else {
-        await launchUrl(url);
+        await launchUrl(webUri);
       }
     } catch (_) {
       if (!mounted) return;
@@ -143,8 +201,8 @@ class _RouteScreenState extends State<RouteScreen> {
                   // Marker 1: Lokasi Anda (Titik Biru Berdenyut)
                   Marker(
                     point: _userPos,
-                    width: 70,
-                    height: 70,
+                    width: 80,
+                    height: 80,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -301,13 +359,24 @@ class _RouteScreenState extends State<RouteScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Lokasi Anda',
+                                    _isLocating ? 'Mencari GPS...' : 'Lokasi Anda',
                                     style: TextStyle(
                                       color: colors.textPrimary,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
+                                  if (_isLocating) ...[
+                                    const SizedBox(width: 8),
+                                    const SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppTheme.gold,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                               Padding(

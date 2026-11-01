@@ -327,7 +327,7 @@ image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
 
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
-VALUES ('uns-1', 'Warung Makan Bu Sari', 'Purwokerto Utara (Unsoed)', 'Restoran', 10000, 25000, 15000, 4.7, 980, '["Outdoor", "Parkir", "Mushola", "Rumahan"]'::jsonb, 'Jl. HR Bunyamin No. 88 (Dekat Kampus Unsoed Grendeng), Purwokerto', 'Warung makan prasmanan khas Banyumasan dengan aneka sayur lodeh, ayam goreng lengkuas, mendoan hangat, dan sambal terasi segar harga mahasiswa.', '07.00 - 21.00 WIB', -7.4085, 109.245, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', '[{"name": "Paket Nasi Sayur + Ayam", "price": 18000}, {"name": "Mendoan Purwokerto (3 pcs)", "price": 9000}, {"name": "Es Jeruk Peras Segar", "price": 5000}]'::jsonb)
+VALUES ('uns-1', 'Warung Makan Bu Sari', 'Purwokerto Utara', 'Restoran', 10000, 25000, 15000, 4.7, 980, '["Outdoor", "Parkir", "Mushola", "Rumahan"]'::jsonb, 'Jl. HR Bunyamin No. 88 (Dekat Kampus Unsoed Grendeng), Purwokerto', 'Warung makan prasmanan khas Banyumasan dengan aneka sayur lodeh, ayam goreng lengkuas, mendoan hangat, dan sambal terasi segar harga mahasiswa.', '07.00 - 21.00 WIB', -7.4085, 109.245, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', '[{"name": "Paket Nasi Sayur + Ayam", "price": 18000}, {"name": "Mendoan Purwokerto (3 pcs)", "price": 9000}, {"name": "Es Jeruk Peras Segar", "price": 5000}]'::jsonb)
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 city = EXCLUDED.city,
@@ -347,7 +347,7 @@ image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
 
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
-VALUES ('uns-2', 'Table Nine Kitchen & Resto', 'Purwokerto Utara (Unsoed)', 'Restoran', 30000, 120000, 60000, 4.8, 2100, '["AC", "WiFi", "Parkir", "Indoor", "Outdoor", "Mushola"]'::jsonb, 'Jl. Prof. Dr. HR Bunyamin No. 9, Pabuaran, Purwokerto Utara', 'Restoran keluarga & casual dining modern paling representatif di Purwokerto dengan aneka menu nusantara, chinese food, dan western dalam suasana elegan.', '10.00 - 22.00 WIB', -7.404, 109.243, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', '[{"name": "Gurame Bakar Madu Pedas", "price": 65000}, {"name": "Nasi Goreng Table Nine", "price": 38000}, {"name": "Rib Eye Steak Australian", "price": 98000}]'::jsonb)
+VALUES ('uns-2', 'Table Nine Kitchen & Resto', 'Purwokerto Utara', 'Restoran', 30000, 120000, 60000, 4.8, 2100, '["AC", "WiFi", "Parkir", "Indoor", "Outdoor", "Mushola"]'::jsonb, 'Jl. Prof. Dr. HR Bunyamin No. 9, Pabuaran, Purwokerto Utara', 'Restoran keluarga & casual dining modern paling representatif di Purwokerto dengan aneka menu nusantara, chinese food, dan western dalam suasana elegan.', '10.00 - 22.00 WIB', -7.404, 109.243, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', '[{"name": "Gurame Bakar Madu Pedas", "price": 65000}, {"name": "Nasi Goreng Table Nine", "price": 38000}, {"name": "Rib Eye Steak Australian", "price": 98000}]'::jsonb)
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 city = EXCLUDED.city,
@@ -367,7 +367,7 @@ image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
 
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
-VALUES ('uns-3', 'Serabine.co Unsoed', 'Purwokerto Utara (Unsoed)', 'Warkop', 8000, 25000, 15000, 4.6, 670, '["WiFi", "Outdoor", "Colokan", "Musik"]'::jsonb, 'Jl. Suparno No. 34, Karangwangkal, Purwokerto Utara', 'Tongkrongan anak muda dengan sajian serabi tradisional Jawa yang dimodernisasi berbagai topping lumer seperti keju mozzarella, cokelat nutella, dan oreo.', '15.00 - 23.30 WIB', -7.401, 109.253, 'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80', '[{"name": "Serabi Cokelat Keju Lumer", "price": 12000}, {"name": "Serabi Telur Asin Pedas", "price": 14000}, {"name": "Es Cokelat Klasik", "price": 10000}]'::jsonb)
+VALUES ('uns-3', 'Serabine.co Unsoed', 'Purwokerto Utara', 'Warkop', 8000, 25000, 15000, 4.6, 670, '["WiFi", "Outdoor", "Colokan", "Musik"]'::jsonb, 'Jl. Suparno No. 34, Karangwangkal, Purwokerto Utara', 'Tongkrongan anak muda dengan sajian serabi tradisional Jawa yang dimodernisasi berbagai topping lumer seperti keju mozzarella, cokelat nutella, dan oreo.', '15.00 - 23.30 WIB', -7.401, 109.253, 'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80', '[{"name": "Serabi Cokelat Keju Lumer", "price": 12000}, {"name": "Serabi Telur Asin Pedas", "price": 14000}, {"name": "Es Cokelat Klasik", "price": 10000}]'::jsonb)
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 city = EXCLUDED.city,
@@ -447,7 +447,7 @@ image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
 
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
-VALUES ('tim-1', 'Warung Djoglo Arcawinangun', 'Purwokerto Timur & Sumbang', 'Restoran', 18000, 55000, 32000, 4.7, 890, '["Parkir", "Outdoor", "Indoor", "Mushola", "Romantis"]'::jsonb, 'Jl. Sunan Bonang No. 8, Arcawinangun, Purwokerto Timur', 'Resto berarsitektur rumah Joglo Jawa kuno dengan suasana teduh alami, menyajikan masakan tradisional jawa timuran & banyumasan serta aneka kopi tubruk.', '09.30 - 21.30 WIB', -7.416, 109.262, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', '[{"name": "Nasi Liwet Ayam Suwir Komplit", "price": 28000}, {"name": "Rawon Daging Djoeglo", "price": 32000}, {"name": "Mendoan Krispi Cabai Rawit", "price": 12000}]'::jsonb)
+VALUES ('tim-1', 'Warung Djoglo Arcawinangun', 'Purwokerto Timur', 'Restoran', 18000, 55000, 32000, 4.7, 890, '["Parkir", "Outdoor", "Indoor", "Mushola", "Romantis"]'::jsonb, 'Jl. Sunan Bonang No. 8, Arcawinangun, Purwokerto Timur', 'Resto berarsitektur rumah Joglo Jawa kuno dengan suasana teduh alami, menyajikan masakan tradisional jawa timuran & banyumasan serta aneka kopi tubruk.', '09.30 - 21.30 WIB', -7.416, 109.262, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', '[{"name": "Nasi Liwet Ayam Suwir Komplit", "price": 28000}, {"name": "Rawon Daging Djoeglo", "price": 32000}, {"name": "Mendoan Krispi Cabai Rawit", "price": 12000}]'::jsonb)
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 city = EXCLUDED.city,
@@ -467,7 +467,7 @@ image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
 
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
-VALUES ('tim-2', 'Kopi Sadarwana Kembaran', 'Purwokerto Timur & Sumbang', 'Warkop', 12000, 35000, 20000, 4.6, 510, '["WiFi", "Outdoor", "Colokan", "Mushola"]'::jsonb, 'Jl. Raya Ledug, Kembaran (Dekat Kampus UMP)', 'Tempat ngopi syahdu di perbatasan timur Purwokerto dengan angin sejuk persawahan, favorit mahasiswa UMP untuk diskusi kelompok dan menikmati senja.', '13.00 - 23.00 WIB', -7.4175, 109.2745, 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80', '[{"name": "Kopi Susu Sadarwana", "price": 16000}, {"name": "Tahu Gejrot Banyumas", "price": 12000}, {"name": "Tempe Mendoan Hangat", "price": 10000}]'::jsonb)
+VALUES ('tim-2', 'Kopi Sadarwana Kembaran', 'Purwokerto Timur', 'Warkop', 12000, 35000, 20000, 4.6, 510, '["WiFi", "Outdoor", "Colokan", "Mushola"]'::jsonb, 'Jl. Raya Ledug, Kembaran (Dekat Kampus UMP)', 'Tempat ngopi syahdu di perbatasan timur Purwokerto dengan angin sejuk persawahan, favorit mahasiswa UMP untuk diskusi kelompok dan menikmati senja.', '13.00 - 23.00 WIB', -7.4175, 109.2745, 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80', '[{"name": "Kopi Susu Sadarwana", "price": 16000}, {"name": "Tahu Gejrot Banyumas", "price": 12000}, {"name": "Tempe Mendoan Hangat", "price": 10000}]'::jsonb)
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 city = EXCLUDED.city,
@@ -487,7 +487,7 @@ image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
 
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
-VALUES ('tim-3', 'Lesehan Ikan Bakar Sekar Surya', 'Purwokerto Timur & Sumbang', 'Restoran', 20000, 60000, 35000, 4.7, 730, '["Parkir", "Outdoor", "Mushola", "Lesehan"]'::jsonb, 'Jl. Raya Sumbang No. 17, Sumbang, Banyumas', 'Warung lesehan keluarga di kawasan Sumbang dengan kolam ikan asri, sajian gurame bakar kecap pedas, nila goreng renyah, dan lalapan segar daun kemangi.', '10.00 - 21.00 WIB', -7.382, 109.268, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', '[{"name": "Gurame Bakar Madu Pedas", "price": 52000}, {"name": "Nila Goreng Terbang", "price": 28000}, {"name": "Cah Kangkung Terasi", "price": 12000}]'::jsonb)
+VALUES ('tim-3', 'Lesehan Ikan Bakar Sekar Surya', 'Purwokerto Timur', 'Restoran', 20000, 60000, 35000, 4.7, 730, '["Parkir", "Outdoor", "Mushola", "Lesehan"]'::jsonb, 'Jl. Raya Sumbang No. 17, Sumbang, Banyumas', 'Warung lesehan keluarga di kawasan Sumbang dengan kolam ikan asri, sajian gurame bakar kecap pedas, nila goreng renyah, dan lalapan segar daun kemangi.', '10.00 - 21.00 WIB', -7.382, 109.268, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', '[{"name": "Gurame Bakar Madu Pedas", "price": 52000}, {"name": "Nila Goreng Terbang", "price": 28000}, {"name": "Cah Kangkung Terasi", "price": 12000}]'::jsonb)
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 city = EXCLUDED.city,
@@ -507,7 +507,7 @@ image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
 
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
-VALUES ('brt-1', 'D''Java Cafe & Bistro Stasiun', 'Purwokerto Barat & Selatan', 'Cafe', 20000, 60000, 32000, 4.6, 530, '["AC", "WiFi", "Colokan", "Indoor", "Parkir"]'::jsonb, 'Jl. Kober No. 12 (Dekat Pintu Keluar Stasiun Purwokerto)', 'Cafe strategis berkonsep heritage modern dekat Stasiun Purwokerto, tempat singgah paling nyaman sebelum naik kereta atau setelah tiba di kota Purwokerto.', '09.00 - 23.00 WIB', -7.418, 109.219, 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80', '[{"name": "DJava Signature Latte", "price": 25000}, {"name": "Chicken Schnitzel", "price": 34000}, {"name": "Singkong Keju Salju", "price": 16000}]'::jsonb)
+VALUES ('brt-1', 'D''Java Cafe & Bistro Stasiun', 'Purwokerto Barat', 'Cafe', 20000, 60000, 32000, 4.6, 530, '["AC", "WiFi", "Colokan", "Indoor", "Parkir"]'::jsonb, 'Jl. Kober No. 12 (Dekat Pintu Keluar Stasiun Purwokerto)', 'Cafe strategis berkonsep heritage modern dekat Stasiun Purwokerto, tempat singgah paling nyaman sebelum naik kereta atau setelah tiba di kota Purwokerto.', '09.00 - 23.00 WIB', -7.418, 109.219, 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80', '[{"name": "DJava Signature Latte", "price": 25000}, {"name": "Chicken Schnitzel", "price": 34000}, {"name": "Singkong Keju Salju", "price": 16000}]'::jsonb)
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 city = EXCLUDED.city,
@@ -527,7 +527,7 @@ image_url = EXCLUDED.image_url,
 menu_highlights = EXCLUDED.menu_highlights;
 
 INSERT INTO public.places (id, name, city, category, min_price, max_price, avg_price, rating, review_count, facilities, address, description, open_hours, latitude, longitude, image_url, menu_highlights)
-VALUES ('brt-2', 'Restoran Pringsewu Purwokerto', 'Purwokerto Barat & Selatan', 'Restoran', 25000, 85000, 45000, 4.7, 2450, '["Parkir", "AC", "Mushola", "Outdoor", "Indoor", "Lesehan"]'::jsonb, 'Jl. Gerilya Barat No. 8, Tanjung, Purwokerto Selatan', 'Restoran keluarga dengan taman asri, kolam ikan, dan saung lesehan. Spesialis gurame terbang bumbu cobek, ayam bakar taliwang, dan aneka tumisan lezat.', '08.00 - 22.00 WIB', -7.4385, 109.227, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', '[{"name": "Gurame Terbang Sambal Cobek", "price": 68000}, {"name": "Ayam Bakar Bumbu Rujak", "price": 32000}, {"name": "Es Teler Pringsewu", "price": 18000}]'::jsonb)
+VALUES ('brt-2', 'Restoran Pringsewu Purwokerto', 'Purwokerto Selatan', 'Restoran', 25000, 85000, 45000, 4.7, 2450, '["Parkir", "AC", "Mushola", "Outdoor", "Indoor", "Lesehan"]'::jsonb, 'Jl. Gerilya Barat No. 8, Tanjung, Purwokerto Selatan', 'Restoran keluarga dengan taman asri, kolam ikan, dan saung lesehan. Spesialis gurame terbang bumbu cobek, ayam bakar taliwang, dan aneka tumisan lezat.', '08.00 - 22.00 WIB', -7.4385, 109.227, 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', '[{"name": "Gurame Terbang Sambal Cobek", "price": 68000}, {"name": "Ayam Bakar Bumbu Rujak", "price": 32000}, {"name": "Es Teler Pringsewu", "price": 18000}]'::jsonb)
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 city = EXCLUDED.city,
