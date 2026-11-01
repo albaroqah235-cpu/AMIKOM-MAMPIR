@@ -207,12 +207,7 @@ class AppTheme {
 /// ORNAMEN LATAR BELAKANG MANDALA / BATIK HALUS MULTI-SUDUT
 /// ============================================================
 
-enum OrnamentOrigin {
-  topRight,
-  bottomLeft,
-  topLeft,
-  bottomRight,
-}
+enum OrnamentOrigin { topRight, bottomLeft, topLeft, bottomRight }
 
 /// Ornamen Mandala / Batik yang digambar pada latar belakang layar
 class MandalaOrnamentPainter extends CustomPainter {
@@ -236,8 +231,8 @@ class MandalaOrnamentPainter extends CustomPainter {
     // Mode Gelap: Emas amber hangat (0xFFFFB74D) dengan opasitas 0.20
     // Mode Terang: Emas tembaga terracotta (0xFFB45309) dengan opasitas 0.26
     final bool dark = isDark ?? true;
-    final baseColor = color ??
-        (dark ? const Color(0xFFFFB74D) : const Color(0xFFB45309));
+    final baseColor =
+        color ?? (dark ? const Color(0xFFFFB74D) : const Color(0xFFB45309));
     final double opacity = dark ? 0.20 : 0.26;
 
     final paint = Paint()
@@ -318,14 +313,13 @@ class FloatingBatikAccentPainter extends CustomPainter {
   final bool isDark;
   final double strokeWidth;
 
-  FloatingBatikAccentPainter({
-    required this.isDark,
-    this.strokeWidth = 1.6,
-  });
+  FloatingBatikAccentPainter({required this.isDark, this.strokeWidth = 1.6});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final baseColor = isDark ? const Color(0xFFFFB74D) : const Color(0xFFB45309);
+    final baseColor = isDark
+        ? const Color(0xFFFFB74D)
+        : const Color(0xFFB45309);
     final double opacity = isDark ? 0.18 : 0.24;
 
     final strokePaint = Paint()
@@ -353,10 +347,30 @@ class FloatingBatikAccentPainter extends CustomPainter {
       // Bentuk berlian / bunga batik 4 sisi
       final path = Path();
       path.moveTo(pt.dx, pt.dy - r);
-      path.quadraticBezierTo(pt.dx + r * 0.25, pt.dy - r * 0.25, pt.dx + r, pt.dy);
-      path.quadraticBezierTo(pt.dx + r * 0.25, pt.dy + r * 0.25, pt.dx, pt.dy + r);
-      path.quadraticBezierTo(pt.dx - r * 0.25, pt.dy + r * 0.25, pt.dx - r, pt.dy);
-      path.quadraticBezierTo(pt.dx - r * 0.25, pt.dy - r * 0.25, pt.dx, pt.dy - r);
+      path.quadraticBezierTo(
+        pt.dx + r * 0.25,
+        pt.dy - r * 0.25,
+        pt.dx + r,
+        pt.dy,
+      );
+      path.quadraticBezierTo(
+        pt.dx + r * 0.25,
+        pt.dy + r * 0.25,
+        pt.dx,
+        pt.dy + r,
+      );
+      path.quadraticBezierTo(
+        pt.dx - r * 0.25,
+        pt.dy + r * 0.25,
+        pt.dx - r,
+        pt.dy,
+      );
+      path.quadraticBezierTo(
+        pt.dx - r * 0.25,
+        pt.dy - r * 0.25,
+        pt.dx,
+        pt.dy - r,
+      );
       path.close();
 
       canvas.drawPath(path, strokePaint);

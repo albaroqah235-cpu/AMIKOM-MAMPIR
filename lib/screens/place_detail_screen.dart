@@ -14,11 +14,7 @@ class PlaceDetailScreen extends StatefulWidget {
   final PlaceModel place;
   final int? userBudget;
 
-  const PlaceDetailScreen({
-    super.key,
-    required this.place,
-    this.userBudget,
-  });
+  const PlaceDetailScreen({super.key, required this.place, this.userBudget});
 
   @override
   State<PlaceDetailScreen> createState() => _PlaceDetailScreenState();
@@ -96,15 +92,20 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
               children: [
                 // 1. Top Bar: Back, Share, Favorite
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       CircleAvatar(
                         backgroundColor: colors.surfaceNavy,
                         child: IconButton(
-                          icon: Icon(Icons.arrow_back,
-                              color: colors.iconColor, size: 20),
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: colors.iconColor,
+                            size: 20,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
@@ -112,8 +113,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                       CircleAvatar(
                         backgroundColor: colors.surfaceNavy,
                         child: IconButton(
-                          icon: Icon(Icons.share_outlined,
-                              color: colors.iconColor, size: 20),
+                          icon: Icon(
+                            Icons.share_outlined,
+                            color: colors.iconColor,
+                            size: 20,
+                          ),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -160,14 +164,15 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                      color: AppTheme.borderNavy),
+                                    color: AppTheme.borderNavy,
+                                  ),
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(20),
                                   child: PageView.builder(
                                     controller: _imagePageController,
-                                    onPageChanged: (i) => setState(
-                                        () => _currentImageIndex = i),
+                                    onPageChanged: (i) =>
+                                        setState(() => _currentImageIndex = i),
                                     itemCount: _galleryImages.length,
                                     itemBuilder: (context, idx) {
                                       return Image.network(
@@ -176,13 +181,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                         width: double.infinity,
                                         errorBuilder: (ctx, err, st) =>
                                             Container(
-                                          color: AppTheme.surfaceNavy,
-                                          child: const Icon(
-                                            Icons.restaurant_rounded,
-                                            size: 64,
-                                            color: AppTheme.orange,
-                                          ),
-                                        ),
+                                              color: AppTheme.surfaceNavy,
+                                              child: const Icon(
+                                                Icons.restaurant_rounded,
+                                                size: 64,
+                                                color: AppTheme.orange,
+                                              ),
+                                            ),
                                       );
                                     },
                                   ),
@@ -195,10 +200,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                 bottom: 14,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color:
-                                        Colors.black.withValues(alpha: 0.65),
+                                    color: Colors.black.withValues(alpha: 0.65),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -253,8 +259,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                               // Rating, Reviews & Distance
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded,
-                                      color: AppTheme.gold, size: 18),
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: AppTheme.gold,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 3),
                                   Text(
                                     '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
@@ -294,12 +303,15 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                 children: place.facilities.map((fac) {
                                   return Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 6),
+                                      horizontal: 14,
+                                      vertical: 6,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: colors.surfaceNavy,
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                          color: colors.borderNavy),
+                                        color: colors.borderNavy,
+                                      ),
                                     ),
                                     child: Text(
                                       fac,
@@ -323,7 +335,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                  color: colors.borderNavy, width: 1.5),
+                                color: colors.borderNavy,
+                                width: 1.5,
+                              ),
                             ),
                           ),
                           child: TabBar(
@@ -333,7 +347,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                             labelColor: colors.textPrimary,
                             unselectedLabelColor: colors.textSecondary,
                             labelStyle: const TextStyle(
-                                fontWeight: FontWeight.w800, fontSize: 14),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                            ),
                             tabs: const [
                               Tab(text: 'Deskripsi'),
                               Tab(text: 'Menu'),
@@ -368,15 +384,17 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                 // 3. Bottom Action Bar: "Lihat Rute" & "Hapus dari Favorit"
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.scaffoldBg,
-                    border: Border(
-                      top: BorderSide(color: colors.borderNavy),
-                    ),
+                    border: Border(top: BorderSide(color: colors.borderNavy)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: colors.isDark ? 0.5 : 0.08),
+                        color: Colors.black.withValues(
+                          alpha: colors.isDark ? 0.5 : 0.08,
+                        ),
                         blurRadius: 10,
                         offset: const Offset(0, -3),
                       ),
@@ -408,8 +426,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                               ),
                             );
                           },
-                          icon: const Icon(Icons.near_me_rounded,
-                              color: Colors.white),
+                          icon: const Icon(
+                            Icons.near_me_rounded,
+                            color: Colors.white,
+                          ),
                           label: const Text(
                             'Lihat Rute',
                             style: TextStyle(
@@ -431,8 +451,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                         const SizedBox(height: 8),
                         TextButton.icon(
                           onPressed: _toggleFavorite,
-                          icon: const Icon(Icons.delete_outline,
-                              color: Colors.redAccent, size: 18),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                            size: 18,
+                          ),
                           label: const Text(
                             'Hapus dari Favorit',
                             style: TextStyle(
@@ -469,8 +492,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
         const SizedBox(height: 14),
         Row(
           children: [
-            const Icon(Icons.access_time_rounded,
-                color: AppTheme.gold, size: 18),
+            const Icon(
+              Icons.access_time_rounded,
+              color: AppTheme.gold,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Text(
               place.openHours,
@@ -482,8 +508,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.location_on_rounded,
-                color: AppTheme.orange, size: 18),
+            const Icon(
+              Icons.location_on_rounded,
+              color: AppTheme.orange,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -508,13 +537,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
               options: MapOptions(
                 initialCenter: LatLng(place.latitude, place.longitude),
                 initialZoom: 14.5,
-                interactionOptions:
-                    const InteractionOptions(flags: InteractiveFlag.none),
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
               ),
               children: [
                 TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.mampir.mampir_app',
                 ),
                 MarkerLayer(
@@ -528,8 +557,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                           gradient: AppTheme.primaryGradient,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.restaurant,
-                            color: Colors.white, size: 18),
+                        child: const Icon(
+                          Icons.restaurant,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ],
@@ -565,8 +597,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
           children: [
             Row(
               children: [
-                const Icon(Icons.restaurant_menu,
-                    color: AppTheme.gold, size: 18),
+                const Icon(
+                  Icons.restaurant_menu,
+                  color: AppTheme.gold,
+                  size: 18,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   item.name,
@@ -636,9 +671,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                   child: Text(
                     (rev['user'] as String)[0],
                     style: const TextStyle(
-                        color: AppTheme.gold,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12),
+                      color: AppTheme.gold,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),

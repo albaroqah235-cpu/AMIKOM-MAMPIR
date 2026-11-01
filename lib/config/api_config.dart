@@ -22,12 +22,17 @@ class ApiConfig {
   /// Supabase Anon (Public) Key.
   /// Contoh: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
   /// Kosongkan jika belum punya — aplikasi tetap jalan dengan data bawaan.
-  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWRpdGh4dWp4dnp5eWJqdHBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMzA2NTIsImV4cCI6MjEwODgwNjY1Mn0.7zE0gLxh0a2DNzdVcRfTj3EZDaqXWZ09kL5gcXTETXY';
+  static const String supabaseAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWRpdGh4dWp4dnp5eWJqdHBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMzA2NTIsImV4cCI6MjEwODgwNjY1Mn0.7zE0gLxh0a2DNzdVcRfTj3EZDaqXWZ09kL5gcXTETXY';
 
   /// Endpoint untuk mengambil data tempat (GET request)
   static String get placesEndpoint {
-    final clean = supabaseUrl.endsWith('/') ? supabaseUrl.substring(0, supabaseUrl.length - 1) : supabaseUrl;
-    return clean.endsWith('/rest/v1') ? '$clean/places' : '$clean/rest/v1/places';
+    final clean = supabaseUrl.endsWith('/')
+        ? supabaseUrl.substring(0, supabaseUrl.length - 1)
+        : supabaseUrl;
+    return clean.endsWith('/rest/v1')
+        ? '$clean/places'
+        : '$clean/rest/v1/places';
   }
 
   /// Mengecek apakah konfigurasi Supabase sudah diisi oleh pengguna.
@@ -38,9 +43,9 @@ class ApiConfig {
   /// Header standar untuk request ke Supabase REST API.
   /// Berisi API Key dan format response JSON.
   static Map<String, String> get headers => {
-        'apikey': supabaseAnonKey,
-        'Authorization': 'Bearer $supabaseAnonKey',
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation',
-      };
+    'apikey': supabaseAnonKey,
+    'Authorization': 'Bearer $supabaseAnonKey',
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+  };
 }

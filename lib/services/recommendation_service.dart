@@ -51,7 +51,8 @@ class RecommendationService {
         final pCity = place.city.toLowerCase();
         final pAddr = place.address.toLowerCase();
         return regionKeywords.any(
-            (kw) => pCity.contains(kw) || pAddr.contains(kw));
+          (kw) => pCity.contains(kw) || pAddr.contains(kw),
+        );
       }).toList();
 
       // Jika candidatePlaces kosong karena filter regional terlalu ketat,
@@ -67,8 +68,11 @@ class RecommendationService {
         selectedCategory != 'Semua' &&
         selectedCategory != 'Lainnya') {
       final filteredByCategory = candidatePlaces
-          .where((p) =>
-              p.category.toLowerCase().contains(selectedCategory.toLowerCase()))
+          .where(
+            (p) => p.category.toLowerCase().contains(
+              selectedCategory.toLowerCase(),
+            ),
+          )
           .toList();
       if (filteredByCategory.isNotEmpty) {
         candidatePlaces = filteredByCategory;
@@ -118,14 +122,16 @@ class RecommendationService {
         userPreferences: userPreferences,
       );
 
-      results.add(RecommendationResult(
-        place: place,
-        totalScore: totalScore,
-        budgetScore: budgetScore,
-        similarityScore: simScore,
-        ratingScore: ratingScore,
-        reasonBadge: reason,
-      ));
+      results.add(
+        RecommendationResult(
+          place: place,
+          totalScore: totalScore,
+          budgetScore: budgetScore,
+          similarityScore: simScore,
+          ratingScore: ratingScore,
+          reasonBadge: reason,
+        ),
+      );
     }
 
     // Urutkan dari total skor tertinggi ke terendah
@@ -175,7 +181,8 @@ class RecommendationService {
     // Jika ada tempat acuan yang user ketik/sukai
     if (referencePlace != null && referencePlace.id != place.id) {
       // Cocokkan kesamaan kategori (+15 poin)
-      if (place.category.toLowerCase() == referencePlace.category.toLowerCase()) {
+      if (place.category.toLowerCase() ==
+          referencePlace.category.toLowerCase()) {
         score += 15.0;
       }
       // Cocokkan fasilitas tempat acuan (+5 poin per fasilitas sama)
@@ -200,10 +207,12 @@ class RecommendationService {
           score += 15.0;
         }
         // place.facilities & menuHighlights (+15 poin)
-        final matchFacility = place.facilities
-            .any((f) => f.toLowerCase().contains(token));
-        final matchMenu = place.menuHighlights
-            .any((m) => m.name.toLowerCase().contains(token));
+        final matchFacility = place.facilities.any(
+          (f) => f.toLowerCase().contains(token),
+        );
+        final matchMenu = place.menuHighlights.any(
+          (m) => m.name.toLowerCase().contains(token),
+        );
         if (matchFacility || matchMenu) {
           score += 15.0;
         }
@@ -218,14 +227,18 @@ class RecommendationService {
     // Pencocokan fasilitas preferensi user (WiFi, Colokan, AC, dll)
     if (userPreferences.isNotEmpty) {
       for (final pref in userPreferences) {
-        if (place.facilities.any((f) => f.toLowerCase() == pref.toLowerCase())) {
+        if (place.facilities.any(
+          (f) => f.toLowerCase() == pref.toLowerCase(),
+        )) {
           score += 6.0;
         }
       }
     }
 
     // Default relevansi jika tidak ada input sama sekali
-    if (queryTokens.isEmpty && userPreferences.isEmpty && referencePlace == null) {
+    if (queryTokens.isEmpty &&
+        userPreferences.isEmpty &&
+        referencePlace == null) {
       score = 25.0;
     }
 
@@ -246,19 +259,53 @@ class RecommendationService {
   static List<String> _getRegionKeywords(String region) {
     final r = region.toLowerCase();
     if (r.contains('baturraden')) {
-      return ['baturraden', 'karanggintung', 'rempoah', 'ketenger', 'palawi', 'curug', 'limpakuwus'];
+      return [
+        'baturraden',
+        'karanggintung',
+        'rempoah',
+        'ketenger',
+        'palawi',
+        'curug',
+        'limpakuwus',
+      ];
     } else if (r.contains('utara')) {
-      return ['unsoed', 'bunyamin', 'grendeng', 'purwokerto utara', 'pabuaran', 'karangwangkal'];
+      return [
+        'unsoed',
+        'bunyamin',
+        'grendeng',
+        'purwokerto utara',
+        'pabuaran',
+        'karangwangkal',
+      ];
     } else if (r.contains('sokaraja')) {
       return ['sokaraja', 'soto sokaraja', 'getuk'];
     } else if (r.contains('timur')) {
-      return ['sumbang', 'kembaran', 'arcawinangun', 'dukuhwaluh', 'ump', 'ledug', 'purwokerto timur'];
+      return [
+        'sumbang',
+        'kembaran',
+        'arcawinangun',
+        'dukuhwaluh',
+        'ump',
+        'ledug',
+        'purwokerto timur',
+      ];
     } else if (r.contains('barat')) {
       return ['purwokerto barat', 'stasiun', 'kober', 'gerilya', 'andhang'];
     } else if (r.contains('selatan')) {
       return ['purwokerto selatan', 'tanjung', 'terminal', 'karangpucung'];
-    } else if (r.contains('purwokerto kota') || r.contains('kota') || r.contains('pusat')) {
-      return ['purwokerto kota', 'alun-alun', 'gor', 'sudirman', 'dr. angka', 'isdiman', 'sukun', 'pramuka'];
+    } else if (r.contains('purwokerto kota') ||
+        r.contains('kota') ||
+        r.contains('pusat')) {
+      return [
+        'purwokerto kota',
+        'alun-alun',
+        'gor',
+        'sudirman',
+        'dr. angka',
+        'isdiman',
+        'sukun',
+        'pramuka',
+      ];
     }
     return [r];
   }
@@ -286,7 +333,10 @@ class RecommendationService {
 
     if (userPreferences.isNotEmpty) {
       final matched = place.facilities
-          .where((f) => userPreferences.any((p) => p.toLowerCase() == f.toLowerCase()))
+          .where(
+            (f) =>
+                userPreferences.any((p) => p.toLowerCase() == f.toLowerCase()),
+          )
           .toList();
       if (matched.isNotEmpty) {
         return 'Ada ${matched.first} • Rating ${place.rating.toStringAsFixed(1)}';

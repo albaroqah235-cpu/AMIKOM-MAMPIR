@@ -40,9 +40,7 @@ class _OnboardingPreferenceScreenState
           // Background Mandala & Batik Multi-Sudut
           const AppBackgroundOrnament(topSize: 280, bottomSize: 240),
 
-          SafeArea(
-            child: _buildWelcomePage(),
-          ),
+          SafeArea(child: _buildWelcomePage()),
         ],
       ),
     );
@@ -58,7 +56,10 @@ class _OnboardingPreferenceScreenState
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 20.0,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -90,17 +91,18 @@ class _OnboardingPreferenceScreenState
                           child: Image.asset(
                             'assets/images/app_icon.jpeg',
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              decoration: const BoxDecoration(
-                                gradient: AppTheme.primaryGradient,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.restaurant_rounded,
-                                size: 56,
-                                color: Colors.white,
-                              ),
-                            ),
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  decoration: const BoxDecoration(
+                                    gradient: AppTheme.primaryGradient,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.restaurant_rounded,
+                                    size: 56,
+                                    color: Colors.white,
+                                  ),
+                                ),
                           ),
                         ),
                       ),
@@ -154,7 +156,10 @@ class _OnboardingPreferenceScreenState
                   // 3 Kartu Fitur Unggulan (Responsif, Rapi, Tanpa Overflow)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       color: colors.cardNavy.withAlpha(160),

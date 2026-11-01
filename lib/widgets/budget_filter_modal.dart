@@ -70,8 +70,11 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
   late Set<String> _selectedPlaceTypes;
   late Set<String> _selectedPreferences;
 
-  final NumberFormat _currencyFormatter =
-      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  final NumberFormat _currencyFormatter = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
   // Quick Chips sesuai mockup
   static const List<Map<String, dynamic>> _quickChips = [
@@ -170,14 +173,16 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
       decoration: BoxDecoration(
         color: colors.scaffoldBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: colors.borderNavy, width: 1.5),
-        ),
+        border: Border(top: BorderSide(color: colors.borderNavy, width: 1.5)),
       ),
       child: Stack(
         children: [
           // Background Mandala & Batik Multi-Sudut
-          const AppBackgroundOrnament(showBottomCorner: false, topSize: 220, topScale: 0.75),
+          const AppBackgroundOrnament(
+            showBottomCorner: false,
+            topSize: 220,
+            topScale: 0.75,
+          ),
 
           SafeArea(
             child: SingleChildScrollView(
@@ -263,7 +268,9 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                         hintText: 'Tulis nominal budget sendiri',
                         hintStyle: TextStyle(color: colors.textMuted),
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         border: InputBorder.none,
                       ),
                       onChanged: _onManualTextChanged,
@@ -280,7 +287,8 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                       overlayColor: AppTheme.gold.withValues(alpha: 0.2),
                       trackHeight: 4,
                       thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 9),
+                        enabledThumbRadius: 9,
+                      ),
                     ),
                     child: Slider(
                       value: _selectedBudget.toDouble().clamp(5000.0, 150000.0),
@@ -306,7 +314,9 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 8),
+                            horizontal: 18,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             gradient: isSelected
                                 ? AppTheme.primaryGradient
@@ -322,7 +332,9 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                           child: Text(
                             chip['label'] as String,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : colors.textSecondary,
+                              color: isSelected
+                                  ? Colors.white
+                                  : colors.textSecondary,
                               fontWeight: isSelected
                                   ? FontWeight.w800
                                   : FontWeight.w600,
@@ -363,7 +375,9 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             gradient: isSelected
                                 ? AppTheme.primaryGradient
@@ -379,7 +393,9 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                           child: Text(
                             type,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : colors.textSecondary,
+                              color: isSelected
+                                  ? Colors.white
+                                  : colors.textSecondary,
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
@@ -420,7 +436,9 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             gradient: isSelected
                                 ? AppTheme.primaryGradient
@@ -436,7 +454,9 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                           child: Text(
                             pref,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : colors.textSecondary,
+                              color: isSelected
+                                  ? Colors.white
+                                  : colors.textSecondary,
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
@@ -466,11 +486,13 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                     ),
                     child: ElevatedButton(
                       onPressed: () {
-                        widget.onApply(BudgetFilterData(
-                          budget: _selectedBudget,
-                          placeTypes: _selectedPlaceTypes,
-                          preferences: _selectedPreferences,
-                        ));
+                        widget.onApply(
+                          BudgetFilterData(
+                            budget: _selectedBudget,
+                            placeTypes: _selectedPlaceTypes,
+                            preferences: _selectedPreferences,
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,

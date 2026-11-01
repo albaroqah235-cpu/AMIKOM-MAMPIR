@@ -23,10 +23,7 @@ class ApiService {
 
     try {
       final url = Uri.parse(ApiConfig.placesEndpoint);
-      final response = await http.get(
-        url,
-        headers: ApiConfig.headers,
-      );
+      final response = await http.get(url, headers: ApiConfig.headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = jsonDecode(response.body);
@@ -79,12 +76,18 @@ class ApiService {
         'review_count': 1250,
         'facilities': ['AC', 'WiFi', 'Colokan', 'Indoor', 'Parkir'],
         'address': 'Jl. Jend. Sudirman No. 392, Purwokerto',
-        'description': 'Tempat ngopi modern yang nyaman di pusat Kota Purwokerto, cocok untuk bekerja, nugas, atau sekadar santai bersama teman.',
+        'description':
+            'Tempat ngopi modern yang nyaman di pusat Kota Purwokerto, cocok untuk bekerja, nugas, atau sekadar santai bersama teman.',
         'open_hours': '08.00 - 22.00 WIB',
         'latitude': -7.4244,
         'longitude': 109.2302,
-        'image_url': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Kopi Kenangan Mantan', 'price': 18000}, {'name': 'Avocado Coffee', 'price': 24000}, {'name': 'Roti Cokelat Klasik', 'price': 12000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Kopi Kenangan Mantan', 'price': 18000},
+          {'name': 'Avocado Coffee', 'price': 24000},
+          {'name': 'Roti Cokelat Klasik', 'price': 12000},
+        ],
       },
       {
         'id': 'pwt-2',
@@ -96,14 +99,27 @@ class ApiService {
         'avg_price': 35000,
         'rating': 4.6,
         'review_count': 640,
-        'facilities': ['WiFi', 'Colokan', 'AC', 'Indoor', 'Outdoor', 'Ramah Hewan'],
+        'facilities': [
+          'WiFi',
+          'Colokan',
+          'AC',
+          'Indoor',
+          'Outdoor',
+          'Ramah Hewan',
+        ],
         'address': 'Jl. Dr. Angka No. 45, Purwokerto',
-        'description': 'Cafe estetik dengan desain modern kontemporer di kawasan Dr. Angka, tempat favorit nugas skripsi, meeting casual, dan hangout sore.',
+        'description':
+            'Cafe estetik dengan desain modern kontemporer di kawasan Dr. Angka, tempat favorit nugas skripsi, meeting casual, dan hangout sore.',
         'open_hours': '10.00 - 23.00 WIB',
         'latitude': -7.4172,
         'longitude': 109.2395,
-        'image_url': 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Caramel Macchiato', 'price': 28000}, {'name': 'Truffle French Fries', 'price': 25000}, {'name': 'Pasta Carbonara', 'price': 35000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Caramel Macchiato', 'price': 28000},
+          {'name': 'Truffle French Fries', 'price': 25000},
+          {'name': 'Pasta Carbonara', 'price': 35000},
+        ],
       },
       {
         'id': 'pwt-3',
@@ -117,12 +133,18 @@ class ApiService {
         'review_count': 410,
         'facilities': ['WiFi', 'Outdoor', 'Colokan', 'Musik', 'Parkir'],
         'address': 'Jl. Prof. Dr. Suharso (Kompleks GOR Satria), Purwokerto',
-        'description': 'Spot nongkrong malam favorit pemuda Purwokerto di kawasan GOR Satria dengan roti bakar tebal, pisang keju cokelat, dan aneka minuman segar.',
+        'description':
+            'Spot nongkrong malam favorit pemuda Purwokerto di kawasan GOR Satria dengan roti bakar tebal, pisang keju cokelat, dan aneka minuman segar.',
         'open_hours': '16.00 - 01.00 WIB',
         'latitude': -7.412,
         'longitude': 109.251,
-        'image_url': 'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Roti Bakar Cokelat Keju', 'price': 18000}, {'name': 'Indomie Kuah Kornet Telur', 'price': 16000}, {'name': 'Es Ovaltine Volcano', 'price': 14000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Roti Bakar Cokelat Keju', 'price': 18000},
+          {'name': 'Indomie Kuah Kornet Telur', 'price': 16000},
+          {'name': 'Es Ovaltine Volcano', 'price': 14000},
+        ],
       },
       {
         'id': 'pwt-4',
@@ -136,12 +158,18 @@ class ApiService {
         'review_count': 850,
         'facilities': ['WiFi', 'Colokan', 'Outdoor'],
         'address': 'Jl. Jend. Sudirman No. 120, Purwokerto',
-        'description': 'Warmindo andalan begadang anak muda dan mahasiswa di jantung kota. Buka 24 jam dengan racikan mie dok-dok kuah kental, magelangan gurih, dan es nutrisari dingin.',
+        'description':
+            'Warmindo andalan begadang anak muda dan mahasiswa di jantung kota. Buka 24 jam dengan racikan mie dok-dok kuah kental, magelangan gurih, dan es nutrisari dingin.',
         'open_hours': 'Buka 24 Jam',
         'latitude': -7.423,
         'longitude': 109.235,
-        'image_url': 'https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Mie Dok-Dok Pedas Telur', 'price': 12000}, {'name': 'Nasi Magelangan', 'price': 14000}, {'name': 'Es Kopi Goodday Dingin', 'price': 5000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Mie Dok-Dok Pedas Telur', 'price': 12000},
+          {'name': 'Nasi Magelangan', 'price': 14000},
+          {'name': 'Es Kopi Goodday Dingin', 'price': 5000},
+        ],
       },
       {
         'id': 'pwt-5',
@@ -155,12 +183,18 @@ class ApiService {
         'review_count': 780,
         'facilities': ['AC', 'WiFi', 'Colokan', 'Indoor', 'Outdoor'],
         'address': 'Jl. Overste Isdiman No. 11, Purwokerto',
-        'description': 'Surga bagi pecinta olahan cokelat murni dan dessert kekinian di kawasan kuliner hits Overste Isdiman, sangat cocok untuk kumpul kencan atau nongkrong santai.',
+        'description':
+            'Surga bagi pecinta olahan cokelat murni dan dessert kekinian di kawasan kuliner hits Overste Isdiman, sangat cocok untuk kumpul kencan atau nongkrong santai.',
         'open_hours': '11.00 - 23.00 WIB',
         'latitude': -7.4145,
         'longitude': 109.2415,
-        'image_url': 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Dark Choco Volcano', 'price': 26000}, {'name': 'Choco Fondue Platter', 'price': 38000}, {'name': 'Spageti Aglio Olio', 'price': 30000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Dark Choco Volcano', 'price': 26000},
+          {'name': 'Choco Fondue Platter', 'price': 38000},
+          {'name': 'Spageti Aglio Olio', 'price': 30000},
+        ],
       },
       {
         'id': 'pwt-6',
@@ -174,12 +208,18 @@ class ApiService {
         'review_count': 1950,
         'facilities': ['Parkir', 'Indoor', 'Mushola'],
         'address': 'Jl. Pramuka No. 23, Purwokerto',
-        'description': 'Kuliner bakso dan soto daging legendaris di jantung kota Purwokerto dengan kuah kaldu sapi bening pekat gurih, tetelan empuk, dan tetelan gajih melimpah.',
+        'description':
+            'Kuliner bakso dan soto daging legendaris di jantung kota Purwokerto dengan kuah kaldu sapi bening pekat gurih, tetelan empuk, dan tetelan gajih melimpah.',
         'open_hours': '09.00 - 21.00 WIB',
         'latitude': -7.429,
         'longitude': 109.241,
-        'image_url': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Bakso Urat Tetelan Spesial', 'price': 25000}, {'name': 'Soto Daging Sapi Sami Asih', 'price': 26000}, {'name': 'Es Dawet Campur', 'price': 8000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Bakso Urat Tetelan Spesial', 'price': 25000},
+          {'name': 'Soto Daging Sapi Sami Asih', 'price': 26000},
+          {'name': 'Es Dawet Campur', 'price': 8000},
+        ],
       },
       {
         'id': 'pwt-7',
@@ -193,12 +233,18 @@ class ApiService {
         'review_count': 1150,
         'facilities': ['Outdoor', 'Parkir', 'Rumahan'],
         'address': 'Jl. Gatot Subroto No. 64, Purwokerto',
-        'description': 'Kuliner malam legendaris dengan orak-arik telur sayur pedas nampol khas Purwokerto, dimasak dadakan di wajan panas dengan aroma gurih memikat.',
+        'description':
+            'Kuliner malam legendaris dengan orak-arik telur sayur pedas nampol khas Purwokerto, dimasak dadakan di wajan panas dengan aroma gurih memikat.',
         'open_hours': '17.00 - 02.00 WIB',
         'latitude': -7.4265,
         'longitude': 109.238,
-        'image_url': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Nasi Orak-Arik Sukun Pedas', 'price': 14000}, {'name': 'Tambahan Ayam Suwir', 'price': 6000}, {'name': 'Es Jeruk Manis', 'price': 4000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Nasi Orak-Arik Sukun Pedas', 'price': 14000},
+          {'name': 'Tambahan Ayam Suwir', 'price': 6000},
+          {'name': 'Es Jeruk Manis', 'price': 4000},
+        ],
       },
       {
         'id': 'pwt-8',
@@ -212,12 +258,18 @@ class ApiService {
         'review_count': 1300,
         'facilities': ['Outdoor', 'Lesehan', 'Musik'],
         'address': 'Sisi Timur Alun-Alun Purwokerto, Jl. Jend. Sudirman',
-        'description': 'Pusat tongkrongan lesehan malam hari di Alun-Alun Purwokerto dengan view gemerlap lampu kota dan tugu air mancur, sate kulit, sate usus, dan wedang jahe rempah.',
+        'description':
+            'Pusat tongkrongan lesehan malam hari di Alun-Alun Purwokerto dengan view gemerlap lampu kota dan tugu air mancur, sate kulit, sate usus, dan wedang jahe rempah.',
         'open_hours': '18.00 - 02.00 WIB',
         'latitude': -7.4246,
         'longitude': 109.2315,
-        'image_url': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Nasi Kucing Sambal Bandeng', 'price': 4000}, {'name': 'Sate Kulit Puyuh Bakar', 'price': 3000}, {'name': 'Wedang Ronde Jahe Geprek', 'price': 7000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Nasi Kucing Sambal Bandeng', 'price': 4000},
+          {'name': 'Sate Kulit Puyuh Bakar', 'price': 3000},
+          {'name': 'Wedang Ronde Jahe Geprek', 'price': 7000},
+        ],
       },
       {
         'id': 'btr-1',
@@ -231,12 +283,18 @@ class ApiService {
         'review_count': 1450,
         'facilities': ['Outdoor', 'WiFi', 'Colokan', 'Mushola', 'Romantis'],
         'address': 'Jl. Raya Baturraden KM 7, Karanggintung, Baturraden',
-        'description': 'Cafe bernuansa alam pedesaan sejuk di kaki Gunung Slamet dengan pemandangan sawah terasering, gemericik sungai kecil, dan kopi tubruk tradisional nikmat.',
+        'description':
+            'Cafe bernuansa alam pedesaan sejuk di kaki Gunung Slamet dengan pemandangan sawah terasering, gemericik sungai kecil, dan kopi tubruk tradisional nikmat.',
         'open_hours': '09.00 - 23.00 WIB',
         'latitude': -7.3621,
         'longitude': 109.2435,
-        'image_url': 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Kopi Tubruk Keprok', 'price': 15000}, {'name': 'Pisang Goreng Gula Aren', 'price': 14000}, {'name': 'Nasi Sayur Desa', 'price': 22000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Kopi Tubruk Keprok', 'price': 15000},
+          {'name': 'Pisang Goreng Gula Aren', 'price': 14000},
+          {'name': 'Nasi Sayur Desa', 'price': 22000},
+        ],
       },
       {
         'id': 'btr-2',
@@ -248,14 +306,27 @@ class ApiService {
         'avg_price': 45000,
         'rating': 4.8,
         'review_count': 1720,
-        'facilities': ['Outdoor', 'Indoor', 'WiFi', 'Mushola', 'Romantis', 'Parkir'],
+        'facilities': [
+          'Outdoor',
+          'Indoor',
+          'WiFi',
+          'Mushola',
+          'Romantis',
+          'Parkir',
+        ],
         'address': 'Dusun III Berkat, Desa Kebumen, Baturraden',
-        'description': 'Resto & kafe berkonsep peternakan modern di dataran tinggi Baturraden dengan view perbukitan hijau, udara berkabut, susu segar murni, dan aneka steak lezat.',
+        'description':
+            'Resto & kafe berkonsep peternakan modern di dataran tinggi Baturraden dengan view perbukitan hijau, udara berkabut, susu segar murni, dan aneka steak lezat.',
         'open_hours': '10.00 - 22.00 WIB',
         'latitude': -7.3325,
         'longitude': 109.228,
-        'image_url': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Sirloin Steak BBQ', 'price': 58000}, {'name': 'Susu Segar Murni Baturraden', 'price': 15000}, {'name': 'Massapi Platter', 'price': 35000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Sirloin Steak BBQ', 'price': 58000},
+          {'name': 'Susu Segar Murni Baturraden', 'price': 15000},
+          {'name': 'Massapi Platter', 'price': 35000},
+        ],
       },
       {
         'id': 'btr-3',
@@ -269,12 +340,18 @@ class ApiService {
         'review_count': 1100,
         'facilities': ['Outdoor', 'Parkir', 'Lesehan'],
         'address': 'Kawasan Wana Wisata Baturraden, Karangmangu',
-        'description': 'Kuliner ikonik pegunungan Baturraden dengan sajian sate kelinci empuk berbumbu kacang manis pedas, mendoan hangat ukuran jumbo, dan wedang ronde.',
+        'description':
+            'Kuliner ikonik pegunungan Baturraden dengan sajian sate kelinci empuk berbumbu kacang manis pedas, mendoan hangat ukuran jumbo, dan wedang ronde.',
         'open_hours': '08.30 - 21.00 WIB',
         'latitude': -7.315,
         'longitude': 109.224,
-        'image_url': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Sate Kelinci 10 Tusuk + Lontong', 'price': 28000}, {'name': 'Tempe Mendoan Jumbo', 'price': 12000}, {'name': 'Wedang Jahe Susu Ronde', 'price': 10000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Sate Kelinci 10 Tusuk + Lontong', 'price': 28000},
+          {'name': 'Tempe Mendoan Jumbo', 'price': 12000},
+          {'name': 'Wedang Jahe Susu Ronde', 'price': 10000},
+        ],
       },
       {
         'id': 'btr-4',
@@ -287,13 +364,20 @@ class ApiService {
         'rating': 4.7,
         'review_count': 950,
         'facilities': ['Outdoor', 'Parkir', 'Mushola', 'Romantis', 'WiFi'],
-        'address': 'Kawasan Wisata Hutan Pinus Limpakuwus, Sumbang - Baturraden',
-        'description': 'Sensasi bersantap di bawah rimbun pohon pinus raksasa dengan udara sejuk pegunungan, menu masakan hangat khas dataran tinggi, dan racikan kopi arabika.',
+        'address':
+            'Kawasan Wisata Hutan Pinus Limpakuwus, Sumbang - Baturraden',
+        'description':
+            'Sensasi bersantap di bawah rimbun pohon pinus raksasa dengan udara sejuk pegunungan, menu masakan hangat khas dataran tinggi, dan racikan kopi arabika.',
         'open_hours': '08.00 - 18.00 WIB',
         'latitude': -7.319,
         'longitude': 109.252,
-        'image_url': 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Sup Buntut Rempah Hangat', 'price': 48000}, {'name': 'Kopi Pinus Arabika', 'price': 22000}, {'name': 'Pisang Bakar Keju Aren', 'price': 18000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Sup Buntut Rempah Hangat', 'price': 48000},
+          {'name': 'Kopi Pinus Arabika', 'price': 22000},
+          {'name': 'Pisang Bakar Keju Aren', 'price': 18000},
+        ],
       },
       {
         'id': 'btr-5',
@@ -307,12 +391,18 @@ class ApiService {
         'review_count': 880,
         'facilities': ['WiFi', 'Outdoor', 'Colokan', 'Romantis', 'Musik'],
         'address': 'Jl. Wisata Curug Bayan, Ketenger, Baturraden',
-        'description': 'Kedai kopi berkonsep rustic outdoor dekat aliran Curug Bayan yang dingin dan jernih, menikmati hangatnya kopi arabika Gunung Slamet diiringi suara riak air terjun.',
+        'description':
+            'Kedai kopi berkonsep rustic outdoor dekat aliran Curug Bayan yang dingin dan jernih, menikmati hangatnya kopi arabika Gunung Slamet diiringi suara riak air terjun.',
         'open_hours': '10.00 - 22.00 WIB',
         'latitude': -7.327,
         'longitude': 109.221,
-        'image_url': 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Kopi Arabika Slamet V60', 'price': 20000}, {'name': 'Singkong Goreng Sambal Roa', 'price': 15000}, {'name': 'Cireng Salju Bumbu Rujak', 'price': 14000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Kopi Arabika Slamet V60', 'price': 20000},
+          {'name': 'Singkong Goreng Sambal Roa', 'price': 15000},
+          {'name': 'Cireng Salju Bumbu Rujak', 'price': 14000},
+        ],
       },
       {
         'id': 'btr-6',
@@ -326,12 +416,18 @@ class ApiService {
         'review_count': 710,
         'facilities': ['Outdoor', 'Indoor', 'Parkir', 'Mushola', 'Lesehan'],
         'address': 'Kawasan Hutan Agathis Palawi, Baturraden',
-        'description': 'Resto keluarga di tengah teduhnya kanopi pohon damar (Agathis) dengan hidangan khas sunda-jawa, gurame asam manis, dan aneka minuman jahe hangat.',
+        'description':
+            'Resto keluarga di tengah teduhnya kanopi pohon damar (Agathis) dengan hidangan khas sunda-jawa, gurame asam manis, dan aneka minuman jahe hangat.',
         'open_hours': '09.00 - 20.00 WIB',
         'latitude': -7.321,
         'longitude': 109.229,
-        'image_url': 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Gurame Bakar Cobek Agathis', 'price': 58000}, {'name': 'Ayam Kampung Goreng Kremes', 'price': 30000}, {'name': 'Kopi Jahe Susu Palawi', 'price': 14000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Gurame Bakar Cobek Agathis', 'price': 58000},
+          {'name': 'Ayam Kampung Goreng Kremes', 'price': 30000},
+          {'name': 'Kopi Jahe Susu Palawi', 'price': 14000},
+        ],
       },
       {
         'id': 'uns-1',
@@ -344,13 +440,20 @@ class ApiService {
         'rating': 4.7,
         'review_count': 980,
         'facilities': ['Outdoor', 'Parkir', 'Mushola', 'Rumahan'],
-        'address': 'Jl. HR Bunyamin No. 88 (Dekat Kampus Unsoed Grendeng), Purwokerto',
-        'description': 'Warung makan prasmanan khas Banyumasan dengan aneka sayur lodeh, ayam goreng lengkuas, mendoan hangat, dan sambal terasi segar harga mahasiswa.',
+        'address':
+            'Jl. HR Bunyamin No. 88 (Dekat Kampus Unsoed Grendeng), Purwokerto',
+        'description':
+            'Warung makan prasmanan khas Banyumasan dengan aneka sayur lodeh, ayam goreng lengkuas, mendoan hangat, dan sambal terasi segar harga mahasiswa.',
         'open_hours': '07.00 - 21.00 WIB',
         'latitude': -7.4085,
         'longitude': 109.245,
-        'image_url': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Paket Nasi Sayur + Ayam', 'price': 18000}, {'name': 'Mendoan Purwokerto (3 pcs)', 'price': 9000}, {'name': 'Es Jeruk Peras Segar', 'price': 5000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Paket Nasi Sayur + Ayam', 'price': 18000},
+          {'name': 'Mendoan Purwokerto (3 pcs)', 'price': 9000},
+          {'name': 'Es Jeruk Peras Segar', 'price': 5000},
+        ],
       },
       {
         'id': 'uns-2',
@@ -363,13 +466,20 @@ class ApiService {
         'rating': 4.8,
         'review_count': 2100,
         'facilities': ['AC', 'WiFi', 'Parkir', 'Indoor', 'Outdoor', 'Mushola'],
-        'address': 'Jl. Prof. Dr. HR Bunyamin No. 9, Pabuaran, Purwokerto Utara',
-        'description': 'Restoran keluarga & casual dining modern paling representatif di Purwokerto dengan aneka menu nusantara, chinese food, dan western dalam suasana elegan.',
+        'address':
+            'Jl. Prof. Dr. HR Bunyamin No. 9, Pabuaran, Purwokerto Utara',
+        'description':
+            'Restoran keluarga & casual dining modern paling representatif di Purwokerto dengan aneka menu nusantara, chinese food, dan western dalam suasana elegan.',
         'open_hours': '10.00 - 22.00 WIB',
         'latitude': -7.404,
         'longitude': 109.243,
-        'image_url': 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Gurame Bakar Madu Pedas', 'price': 65000}, {'name': 'Nasi Goreng Table Nine', 'price': 38000}, {'name': 'Rib Eye Steak Australian', 'price': 98000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Gurame Bakar Madu Pedas', 'price': 65000},
+          {'name': 'Nasi Goreng Table Nine', 'price': 38000},
+          {'name': 'Rib Eye Steak Australian', 'price': 98000},
+        ],
       },
       {
         'id': 'uns-3',
@@ -383,12 +493,18 @@ class ApiService {
         'review_count': 670,
         'facilities': ['WiFi', 'Outdoor', 'Colokan', 'Musik'],
         'address': 'Jl. Suparno No. 34, Karangwangkal, Purwokerto Utara',
-        'description': 'Tongkrongan anak muda dengan sajian serabi tradisional Jawa yang dimodernisasi berbagai topping lumer seperti keju mozzarella, cokelat nutella, dan oreo.',
+        'description':
+            'Tongkrongan anak muda dengan sajian serabi tradisional Jawa yang dimodernisasi berbagai topping lumer seperti keju mozzarella, cokelat nutella, dan oreo.',
         'open_hours': '15.00 - 23.30 WIB',
         'latitude': -7.401,
         'longitude': 109.253,
-        'image_url': 'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Serabi Cokelat Keju Lumer', 'price': 12000}, {'name': 'Serabi Telur Asin Pedas', 'price': 14000}, {'name': 'Es Cokelat Klasik', 'price': 10000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Serabi Cokelat Keju Lumer', 'price': 12000},
+          {'name': 'Serabi Telur Asin Pedas', 'price': 14000},
+          {'name': 'Es Cokelat Klasik', 'price': 10000},
+        ],
       },
       {
         'id': 'skr-1',
@@ -402,12 +518,18 @@ class ApiService {
         'review_count': 2300,
         'facilities': ['Parkir', 'Mushola', 'Outdoor', 'Indoor'],
         'address': 'Jl. Raya Bank Jateng No. 15, Sokaraja, Banyumas',
-        'description': 'Soto khas Sokaraja paling legendaris dengan kuah kaldu sapi kental berpadu sambal kacang gurih serta ketupat dan kerupuk cantir merah khas.',
+        'description':
+            'Soto khas Sokaraja paling legendaris dengan kuah kaldu sapi kental berpadu sambal kacang gurih serta ketupat dan kerupuk cantir merah khas.',
         'open_hours': '08.00 - 20.30 WIB',
         'latitude': -7.4612,
         'longitude': 109.2789,
-        'image_url': 'https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Soto Daging Sapi Komplit', 'price': 28000}, {'name': 'Soto Ayam Kampung', 'price': 23000}, {'name': 'Tempe Mendoan Sokaraja', 'price': 10000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Soto Daging Sapi Komplit', 'price': 28000},
+          {'name': 'Soto Ayam Kampung', 'price': 23000},
+          {'name': 'Tempe Mendoan Sokaraja', 'price': 10000},
+        ],
       },
       {
         'id': 'skr-2',
@@ -421,12 +543,18 @@ class ApiService {
         'review_count': 3200,
         'facilities': ['Parkir', 'AC', 'Indoor'],
         'address': 'Jl. Jend. Sudirman No. 151, Sokaraja Tengah',
-        'description': 'Pusat oleh-oleh dan kuliner legendaris paling ternama di Banyumas sejak 1918. Getuk singkong manis legit dibalut gula kelapa murni yang renyah di luar dan lumer di dalam.',
+        'description':
+            'Pusat oleh-oleh dan kuliner legendaris paling ternama di Banyumas sejak 1918. Getuk singkong manis legit dibalut gula kelapa murni yang renyah di luar dan lumer di dalam.',
         'open_hours': '07.00 - 21.30 WIB',
         'latitude': -7.458,
         'longitude': 109.274,
-        'image_url': 'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Getuk Goreng Original 1 Besek', 'price': 25000}, {'name': 'Getuk Goreng Aneka Rasa', 'price': 28000}, {'name': 'Nopia Khas Banyumas', 'price': 15000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Getuk Goreng Original 1 Besek', 'price': 25000},
+          {'name': 'Getuk Goreng Aneka Rasa', 'price': 28000},
+          {'name': 'Nopia Khas Banyumas', 'price': 15000},
+        ],
       },
       {
         'id': 'skr-3',
@@ -440,12 +568,18 @@ class ApiService {
         'review_count': 1400,
         'facilities': ['Parkir', 'Outdoor', 'Indoor', 'Mushola'],
         'address': 'Jl. Jend. Sudirman No. 42, Sokaraja Kidul',
-        'description': 'Varian soto Sokaraja istimewa dengan bumbu kecik rahasia turun-temurun, pilihan daging sapi lembut atau babat iso, disiram sambal kacang kental beraroma rempah.',
+        'description':
+            'Varian soto Sokaraja istimewa dengan bumbu kecik rahasia turun-temurun, pilihan daging sapi lembut atau babat iso, disiram sambal kacang kental beraroma rempah.',
         'open_hours': '08.00 - 20.00 WIB',
         'latitude': -7.4635,
         'longitude': 109.2805,
-        'image_url': 'https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Soto Kecik Daging Sapi', 'price': 26000}, {'name': 'Soto Campur Babat Daging', 'price': 29000}, {'name': 'Kerupuk Cantir Renyah', 'price': 5000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Soto Kecik Daging Sapi', 'price': 26000},
+          {'name': 'Soto Campur Babat Daging', 'price': 29000},
+          {'name': 'Kerupuk Cantir Renyah', 'price': 5000},
+        ],
       },
       {
         'id': 'tim-1',
@@ -459,12 +593,18 @@ class ApiService {
         'review_count': 890,
         'facilities': ['Parkir', 'Outdoor', 'Indoor', 'Mushola', 'Romantis'],
         'address': 'Jl. Sunan Bonang No. 8, Arcawinangun, Purwokerto Timur',
-        'description': 'Resto berarsitektur rumah Joglo Jawa kuno dengan suasana teduh alami, menyajikan masakan tradisional jawa timuran & banyumasan serta aneka kopi tubruk.',
+        'description':
+            'Resto berarsitektur rumah Joglo Jawa kuno dengan suasana teduh alami, menyajikan masakan tradisional jawa timuran & banyumasan serta aneka kopi tubruk.',
         'open_hours': '09.30 - 21.30 WIB',
         'latitude': -7.416,
         'longitude': 109.262,
-        'image_url': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Nasi Liwet Ayam Suwir Komplit', 'price': 28000}, {'name': 'Rawon Daging Djoeglo', 'price': 32000}, {'name': 'Mendoan Krispi Cabai Rawit', 'price': 12000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Nasi Liwet Ayam Suwir Komplit', 'price': 28000},
+          {'name': 'Rawon Daging Djoeglo', 'price': 32000},
+          {'name': 'Mendoan Krispi Cabai Rawit', 'price': 12000},
+        ],
       },
       {
         'id': 'tim-2',
@@ -478,12 +618,18 @@ class ApiService {
         'review_count': 510,
         'facilities': ['WiFi', 'Outdoor', 'Colokan', 'Mushola'],
         'address': 'Jl. Raya Ledug, Kembaran (Dekat Kampus UMP)',
-        'description': 'Tempat ngopi syahdu di perbatasan timur Purwokerto dengan angin sejuk persawahan, favorit mahasiswa UMP untuk diskusi kelompok dan menikmati senja.',
+        'description':
+            'Tempat ngopi syahdu di perbatasan timur Purwokerto dengan angin sejuk persawahan, favorit mahasiswa UMP untuk diskusi kelompok dan menikmati senja.',
         'open_hours': '13.00 - 23.00 WIB',
         'latitude': -7.4175,
         'longitude': 109.2745,
-        'image_url': 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Kopi Susu Sadarwana', 'price': 16000}, {'name': 'Tahu Gejrot Banyumas', 'price': 12000}, {'name': 'Tempe Mendoan Hangat', 'price': 10000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Kopi Susu Sadarwana', 'price': 16000},
+          {'name': 'Tahu Gejrot Banyumas', 'price': 12000},
+          {'name': 'Tempe Mendoan Hangat', 'price': 10000},
+        ],
       },
       {
         'id': 'tim-3',
@@ -497,12 +643,18 @@ class ApiService {
         'review_count': 730,
         'facilities': ['Parkir', 'Outdoor', 'Mushola', 'Lesehan'],
         'address': 'Jl. Raya Sumbang No. 17, Sumbang, Banyumas',
-        'description': 'Warung lesehan keluarga di kawasan Sumbang dengan kolam ikan asri, sajian gurame bakar kecap pedas, nila goreng renyah, dan lalapan segar daun kemangi.',
+        'description':
+            'Warung lesehan keluarga di kawasan Sumbang dengan kolam ikan asri, sajian gurame bakar kecap pedas, nila goreng renyah, dan lalapan segar daun kemangi.',
         'open_hours': '10.00 - 21.00 WIB',
         'latitude': -7.382,
         'longitude': 109.268,
-        'image_url': 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Gurame Bakar Madu Pedas', 'price': 52000}, {'name': 'Nila Goreng Terbang', 'price': 28000}, {'name': 'Cah Kangkung Terasi', 'price': 12000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Gurame Bakar Madu Pedas', 'price': 52000},
+          {'name': 'Nila Goreng Terbang', 'price': 28000},
+          {'name': 'Cah Kangkung Terasi', 'price': 12000},
+        ],
       },
       {
         'id': 'brt-1',
@@ -516,12 +668,18 @@ class ApiService {
         'review_count': 530,
         'facilities': ['AC', 'WiFi', 'Colokan', 'Indoor', 'Parkir'],
         'address': 'Jl. Kober No. 12 (Dekat Pintu Keluar Stasiun Purwokerto)',
-        'description': 'Cafe strategis berkonsep heritage modern dekat Stasiun Purwokerto, tempat singgah paling nyaman sebelum naik kereta atau setelah tiba di kota Purwokerto.',
+        'description':
+            'Cafe strategis berkonsep heritage modern dekat Stasiun Purwokerto, tempat singgah paling nyaman sebelum naik kereta atau setelah tiba di kota Purwokerto.',
         'open_hours': '09.00 - 23.00 WIB',
         'latitude': -7.418,
         'longitude': 109.219,
-        'image_url': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'DJava Signature Latte', 'price': 25000}, {'name': 'Chicken Schnitzel', 'price': 34000}, {'name': 'Singkong Keju Salju', 'price': 16000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'DJava Signature Latte', 'price': 25000},
+          {'name': 'Chicken Schnitzel', 'price': 34000},
+          {'name': 'Singkong Keju Salju', 'price': 16000},
+        ],
       },
       {
         'id': 'brt-2',
@@ -533,14 +691,27 @@ class ApiService {
         'avg_price': 45000,
         'rating': 4.7,
         'review_count': 2450,
-        'facilities': ['Parkir', 'AC', 'Mushola', 'Outdoor', 'Indoor', 'Lesehan'],
+        'facilities': [
+          'Parkir',
+          'AC',
+          'Mushola',
+          'Outdoor',
+          'Indoor',
+          'Lesehan',
+        ],
         'address': 'Jl. Gerilya Barat No. 8, Tanjung, Purwokerto Selatan',
-        'description': 'Restoran keluarga dengan taman asri, kolam ikan, dan saung lesehan. Spesialis gurame terbang bumbu cobek, ayam bakar taliwang, dan aneka tumisan lezat.',
+        'description':
+            'Restoran keluarga dengan taman asri, kolam ikan, dan saung lesehan. Spesialis gurame terbang bumbu cobek, ayam bakar taliwang, dan aneka tumisan lezat.',
         'open_hours': '08.00 - 22.00 WIB',
         'latitude': -7.4385,
         'longitude': 109.227,
-        'image_url': 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-        'menu_highlights': [{'name': 'Gurame Terbang Sambal Cobek', 'price': 68000}, {'name': 'Ayam Bakar Bumbu Rujak', 'price': 32000}, {'name': 'Es Teler Pringsewu', 'price': 18000}],
+        'image_url':
+            'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+        'menu_highlights': [
+          {'name': 'Gurame Terbang Sambal Cobek', 'price': 68000},
+          {'name': 'Ayam Bakar Bumbu Rujak', 'price': 32000},
+          {'name': 'Es Teler Pringsewu', 'price': 18000},
+        ],
       },
     ];
 

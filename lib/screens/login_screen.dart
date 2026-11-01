@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import '../config/api_config.dart';
 import '../services/auth_service.dart';
 import '../services/preference_service.dart';
 import '../theme/app_theme.dart';
@@ -141,278 +144,159 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ===========================================================
-  // 3. SSO: MASUK DENGAN GOOGLE (MODAL PIHAK KETIGA RESMI)
+  // 3. SSO: MASUK DENGAN GOOGLE (SUPABASE OAUTH ASLI)
   // ===========================================================
   Future<void> _handleGoogleLogin() async {
-    // Buka BottomSheet Akun Google resmi
-    final selectedAccount = await showModalBottomSheet<Map<String, String>>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+    setState(() => _isLoading = true);
 
-                // Google Header
-                Row(
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'G',
-                        style: TextStyle(
-                          color: Color(0xFF4285F4),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'Pilih Akun Google',
-                      style: TextStyle(
-                        color: Color(0xFF1F2937),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Padding(
-                  padding: EdgeInsets.only(left: 38),
-                  child: Text(
-                    'untuk melanjutkan ke MAMPIR',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                const SizedBox(height: 8),
+    final oauthUrl =
+        '${ApiConfig.supabaseUrl}/auth/v1/authorize?provider=google';
 
-                // Pilihan Akun 1: Yusuf
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFF4285F4),
-                    child: const Text(
-                      'Y',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  title: const Text(
-                    'Yusuf Fikri Safiyulloh',
-                    style: TextStyle(
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'yusuffikrisafiyulloh@gmail.com',
-                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
-                  ),
-                  onTap: () {
-                    Navigator.pop(ctx, {
-                      'name': 'Yusuf Fikri Safiyulloh',
-                      'email': 'yusuffikrisafiyulloh@gmail.com',
-                    });
-                  },
-                ),
+    try {
+      // Periksa status provider Google di Supabase
+      final checkRes = await http.get(Uri.parse(oauthUrl));
+      if (checkRes.statusCode == 400 &&
+          checkRes.body.contains('provider is not enabled')) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        _showGoogleProviderNoticeDialog();
+        return;
+      }
 
-                // Pilihan Akun 2: Asep
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFFEA4335),
-                    child: const Text(
-                      'A',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  title: const Text(
-                    'Asep Hendra',
-                    style: TextStyle(
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'asep.mampir@gmail.com',
-                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
-                  ),
-                  onTap: () {
-                    Navigator.pop(ctx, {
-                      'name': 'Asep Hendra',
-                      'email': 'asep.mampir@gmail.com',
-                    });
-                  },
-                ),
-
-                // Pilihan Akun 3: Tambah Akun Lain
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.grey.shade200,
-                    child: const Icon(
-                      Icons.person_add_alt_1_rounded,
-                      color: Color(0xFF4B5563),
-                      size: 20,
-                    ),
-                  ),
-                  title: const Text(
-                    'Gunakan Akun Google Lain',
-                    style: TextStyle(
-                      color: Color(0xFF1F2937),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final customAccount = await _showCustomGoogleAccountDialog();
-                    if (customAccount != null && mounted) {
-                      _processGoogleLogin(customAccount['name']!, customAccount['email']!);
-                    }
-                  },
-                ),
-
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                const SizedBox(height: 12),
-
-                // Disclaimer Resmi Google
-                const Text(
-                  'Untuk melanjutkan, Google akan membagikan nama, alamat email, dan foto profil Anda dengan MAMPIR.',
-                  style: TextStyle(
-                    color: Color(0xFF9CA3AF),
-                    fontSize: 11,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
+      final uri = Uri.parse(oauthUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(
+          Uri.parse(oauthUrl),
+          mode: LaunchMode.externalApplication,
         );
-      },
-    );
-
-    if (selectedAccount != null && mounted) {
-      await _processGoogleLogin(selectedAccount['name']!, selectedAccount['email']!);
+      } catch (err) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal membuka alur masuk Google: $err'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _processGoogleLogin(String name, String email) async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    await _prefService.login(
-      name: name,
-      email: email,
-      isGuest: false,
-    );
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Berhasil masuk sebagai $name via Google! ✨',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green.shade700,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
-    );
-  }
-
-  Future<Map<String, String>?> _showCustomGoogleAccountDialog() async {
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
-    return showDialog<Map<String, String>>(
+  void _showGoogleProviderNoticeDialog() {
+    final colors = AppTheme.colors(context);
+    showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        backgroundColor: colors.surfaceNavy,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: colors.borderNavy),
+        ),
+        title: Row(
           children: [
-            Text(
-              'G',
-              style: TextStyle(
-                color: Color(0xFF4285F4),
-                fontWeight: FontWeight.w900,
-                fontSize: 22,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'G',
+                style: TextStyle(
+                  color: Color(0xFF4285F4),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
+                ),
               ),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Text(
-              'Akun Google',
-              style: TextStyle(color: Color(0xFF1F2937), fontSize: 17, fontWeight: FontWeight.bold),
+              'Google Sign-In Supabase',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: nameController,
-              style: const TextStyle(color: Color(0xFF1F2937)),
-              decoration: const InputDecoration(
-                labelText: 'Nama Lengkap',
-                hintText: 'Contoh: Asep Mampir',
+            Text(
+              'Alur Google SSO menghubungkan aplikasi ke akun Google resmi pengguna via Supabase Auth.',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 13,
+                height: 1.4,
               ),
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Color(0xFF1F2937)),
-              decoration: const InputDecoration(
-                labelText: 'Email Google (@gmail.com)',
-                hintText: 'nama@gmail.com',
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.cardNavy,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.borderNavy),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: AppTheme.orange,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Status Provider:',
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Provider Google belum diaktifkan di dashboard Supabase proyek kamu (vdqdithxujxvzyybjtpn).',
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Cara Mengaktifkan di Dashboard Supabase:',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '1. Buka Supabase Dashboard > Authentication > Providers > Google.\n'
+              '2. Masukkan Client ID & Client Secret dari Google Cloud Console.\n'
+              '3. Klik Simpan. Setelah aktif, Google SSO akan langsung membuka pemilih akun Google resmi.',
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 12,
+                height: 1.4,
               ),
             ),
           ],
@@ -420,20 +304,25 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: const Text('Tutup', style: TextStyle(color: AppTheme.gold)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4285F4),
             ),
-            onPressed: () {
-              final email = emailController.text.trim();
-              var name = nameController.text.trim();
-              if (email.isEmpty || !email.contains('@')) return;
-              if (name.isEmpty) name = email.split('@').first;
-              Navigator.pop(ctx, {'name': name, 'email': email});
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final url = Uri.parse(
+                'https://supabase.com/dashboard/project/vdqdithxujxvzyybjtpn/auth/providers',
+              );
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
             },
-            child: const Text('Lanjutkan', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Buka Dashboard',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -451,11 +340,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final guestName = PreferenceService.formatGuestName(region);
     final guestEmail = PreferenceService.formatGuestEmail(region);
 
-    await _prefService.login(
-      name: guestName,
-      email: guestEmail,
-      isGuest: true,
-    );
+    await _prefService.login(name: guestName, email: guestEmail, isGuest: true);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -485,10 +370,16 @@ class _LoginScreenState extends State<LoginScreen> {
             SnackBar(
               content: const Row(
                 children: [
-                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text('Kata sandi berhasil diperbarui! Silakan tekan tombol Masuk.'),
+                    child: Text(
+                      'Kata sandi berhasil diperbarui! Silakan tekan tombol Masuk.',
+                    ),
                   ),
                 ],
               ),
@@ -512,7 +403,10 @@ class _LoginScreenState extends State<LoginScreen> {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -584,9 +478,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => setState(() => _isRegisterMode = false),
+                                onTap: () =>
+                                    setState(() => _isRegisterMode = false),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: !_isRegisterMode
                                         ? AppTheme.orange
@@ -609,9 +506,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => setState(() => _isRegisterMode = true),
+                                onTap: () =>
+                                    setState(() => _isRegisterMode = true),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: _isRegisterMode
                                         ? AppTheme.orange
@@ -690,7 +590,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             size: 20,
                           ),
                           onPressed: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
+                            setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            );
                           },
                         ),
                         validator: (val) {
@@ -722,8 +624,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               size: 20,
                             ),
                             onPressed: () {
-                              setState(() => _obscureConfirmPassword =
-                                  !_obscureConfirmPassword);
+                              setState(
+                                () => _obscureConfirmPassword =
+                                    !_obscureConfirmPassword,
+                              );
                             },
                           ),
                           validator: (val) {
@@ -749,7 +653,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: _showForgotPasswordDialog,
                             child: const Text(
                               'Lupa Kata Sandi?',
-                              style: TextStyle(color: AppTheme.gold, fontSize: 12),
+                              style: TextStyle(
+                                color: AppTheme.gold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
@@ -771,7 +678,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           onPressed: _isLoading
                               ? null
-                              : (_isRegisterMode ? _handleRegister : _handleLogin),
+                              : (_isRegisterMode
+                                    ? _handleRegister
+                                    : _handleLogin),
                           child: _isLoading
                               ? const SizedBox(
                                   width: 22,
@@ -872,8 +781,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextButton.styleFrom(
                             foregroundColor: AppTheme.textSecondary,
                           ),
-                          icon: const Icon(Icons.person_pin_circle_outlined,
-                              color: AppTheme.gold, size: 18),
+                          icon: const Icon(
+                            Icons.person_pin_circle_outlined,
+                            color: AppTheme.gold,
+                            size: 18,
+                          ),
                           label: const Text(
                             'Masuk Sementara sebagai Tamu',
                             style: TextStyle(
@@ -932,8 +844,10 @@ class _LoginScreenState extends State<LoginScreen> {
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: colors.cardNavy,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: colors.borderNavy),
@@ -964,10 +878,7 @@ class _ForgotPasswordDialog extends StatefulWidget {
   final AuthService authService;
   final void Function(String email, String newPassword)? onSuccess;
 
-  const _ForgotPasswordDialog({
-    required this.authService,
-    this.onSuccess,
-  });
+  const _ForgotPasswordDialog({required this.authService, this.onSuccess});
 
   @override
   State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
@@ -1022,10 +933,13 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result.message ??
-            (result.success ? 'Kode OTP dikirim!' : 'Gagal mengirim OTP.')),
-        backgroundColor:
-            result.success ? Colors.green.shade700 : Colors.redAccent,
+        content: Text(
+          result.message ??
+              (result.success ? 'Kode OTP dikirim!' : 'Gagal mengirim OTP.'),
+        ),
+        backgroundColor: result.success
+            ? Colors.green.shade700
+            : Colors.redAccent,
       ),
     );
   }
@@ -1075,8 +989,9 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(result.message ?? ''),
-        backgroundColor:
-            result.success ? Colors.green.shade700 : Colors.redAccent,
+        backgroundColor: result.success
+            ? Colors.green.shade700
+            : Colors.redAccent,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -1095,7 +1010,11 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Row(
         children: [
-          const Icon(Icons.lock_reset_rounded, color: AppTheme.orange, size: 24),
+          const Icon(
+            Icons.lock_reset_rounded,
+            color: AppTheme.orange,
+            size: 24,
+          ),
           const SizedBox(width: 8),
           Text(
             _step == 1 ? 'Lupa Kata Sandi?' : 'Reset Kata Sandi',
@@ -1116,9 +1035,13 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.orange,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          onPressed: _isLoading ? null : (_step == 1 ? _sendOtp : _verifyAndReset),
+          onPressed: _isLoading
+              ? null
+              : (_step == 1 ? _sendOtp : _verifyAndReset),
           child: _isLoading
               ? const SizedBox(
                   width: 18,
@@ -1130,7 +1053,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                 )
               : Text(
                   _step == 1 ? 'Kirim Kode' : 'Reset Sandi',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
         ),
       ],
@@ -1158,8 +1084,11 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           decoration: InputDecoration(
             hintText: 'nama@email.com',
             hintStyle: TextStyle(color: colors.textMuted, fontSize: 13),
-            prefixIcon:
-                const Icon(Icons.email_outlined, color: AppTheme.orange, size: 20),
+            prefixIcon: const Icon(
+              Icons.email_outlined,
+              color: AppTheme.orange,
+              size: 20,
+            ),
             filled: true,
             fillColor: colors.cardNavy,
             border: OutlineInputBorder(
@@ -1194,8 +1123,11 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.check_circle_outline,
-                  color: Colors.greenAccent, size: 16),
+              const Icon(
+                Icons.check_circle_outline,
+                color: Colors.greenAccent,
+                size: 16,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1251,15 +1183,26 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.orange,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  icon: const Icon(Icons.paste_rounded, color: Colors.white, size: 15),
+                  icon: const Icon(
+                    Icons.paste_rounded,
+                    color: Colors.white,
+                    size: 15,
+                  ),
                   label: const Text(
                     'Tempel',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   onPressed: () {
                     setState(() {
@@ -1272,17 +1215,24 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           ),
         ],
         const SizedBox(height: 14),
-        Text('Kode OTP',
-            style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600)),
+        Text(
+          'Kode OTP',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: _otpController,
           keyboardType: TextInputType.number,
           maxLength: 8,
-          style: TextStyle(color: colors.textPrimary, fontSize: 18, letterSpacing: 4),
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 18,
+            letterSpacing: 4,
+          ),
           textAlign: TextAlign.center,
           decoration: InputDecoration(
             counterText: '',
@@ -1301,11 +1251,14 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           ),
         ),
         const SizedBox(height: 12),
-        Text('Kata Sandi Baru',
-            style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600)),
+        Text(
+          'Kata Sandi Baru',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: _newPasswordController,
@@ -1337,11 +1290,14 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           ),
         ),
         const SizedBox(height: 10),
-        Text('Konfirmasi Kata Sandi Baru',
-            style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600)),
+        Text(
+          'Konfirmasi Kata Sandi Baru',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: _confirmNewPasswordController,

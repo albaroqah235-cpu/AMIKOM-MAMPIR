@@ -130,7 +130,10 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
               children: [
                 // Header Bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 16.0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -158,7 +161,10 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                 // Daftar Kartu Pilihan Wilayah
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 4.0,
+                    ),
                     physics: const BouncingScrollPhysics(),
                     itemCount: _regionOptions.length,
                     itemBuilder: (context, index) {
@@ -167,20 +173,27 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
 
                       return GestureDetector(
                         onTap: () {
-                          setState(() => _selectedRegion = opt['name'] as String);
+                          setState(
+                            () => _selectedRegion = opt['name'] as String,
+                          );
                         },
                         behavior: HitTestBehavior.opaque,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppTheme.gold.withAlpha(28)
                                 : colors.cardNavy.withAlpha(180),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isSelected ? AppTheme.gold : colors.borderNavy,
+                              color: isSelected
+                                  ? AppTheme.gold
+                                  : colors.borderNavy,
                               width: isSelected ? 1.8 : 1.0,
                             ),
                             boxShadow: isSelected
@@ -205,7 +218,9 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                                 ),
                                 child: Icon(
                                   opt['icon'] as IconData,
-                                  color: isSelected ? Colors.white : AppTheme.gold,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppTheme.gold,
                                   size: 22,
                                 ),
                               ),
@@ -253,7 +268,11 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
                                       : Colors.transparent,
                                 ),
                                 child: isSelected
-                                    ? const Icon(Icons.check, size: 14, color: Colors.black)
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 14,
+                                        color: Colors.black,
+                                      )
                                     : null,
                               ),
                             ],
@@ -330,4 +349,3 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen> {
     );
   }
 }
-

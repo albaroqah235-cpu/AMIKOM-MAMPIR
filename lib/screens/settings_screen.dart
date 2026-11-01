@@ -18,11 +18,7 @@ class SettingsScreen extends StatefulWidget {
   final bool isRootTab;
   final String? currentRegion;
 
-  const SettingsScreen({
-    super.key,
-    this.isRootTab = false,
-    this.currentRegion,
-  });
+  const SettingsScreen({super.key, this.isRootTab = false, this.currentRegion});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -55,7 +51,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final isGuest = await _prefService.isGuest();
-    final region = widget.currentRegion ?? await _prefService.getSelectedRegion();
+    final region =
+        widget.currentRegion ?? await _prefService.getSelectedRegion();
     String name;
     String email;
     final badge = PreferenceService.formatExplorerBadge(region);
@@ -95,8 +92,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surfaceNavy,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Edit Profil Pengguna',
-            style: TextStyle(color: colors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Edit Profil Pengguna',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -147,14 +150,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.orange,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             onPressed: () async {
               final newName = nameCtrl.text.trim();
               final newEmail = emailCtrl.text.trim();
               Navigator.pop(ctx);
               if (newName.isNotEmpty) {
-                await _prefService.updateProfile(name: newName, email: newEmail);
+                await _prefService.updateProfile(
+                  name: newName,
+                  email: newEmail,
+                );
                 if (mounted) {
                   setState(() {
                     _userName = newName;
@@ -181,7 +189,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 24),
             const SizedBox(width: 8),
-            Text('Keluar Akun', style: TextStyle(color: colors.textPrimary, fontSize: 18)),
+            Text(
+              'Keluar Akun',
+              style: TextStyle(color: colors.textPrimary, fontSize: 18),
+            ),
           ],
         ),
         content: Text(
@@ -196,7 +207,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             onPressed: () async {
               Navigator.pop(ctx);
@@ -209,7 +222,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 (route) => false,
               );
             },
-            child: const Text('Keluar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Keluar',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -232,8 +251,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 // Header Bar
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       if (!widget.isRootTab) ...[
@@ -260,7 +281,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     children: [
                       // USER PROFILE CARD
                       _buildUserProfileCard(),
@@ -285,7 +308,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildSettingItem(
                         icon: Icons.location_on_outlined,
                         title: 'Izin Lokasi',
-                        trailingText: _isLocationEnabled ? 'Diizinkan' : 'Ditolak',
+                        trailingText: _isLocationEnabled
+                            ? 'Diizinkan'
+                            : 'Ditolak',
                         onTap: _showLocationSettingsModal,
                       ),
                       _buildDivider(),
@@ -314,13 +339,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         height: 48,
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.redAccent, width: 1.2),
+                            side: const BorderSide(
+                              color: Colors.redAccent,
+                              width: 1.2,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             backgroundColor: Colors.redAccent.withAlpha(25),
                           ),
-                          icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
+                          icon: const Icon(
+                            Icons.logout_rounded,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
                           label: const Text(
                             'Keluar dari Akun',
                             style: TextStyle(
@@ -408,16 +440,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 2),
                 Text(
                   _userEmail,
-                  style: TextStyle(
-                    color: colors.textSecondary,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.gold.withAlpha(30),
                     borderRadius: BorderRadius.circular(10),
@@ -439,7 +471,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Tombol Edit Profil
           if (!_isGuest)
             IconButton(
-              icon: const Icon(Icons.edit_outlined, color: AppTheme.gold, size: 20),
+              icon: const Icon(
+                Icons.edit_outlined,
+                color: AppTheme.gold,
+                size: 20,
+              ),
               tooltip: 'Edit Profil',
               onPressed: _showEditProfileDialog,
             ),
@@ -479,7 +515,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, color: AppTheme.orange, size: 24),
+                      const Icon(
+                        Icons.location_on_rounded,
+                        color: AppTheme.orange,
+                        size: 24,
+                      ),
                       const SizedBox(width: 10),
                       Text(
                         'Pengaturan Izin Lokasi (GPS)',
@@ -494,7 +534,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 12),
                   Text(
                     'MAMPIR membutuhkan izin lokasi agar dapat merekomendasikan kuliner terdekat serta memandu rute perjalanan di Purwokerto, Baturraden, dan Sokaraja.',
-                    style: TextStyle(color: colors.textSecondary, fontSize: 13, height: 1.4),
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -502,11 +546,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     activeThumbColor: AppTheme.orange,
                     activeTrackColor: AppTheme.orange.withAlpha(120),
                     contentPadding: EdgeInsets.zero,
-                    title: Text('Akses Lokasi Perangkat',
-                        style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+                    title: Text(
+                      'Akses Lokasi Perangkat',
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     subtitle: Text(
-                      _isLocationEnabled ? 'GPS aktif untuk Purwokerto & Sekitarnya' : 'Lokasi nonaktif (menggunakan titik pusat kota)',
-                      style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                      _isLocationEnabled
+                          ? 'GPS aktif untuk Purwokerto & Sekitarnya'
+                          : 'Lokasi nonaktif (menggunakan titik pusat kota)',
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 13,
+                      ),
                     ),
                     value: _isLocationEnabled,
                     onChanged: (val) async {
@@ -517,9 +571,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       messenger.showSnackBar(
                         SnackBar(
-                          content: Text(val
-                              ? 'Izin lokasi berhasil diaktifkan'
-                              : 'Izin lokasi dinonaktifkan'),
+                          content: Text(
+                            val
+                                ? 'Izin lokasi berhasil diaktifkan'
+                                : 'Izin lokasi dinonaktifkan',
+                          ),
                           duration: const Duration(seconds: 1),
                         ),
                       );
@@ -538,9 +594,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showThemeSelectorModal() {
     final colors = AppTheme.colors(context);
     final themes = [
-      {'code': 'Gelap', 'title': 'Tema Gelap (Dark)', 'icon': Icons.nightlight_round},
-      {'code': 'Terang', 'title': 'Tema Terang (Light)', 'icon': Icons.wb_sunny_rounded},
-      {'code': 'Sistem', 'title': 'Ikuti Pengaturan Sistem', 'icon': Icons.settings_brightness_rounded},
+      {
+        'code': 'Gelap',
+        'title': 'Tema Gelap (Dark)',
+        'icon': Icons.nightlight_round,
+      },
+      {
+        'code': 'Terang',
+        'title': 'Tema Terang (Light)',
+        'icon': Icons.wb_sunny_rounded,
+      },
+      {
+        'code': 'Sistem',
+        'title': 'Ikuti Pengaturan Sistem',
+        'icon': Icons.settings_brightness_rounded,
+      },
     ];
 
     showModalBottomSheet(
@@ -569,7 +637,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Icon(Icons.palette_rounded, color: AppTheme.orange, size: 24),
+                  const Icon(
+                    Icons.palette_rounded,
+                    color: AppTheme.orange,
+                    size: 24,
+                  ),
                   const SizedBox(width: 10),
                   Text(
                     'Pilih Tema Tampilan',
@@ -589,7 +661,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? (colors.isDark ? AppTheme.cardNavy : const Color(0xFFFFF7ED))
+                        ? (colors.isDark
+                              ? AppTheme.cardNavy
+                              : const Color(0xFFFFF7ED))
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -599,17 +673,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: ListTile(
                     leading: Icon(
                       theme['icon'] as IconData,
-                      color: isSelected ? AppTheme.orange : colors.textSecondary,
+                      color: isSelected
+                          ? AppTheme.orange
+                          : colors.textSecondary,
                     ),
                     title: Text(
                       theme['title'] as String,
                       style: TextStyle(
-                        color: isSelected ? AppTheme.orange : colors.textPrimary,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected
+                            ? AppTheme.orange
+                            : colors.textPrimary,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
                       ),
                     ),
                     trailing: isSelected
-                        ? const Icon(Icons.check_circle_rounded, color: AppTheme.orange)
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppTheme.orange,
+                          )
                         : null,
                     onTap: () async {
                       final messenger = ScaffoldMessenger.of(context);
@@ -694,7 +777,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: colors.isDark ? Colors.white10 : Colors.black.withAlpha(15),
+                color: colors.isDark
+                    ? Colors.white10
+                    : Colors.black.withAlpha(15),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -725,7 +810,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Center(
             child: TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup', style: TextStyle(color: AppTheme.gold, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Tutup',
+                style: TextStyle(
+                  color: AppTheme.gold,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
@@ -766,10 +857,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             )
           : null,
       trailing: Row(
@@ -829,10 +917,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             )
           : null,
       trailing: Switch.adaptive(
@@ -846,10 +931,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildDivider() {
     final colors = AppTheme.colors(context);
-    return Divider(
-      color: colors.borderNavy,
-      height: 1,
-      indent: 58,
-    );
+    return Divider(color: colors.borderNavy, height: 1, indent: 58);
   }
 }

@@ -48,7 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _userBudget = 25000;
   Set<String> _userPreferences = {'WiFi', 'Colokan'};
   Set<String> _favoriteIds = {};
-  String? _selectedCategory; // null = semua, or Makan, Nongkrong, Cafe, Restoran, Lainnya
+  String?
+  _selectedCategory; // null = semua, or Makan, Nongkrong, Cafe, Restoran, Lainnya
 
   // Map state
   PlaceModel? _selectedMapPlace;
@@ -88,7 +89,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (mounted) {
       setState(() {
-        _selectedRegion = region;
+        _selectedRegion = _purwokertoRegions.contains(region)
+            ? region
+            : (_purwokertoRegions.contains('Purwokerto Kota')
+                  ? 'Purwokerto Kota'
+                  : _purwokertoRegions.first);
         _userBudget = budget;
         if (prefs.isNotEmpty) _userPreferences = prefs.toSet();
         _favoriteIds = favs.toSet();
@@ -211,9 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: colors.scaffoldBg,
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.gold),
-            )
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.gold))
           : IndexedStack(
               index: _currentTabIndex,
               children: [
@@ -259,7 +262,9 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(child: _buildNavItem(0, Icons.home_rounded, 'Beranda')),
               Expanded(child: _buildNavItem(1, Icons.search_rounded, 'Cari')),
-              Expanded(child: _buildNavItem(2, Icons.favorite_rounded, 'Favorit')),
+              Expanded(
+                child: _buildNavItem(2, Icons.favorite_rounded, 'Favorit'),
+              ),
               Expanded(child: _buildNavItem(3, Icons.map_outlined, 'Peta')),
               Expanded(child: _buildNavItem(4, Icons.person_rounded, 'Akun')),
             ],
@@ -397,6 +402,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 1. Top Header: Pin Oranye + Region Dropdown + Bell + Setting Icon
   Widget _buildTopHeader() {
     final colors = AppTheme.colors(context);
+    final activeRegion = _purwokertoRegions.contains(_selectedRegion)
+        ? _selectedRegion
+        : _purwokertoRegions.first;
+
     return Row(
       children: [
         // Pin Oranye
@@ -410,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: const Icon(
             Icons.location_on,
             color: AppTheme.orange,
-            size: 22,
+            size: 20,
           ),
         ),
         const SizedBox(width: 8),
@@ -419,17 +428,32 @@ class _HomeScreenState extends State<HomeScreen> {
         Expanded(
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: _selectedRegion,
+              value: activeRegion,
               isDense: true,
               isExpanded: true,
               dropdownColor: colors.surfaceNavy,
-              icon: Icon(Icons.keyboard_arrow_down,
-                  color: colors.textPrimary, size: 20),
-              style: TextStyle(
+              icon: Icon(
+                Icons.keyboard_arrow_down,
                 color: colors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+                size: 20,
               ),
+              selectedItemBuilder: (BuildContext ctx) {
+                return _purwokertoRegions.map((region) {
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      region,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  );
+                }).toList();
+              },
               items: _purwokertoRegions.map((region) {
                 return DropdownMenuItem<String>(
                   value: region,
@@ -439,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     maxLines: 1,
                     style: TextStyle(
                       color: colors.textPrimary,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -452,8 +476,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Lonceng Notifikasi
         IconButton(
-          icon: const Icon(Icons.notifications_none_rounded,
-              color: AppTheme.gold, size: 26),
+          padding: const EdgeInsets.all(6),
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          icon: const Icon(
+            Icons.notifications_none_rounded,
+            color: AppTheme.gold,
+            size: 24,
+          ),
+          tooltip: 'Notifikasi',
           onPressed: () {
             Navigator.push(
               context,
@@ -464,8 +494,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Pengaturan
         IconButton(
-          icon: Icon(Icons.settings_outlined,
-              color: colors.iconColor, size: 24),
+          padding: const EdgeInsets.all(6),
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          icon: Icon(
+            Icons.settings_outlined,
+            color: colors.iconColor,
+            size: 22,
+          ),
+          tooltip: 'Akun & Pengaturan',
           onPressed: () {
             setState(() => _currentTabIndex = 4);
           },
@@ -505,12 +541,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (ctx) => SearchScreen(
                       allPlaces: _allPlaces,
                       autoFocus: true,
+                      initialBudget: _userBudget,
+                      initialCategory: _selectedCategory,
+                      initialRegion: _selectedRegion,
+                      onFilterChanged: (b, c, r) {
+                        if (mounted) {
+                          setState(() {
+                            if (b != null) _userBudget = b;
+                            if (c != null) _selectedCategory = c;
+                            if (r != null) _selectedRegion = r;
+                          });
+                        }
+                      },
                     ),
                   ),
                 );
                 if (mounted) {
-                  final favs = await _prefService.getFavorites();
-                  setState(() => _favoriteIds = favs.toSet());
+                  await _loadPreferencesAndData();
                 }
               },
               behavior: HitTestBehavior.opaque,
@@ -524,13 +571,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          Container(
-            width: 1,
-            height: 24,
-            color: colors.borderNavy,
-          ),
+          Container(width: 1, height: 24, color: colors.borderNavy),
           IconButton(
-            icon: const Icon(Icons.tune_rounded, color: AppTheme.gold, size: 22),
+            icon: const Icon(
+              Icons.tune_rounded,
+              color: AppTheme.gold,
+              size: 22,
+            ),
             onPressed: _openFilterModal,
             tooltip: 'Filter Budget & Preferensi',
           ),
@@ -607,8 +654,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       color: isSelected ? AppTheme.gold : colors.textPrimary,
                       fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                     ),
                   ),
                 ],
@@ -622,7 +670,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 4. Section "Rekomendasi untuk kamu"
   Widget _buildRecommendationSection(
-      PlaceModel? featured, List<RecommendationResult> recs) {
+    PlaceModel? featured,
+    List<RecommendationResult> recs,
+  ) {
     final colors = AppTheme.colors(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,12 +701,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (ctx) => SearchScreen(
                       allPlaces: _allPlaces,
                       showAll: true,
+                      initialBudget: _userBudget,
+                      initialCategory: _selectedCategory,
+                      initialRegion: _selectedRegion,
+                      onFilterChanged: (b, c, r) {
+                        if (mounted) {
+                          setState(() {
+                            if (b != null) _userBudget = b;
+                            if (c != null) _selectedCategory = c;
+                            if (r != null) _selectedRegion = r;
+                          });
+                        }
+                      },
                     ),
                   ),
                 );
                 if (mounted) {
-                  final favs = await _prefService.getFavorites();
-                  setState(() => _favoriteIds = favs.toSet());
+                  await _loadPreferencesAndData();
                 }
               },
               child: const Text(
@@ -724,8 +785,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           fit: BoxFit.cover,
                           errorBuilder: (ctx, err, st) => Container(
                             color: AppTheme.surfaceNavy,
-                            child: const Icon(Icons.restaurant,
-                                color: AppTheme.orange, size: 50),
+                            child: const Icon(
+                              Icons.restaurant,
+                              color: AppTheme.orange,
+                              size: 50,
+                            ),
                           ),
                         ),
 
@@ -773,8 +837,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded,
-                                      color: AppTheme.gold, size: 18),
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: AppTheme.gold,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 3),
                                   Text(
                                     '${featured.rating.toStringAsFixed(1)} (${featured.formattedReviewCount})',
@@ -785,8 +852,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
-                                  const Icon(Icons.location_on,
-                                      color: AppTheme.orange, size: 14),
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: AppTheme.orange,
+                                    size: 14,
+                                  ),
                                   const SizedBox(width: 2),
                                   Text(
                                     featured.formattedDistance(),
@@ -866,12 +936,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (ctx) => SearchScreen(
                       allPlaces: _allPlaces,
                       showAll: true,
+                      initialBudget: _userBudget,
+                      initialCategory: _selectedCategory,
+                      initialRegion: _selectedRegion,
+                      onFilterChanged: (b, c, r) {
+                        if (mounted) {
+                          setState(() {
+                            if (b != null) _userBudget = b;
+                            if (c != null) _selectedCategory = c;
+                            if (r != null) _selectedRegion = r;
+                          });
+                        }
+                      },
                     ),
                   ),
                 );
                 if (mounted) {
-                  final favs = await _prefService.getFavorites();
-                  setState(() => _favoriteIds = favs.toSet());
+                  await _loadPreferencesAndData();
                 }
               },
               child: const Text(
@@ -923,7 +1004,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   border: Border.all(color: colors.borderNavy),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: colors.isDark ? 0.25 : 0.05),
+                      color: Colors.black.withValues(
+                        alpha: colors.isDark ? 0.25 : 0.05,
+                      ),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -934,8 +1017,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // Photo
                     ClipRRect(
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
                       child: Image.network(
                         place.imageUrl,
                         height: 100,
@@ -944,7 +1028,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         errorBuilder: (ctx, err, st) => Container(
                           height: 100,
                           color: colors.searchNavy,
-                          child: const Icon(Icons.store, color: AppTheme.orange),
+                          child: const Icon(
+                            Icons.store,
+                            color: AppTheme.orange,
+                          ),
                         ),
                       ),
                     ),
@@ -979,8 +1066,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(Icons.star_rounded,
-                                  color: AppTheme.gold, size: 14),
+                              const Icon(
+                                Icons.star_rounded,
+                                color: AppTheme.gold,
+                                size: 14,
+                              ),
                               const SizedBox(width: 2),
                               Flexible(
                                 child: Text(
@@ -1021,7 +1111,21 @@ class _HomeScreenState extends State<HomeScreen> {
   // TAB 2: CARI (MENYEDIAKAN SEARCHSCREEN LENGKAP DENGAN RIWAYAT & FILTER)
   // ===========================================================================
   Widget _buildSearchTab() {
-    return SearchScreen(allPlaces: _allPlaces);
+    return SearchScreen(
+      allPlaces: _allPlaces,
+      initialBudget: _userBudget,
+      initialCategory: _selectedCategory,
+      initialRegion: _selectedRegion,
+      onFilterChanged: (b, c, r) {
+        if (mounted) {
+          setState(() {
+            if (b != null) _userBudget = b;
+            if (c != null) _selectedCategory = c;
+            if (r != null) _selectedRegion = r;
+          });
+        }
+      },
+    );
   }
 
   // ===========================================================================
@@ -1036,10 +1140,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final filtered = _selectedFavCategory == 'Semua'
         ? savedPlaces
         : savedPlaces
-            .where((p) => p.category
-                .toLowerCase()
-                .contains(_selectedFavCategory.toLowerCase()))
-            .toList();
+              .where(
+                (p) => p.category.toLowerCase().contains(
+                  _selectedFavCategory.toLowerCase(),
+                ),
+              )
+              .toList();
 
     return Stack(
       children: [
@@ -1052,8 +1158,10 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // Header Favorit
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1080,8 +1188,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.tune_rounded,
-                          color: AppTheme.gold, size: 24),
+                      icon: const Icon(
+                        Icons.tune_rounded,
+                        color: AppTheme.gold,
+                        size: 24,
+                      ),
                       onPressed: _openFilterModal,
                     ),
                   ],
@@ -1101,21 +1212,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Container(
                         margin: const EdgeInsets.only(right: 10),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 8),
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           gradient: isSel ? AppTheme.primaryGradient : null,
                           color: isSel ? null : colors.surfaceNavy,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isSel ? Colors.transparent : colors.borderNavy,
+                            color: isSel
+                                ? Colors.transparent
+                                : colors.borderNavy,
                           ),
                         ),
                         child: Text(
                           cat,
                           style: TextStyle(
                             color: isSel ? Colors.white : colors.textSecondary,
-                            fontWeight:
-                                isSel ? FontWeight.w800 : FontWeight.w600,
+                            fontWeight: isSel
+                                ? FontWeight.w800
+                                : FontWeight.w600,
                             fontSize: 13,
                           ),
                         ),
@@ -1159,7 +1275,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(
                               'Sentuh ikon hati untuk menyimpan tempat makan favoritmu.',
                               style: TextStyle(
-                                  color: colors.textSecondary, fontSize: 13),
+                                color: colors.textSecondary,
+                                fontSize: 13,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -1193,12 +1311,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               decoration: BoxDecoration(
                                 color: colors.cardNavy,
                                 borderRadius: BorderRadius.circular(18),
-                                border:
-                                    Border.all(color: colors.borderNavy),
+                                border: Border.all(color: colors.borderNavy),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(
-                                        alpha: colors.isDark ? 0.25 : 0.05),
+                                      alpha: colors.isDark ? 0.25 : 0.05,
+                                    ),
                                     blurRadius: 6,
                                     offset: const Offset(0, 2),
                                   ),
@@ -1213,13 +1331,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       width: 85,
                                       height: 85,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (ctx, err, st) =>
-                                          Container(
+                                      errorBuilder: (ctx, err, st) => Container(
                                         width: 85,
                                         height: 85,
                                         color: colors.searchNavy,
-                                        child: const Icon(Icons.store,
-                                            color: AppTheme.orange),
+                                        child: const Icon(
+                                          Icons.store,
+                                          color: AppTheme.orange,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1242,8 +1361,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   fontWeight: FontWeight.w800,
                                                 ),
                                                 maxLines: 1,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                             GestureDetector(
@@ -1260,9 +1378,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                         const SizedBox(height: 4),
                                         Row(
                                           children: [
-                                            const Icon(Icons.star_rounded,
-                                                color: AppTheme.gold,
-                                                size: 16),
+                                            const Icon(
+                                              Icons.star_rounded,
+                                              color: AppTheme.gold,
+                                              size: 16,
+                                            ),
                                             const SizedBox(width: 2),
                                             Text(
                                               '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
@@ -1318,7 +1438,10 @@ class _HomeScreenState extends State<HomeScreen> {
         FlutterMap(
           mapController: _mapTabController,
           options: const MapOptions(
-            initialCenter: LatLng(-7.3850, 109.2380), // Poros Purwokerto - Baturraden
+            initialCenter: LatLng(
+              -7.3850,
+              109.2380,
+            ), // Poros Purwokerto - Baturraden
             initialZoom: 12.0,
           ),
           children: [
@@ -1339,7 +1462,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: colors.surfaceNavy,
                             borderRadius: BorderRadius.circular(6),
@@ -1371,8 +1496,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                           child: const Center(
-                            child: Icon(Icons.my_location,
-                                size: 12, color: Colors.white),
+                            child: Icon(
+                              Icons.my_location,
+                              size: 12,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ],
@@ -1432,23 +1560,24 @@ class _HomeScreenState extends State<HomeScreen> {
               border: Border.all(color: colors.borderNavy),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: colors.isDark ? 0.3 : 0.08),
+                  color: Colors.black.withValues(
+                    alpha: colors.isDark ? 0.3 : 0.08,
+                  ),
                   blurRadius: 8,
                 ),
               ],
             ),
             child: Row(
               children: [
-                const Icon(Icons.location_on,
-                    size: 18, color: AppTheme.orange),
+                const Icon(Icons.location_on, size: 18, color: AppTheme.orange),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _isFetchingLocation
                         ? 'Mencari lokasi GPS kamu...'
                         : (_userLocation != null
-                            ? 'Menampilkan ${_allPlaces.length} tempat • GPS Terhubung'
-                            : 'Menampilkan ${_allPlaces.length} tempat di Purwokerto'),
+                              ? 'Menampilkan ${_allPlaces.length} tempat • GPS Terhubung'
+                              : 'Menampilkan ${_allPlaces.length} tempat di Purwokerto'),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -1481,7 +1610,9 @@ class _HomeScreenState extends State<HomeScreen> {
               border: Border.all(color: colors.borderNavy),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: colors.isDark ? 0.35 : 0.1),
+                  color: Colors.black.withValues(
+                    alpha: colors.isDark ? 0.35 : 0.1,
+                  ),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -1497,8 +1628,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: AppTheme.gold,
                       ),
                     )
-                  : const Icon(Icons.my_location_rounded,
-                      color: AppTheme.gold, size: 22),
+                  : const Icon(
+                      Icons.my_location_rounded,
+                      color: AppTheme.gold,
+                      size: 22,
+                    ),
               tooltip: 'Lokasi Saya',
               onPressed: () => _fetchUserGpsLocation(moveMap: true),
             ),
@@ -1519,7 +1653,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 border: Border.all(color: AppTheme.orange),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: colors.isDark ? 0.4 : 0.12),
+                    color: Colors.black.withValues(
+                      alpha: colors.isDark ? 0.4 : 0.12,
+                    ),
                     blurRadius: 14,
                     offset: const Offset(0, 4),
                   ),
@@ -1585,26 +1721,31 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 );
                                 if (mounted) {
-                                  final favs = await _prefService.getFavorites();
+                                  final favs = await _prefService
+                                      .getFavorites();
                                   setState(() => _favoriteIds = favs.toSet());
                                 }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: colors.cardNavy,
                                 foregroundColor: colors.textPrimary,
-                                side: BorderSide(
-                                    color: colors.borderNavy),
+                                side: BorderSide(color: colors.borderNavy),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 minimumSize: Size.zero,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text('Detail',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700)),
+                              child: const Text(
+                                'Detail',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
@@ -1623,16 +1764,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 backgroundColor: AppTheme.orange,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 minimumSize: Size.zero,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text('Rute',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700)),
+                              child: const Text(
+                                'Rute',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -1640,9 +1786,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: colors.textSecondary, size: 20),
-                    onPressed: () =>
-                        setState(() => _selectedMapPlace = null),
+                    icon: Icon(
+                      Icons.close,
+                      color: colors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _selectedMapPlace = null),
                   ),
                 ],
               ),

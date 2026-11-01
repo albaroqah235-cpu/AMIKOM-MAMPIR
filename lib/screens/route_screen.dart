@@ -4,26 +4,23 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/place_model.dart';
+import '../services/google_routes_service.dart';
 import '../theme/app_theme.dart';
 
 /// ============================================================
 /// ROUTE & MAP SCREEN — SESUAI petadanRute_mampir.jpeg
 /// ============================================================
 /// Menampilkan:
-/// 1. Jalur rute interaktif dari Lokasi Pengguna ke Tempat Tujuan
+/// 1. Jalur rute jalan raya resmi (Google Routes API)
 /// 2. Marker titik awal (Lokasi Anda) dan pin maskot tujuan
-/// 3. Estimasi waktu & jarak rute tercepat
+/// 3. Estimasi waktu & jarak rute nyata tercepat
 /// 4. Tombol "Mulai Navigasi" yang terintegrasi dengan Google Maps
 /// ============================================================
 class RouteScreen extends StatefulWidget {
   final PlaceModel place;
   final LatLng? userLocation;
 
-  const RouteScreen({
-    super.key,
-    required this.place,
-    this.userLocation,
-  });
+  const RouteScreen({super.key, required this.place, this.userLocation});
 
   @override
   State<RouteScreen> createState() => _RouteScreenState();
@@ -35,6 +32,9 @@ class _RouteScreenState extends State<RouteScreen> {
   late LatLng _userPos;
   List<LatLng> _routePoints = [];
   bool _isLocating = true;
+  bool _isLoadingRoute = false;
+  String? _realDuration;
+  String? _realDistance;
 
   @override
   void initState() {
@@ -57,17 +57,34 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  void _buildRoute() {
-    setState(() {
-      _routePoints = [
-        _userPos,
-        LatLng(_userPos.latitude + 0.0015, _userPos.longitude + 0.001),
-        LatLng(_userPos.latitude + 0.003, _userPos.longitude + 0.002),
-        LatLng(_userPos.latitude + 0.005, _userPos.longitude + 0.0035),
-        LatLng(_destPos.latitude - 0.001, _destPos.longitude - 0.0005),
-        _destPos,
-      ];
-    });
+  Future<void> _buildRoute() async {
+    if (!mounted) return;
+    setState(() => _isLoadingRoute = true);
+
+    try {
+      final routeService = GoogleRoutesService();
+      final result = await routeService.computeRoute(
+        origin: _userPos,
+        destination: _destPos,
+      );
+
+      if (result != null && mounted) {
+        setState(() {
+          _routePoints = result.points;
+          _realDuration = result.formattedDuration;
+          _realDistance = result.formattedDistance;
+          _isLoadingRoute = false;
+        });
+        return;
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _routePoints = [_userPos, _destPos];
+        _isLoadingRoute = false;
+      });
+    }
   }
 
   Future<void> _fetchUserLocation() async {
@@ -106,7 +123,7 @@ class _RouteScreenState extends State<RouteScreen> {
           _userPos = LatLng(p.latitude, p.longitude);
           _isLocating = false;
         });
-        _buildRoute();
+        await _buildRoute();
         _mapController.move(
           LatLng(
             (_userPos.latitude + _destPos.latitude) / 2,
@@ -128,7 +145,9 @@ class _RouteScreenState extends State<RouteScreen> {
     final lat = widget.place.latitude;
     final lng = widget.place.longitude;
     final navUri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
-    final webUri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+    final webUri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+    );
 
     try {
       if (await canLaunchUrl(navUri)) {
@@ -170,7 +189,10 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
-    final distKm = widget.place.distanceInKmFrom(_userPos.latitude, _userPos.longitude);
+    final distKm = widget.place.distanceInKmFrom(
+      _userPos.latitude,
+      _userPos.longitude,
+    );
     final int estMinutes = (distKm * 3.5 + 2).round().clamp(3, 45);
 
     return Scaffold(
@@ -217,7 +239,9 @@ class _RouteScreenState extends State<RouteScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.surfaceNavy,
                             borderRadius: BorderRadius.circular(6),
@@ -263,7 +287,9 @@ class _RouteScreenState extends State<RouteScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.surfaceNavy,
                             borderRadius: BorderRadius.circular(6),
@@ -331,7 +357,9 @@ class _RouteScreenState extends State<RouteScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: colors.surfaceNavy.withValues(alpha: 0.9),
+                        backgroundColor: colors.surfaceNavy.withValues(
+                          alpha: 0.9,
+                        ),
                         child: IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: Icon(Icons.arrow_back, color: colors.iconColor),
@@ -347,7 +375,9 @@ class _RouteScreenState extends State<RouteScreen> {
                             border: Border.all(color: colors.borderNavy),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: colors.isDark ? 0.3 : 0.08),
+                                color: Colors.black.withValues(
+                                  alpha: colors.isDark ? 0.3 : 0.08,
+                                ),
                                 blurRadius: 10,
                               ),
                             ],
@@ -368,7 +398,9 @@ class _RouteScreenState extends State<RouteScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _isLocating ? 'Mencari GPS...' : 'Lokasi Anda',
+                                    _isLocating
+                                        ? 'Mencari GPS...'
+                                        : 'Lokasi Anda',
                                     style: TextStyle(
                                       color: colors.textPrimary,
                                       fontSize: 14,
@@ -443,15 +475,9 @@ class _RouteScreenState extends State<RouteScreen> {
                   onTap: _recenter,
                 ),
                 const SizedBox(height: 8),
-                _buildMapControlBtn(
-                  icon: Icons.add,
-                  onTap: _zoomIn,
-                ),
+                _buildMapControlBtn(icon: Icons.add, onTap: _zoomIn),
                 const SizedBox(height: 8),
-                _buildMapControlBtn(
-                  icon: Icons.remove,
-                  onTap: _zoomOut,
-                ),
+                _buildMapControlBtn(icon: Icons.remove, onTap: _zoomOut),
               ],
             ),
           ),
@@ -469,7 +495,9 @@ class _RouteScreenState extends State<RouteScreen> {
                 border: Border.all(color: colors.borderNavy),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: colors.isDark ? 0.5 : 0.1),
+                    color: Colors.black.withValues(
+                      alpha: colors.isDark ? 0.5 : 0.1,
+                    ),
                     blurRadius: 18,
                     offset: const Offset(0, 4),
                   ),
@@ -493,13 +521,28 @@ class _RouteScreenState extends State<RouteScreen> {
                   ),
 
                   // Estimasi Rute
-                  Text(
-                    'Rute Tercepat • $estMinutes mnt (${widget.place.formattedDistance()})',
-                    style: const TextStyle(
-                      color: AppTheme.gold,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Rute Tercepat • ${_realDuration ?? '$estMinutes mnt'} (${_realDistance ?? widget.place.formattedDistance()})',
+                        style: const TextStyle(
+                          color: AppTheme.gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      if (_isLoadingRoute) ...[
+                        const SizedBox(width: 8),
+                        const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.gold,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 10),
 
@@ -517,7 +560,10 @@ class _RouteScreenState extends State<RouteScreen> {
                             width: 60,
                             height: 60,
                             color: colors.searchNavy,
-                            child: const Icon(Icons.store, color: AppTheme.orange),
+                            child: const Icon(
+                              Icons.store,
+                              color: AppTheme.orange,
+                            ),
                           ),
                         ),
                       ),
@@ -539,8 +585,11 @@ class _RouteScreenState extends State<RouteScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.star_rounded,
-                                    size: 16, color: AppTheme.gold),
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 16,
+                                  color: AppTheme.gold,
+                                ),
                                 const SizedBox(width: 2),
                                 Text(
                                   '${widget.place.rating.toStringAsFixed(1)} (${widget.place.formattedReviewCount})',
@@ -584,7 +633,10 @@ class _RouteScreenState extends State<RouteScreen> {
                     ),
                     child: ElevatedButton.icon(
                       onPressed: _launchGoogleMaps,
-                      icon: const Icon(Icons.near_me_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.near_me_rounded,
+                        color: Colors.white,
+                      ),
                       label: const Text(
                         'Mulai Navigasi',
                         style: TextStyle(

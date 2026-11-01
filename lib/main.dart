@@ -92,10 +92,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _scaleAnimation = Tween<double>(begin: 0.88, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: Curves.easeOutBack,
-      ),
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
     );
 
     _animController.forward();
@@ -170,14 +167,14 @@ class _SplashScreenState extends State<SplashScreen>
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) =>
                                 Image.asset(
-                              'assets/images/app_icon.jpeg',
-                              fit: BoxFit.contain,
-                              errorBuilder: (ctx, err, st) => const Icon(
-                                Icons.restaurant_menu_rounded,
-                                size: 100,
-                                color: AppTheme.orange,
-                              ),
-                            ),
+                                  'assets/images/app_icon.jpeg',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (ctx, err, st) => const Icon(
+                                    Icons.restaurant_menu_rounded,
+                                    size: 100,
+                                    color: AppTheme.orange,
+                                  ),
+                                ),
                           ),
                         ),
                       ),

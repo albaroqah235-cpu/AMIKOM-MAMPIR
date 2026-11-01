@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/place_model.dart';
+import '../services/google_places_service.dart';
 import '../services/preference_service.dart';
 import '../services/recommendation_service.dart';
 import '../theme/app_theme.dart';
@@ -17,6 +18,11 @@ class SearchScreen extends StatefulWidget {
   final String? initialQuery;
   final bool autoFocus;
   final bool showAll;
+  final int? initialBudget;
+  final String? initialCategory;
+  final String? initialRegion;
+  final void Function(int? budget, String? category, String? region)?
+  onFilterChanged;
 
   const SearchScreen({
     super.key,
@@ -24,6 +30,10 @@ class SearchScreen extends StatefulWidget {
     this.initialQuery,
     this.autoFocus = false,
     this.showAll = false,
+    this.initialBudget,
+    this.initialCategory,
+    this.initialRegion,
+    this.onFilterChanged,
   });
 
   @override
@@ -32,12 +42,14 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final PreferenceService _preferenceService = PreferenceService();
+  final GooglePlacesService _placesService = GooglePlacesService();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
   List<String> _history = [];
   List<PlaceModel> _searchResults = [];
   bool _hasSearched = false;
+  bool _isLoadingGooglePlaces = false;
   int _sortOption = 0; // 0: Terdekat, 1: Rating Tertinggi
   LatLng? _userLocation;
 
@@ -46,10 +58,24 @@ class _SearchScreenState extends State<SearchScreen> {
   Set<String> _currentPlaceTypes = {};
   Set<String> _currentPreferences = {'WiFi'};
   Set<String> _favoriteIds = {};
+  String _currentRegion = 'Purwokerto Kota';
 
   @override
   void initState() {
     super.initState();
+
+    if (widget.initialBudget != null) {
+      _currentBudget = widget.initialBudget!;
+    }
+    if (widget.initialRegion != null && widget.initialRegion!.isNotEmpty) {
+      _currentRegion = widget.initialRegion!;
+    }
+    if (widget.initialCategory != null &&
+        widget.initialCategory!.isNotEmpty &&
+        widget.initialCategory != 'Semua') {
+      _currentPlaceTypes = {widget.initialCategory!};
+    }
+
     _loadInitialData();
 
     if (widget.showAll) {
@@ -64,9 +90,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _loadInitialData() async {
     final history = await _preferenceService.getSearchHistory();
-    final budget = await _preferenceService.getBudget();
+    final budget = widget.initialBudget ?? await _preferenceService.getBudget();
     final prefs = await _preferenceService.getUserPreferences();
     final favs = await _preferenceService.getFavorites();
+    final region =
+        widget.initialRegion ?? await _preferenceService.getSelectedRegion();
 
     try {
       Position? pos;
@@ -76,7 +104,8 @@ class _SearchScreenState extends State<SearchScreen> {
         if (perm == LocationPermission.denied) {
           perm = await Geolocator.requestPermission();
         }
-        if (perm == LocationPermission.whileInUse || perm == LocationPermission.always) {
+        if (perm == LocationPermission.whileInUse ||
+            perm == LocationPermission.always) {
           try {
             pos = await Geolocator.getCurrentPosition(
               locationSettings: const LocationSettings(
@@ -99,6 +128,7 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         _history = history;
         _currentBudget = budget;
+        _currentRegion = region;
         if (prefs.isNotEmpty) {
           _currentPreferences = prefs.toSet();
         }
@@ -111,9 +141,11 @@ class _SearchScreenState extends State<SearchScreen> {
     final lat = _userLocation?.latitude ?? -7.4244;
     final lng = _userLocation?.longitude ?? 109.2302;
     if (_sortOption == 0) {
-      list.sort((a, b) => a
-          .distanceInKmFrom(lat, lng)
-          .compareTo(b.distanceInKmFrom(lat, lng)));
+      list.sort(
+        (a, b) => a
+            .distanceInKmFrom(lat, lng)
+            .compareTo(b.distanceInKmFrom(lat, lng)),
+      );
     } else {
       list.sort((a, b) => b.rating.compareTo(a.rating));
     }
@@ -129,7 +161,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  void _performSearch(String query) {
+  Future<void> _performSearch(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) {
       if (widget.showAll) {
@@ -147,26 +179,60 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Simpan kata kunci ke riwayat jika ada
     if (trimmed.isNotEmpty) {
-      _preferenceService.addSearchKeyword(trimmed);
+      await _preferenceService.addSearchKeyword(trimmed);
       _loadHistoryOnly();
     }
 
-    // Jalankan Algoritma Rekomendasi Cerdas Hybrid
+    setState(() {
+      _hasSearched = true;
+      _isLoadingGooglePlaces = trimmed.isNotEmpty;
+    });
+
+    List<PlaceModel> googlePlaces = [];
+    if (trimmed.isNotEmpty) {
+      try {
+        googlePlaces = await _placesService.searchPlaces(
+          trimmed,
+          lat: _userLocation?.latitude,
+          lng: _userLocation?.longitude,
+          region: _currentRegion,
+        );
+      } catch (_) {}
+    }
+
+    // Jalankan Algoritma Rekomendasi Cerdas untuk tempat lokal
     final recs = RecommendationService.getRecommendations(
       allPlaces: widget.allPlaces,
       userBudget: _currentBudget,
       userInputQuery: trimmed,
       userPreferences: _currentPreferences.toList(),
     );
+    final localMatches = recs.map((r) => r.place).toList();
 
-    List<PlaceModel> results = recs.map((r) => r.place).toList();
+    // Gabungkan tempat dari Google Places (nyata & live) dan tempat lokal
+    final Map<String, PlaceModel> unifiedMap = {};
+    for (final p in googlePlaces) {
+      unifiedMap[p.name.toLowerCase().trim()] = p;
+    }
+    for (final p in localMatches) {
+      final key = p.name.toLowerCase().trim();
+      if (!unifiedMap.containsKey(key)) {
+        unifiedMap[key] = p;
+      }
+    }
+
+    List<PlaceModel> results = unifiedMap.values.toList();
 
     // Saring berdasarkan jenis tempat jika ada filter aktif
     if (_currentPlaceTypes.isNotEmpty) {
       final filtered = results.where((p) {
-        return _currentPlaceTypes.any((type) =>
-            p.category.toLowerCase().contains(type.toLowerCase()) ||
-            p.facilities.any((f) => f.toLowerCase().contains(type.toLowerCase())));
+        return _currentPlaceTypes.any(
+          (type) =>
+              p.category.toLowerCase().contains(type.toLowerCase()) ||
+              p.facilities.any(
+                (f) => f.toLowerCase().contains(type.toLowerCase()),
+              ),
+        );
       }).toList();
       if (filtered.isNotEmpty) {
         results = filtered;
@@ -176,10 +242,12 @@ class _SearchScreenState extends State<SearchScreen> {
     // Urutkan berdasarkan sortOption (0: Terdekat via GPS / Alun-alun, 1: Rating Tertinggi)
     _sortResults(results);
 
-    setState(() {
-      _hasSearched = true;
-      _searchResults = results;
-    });
+    if (mounted) {
+      setState(() {
+        _searchResults = results;
+        _isLoadingGooglePlaces = false;
+      });
+    }
   }
 
   Future<void> _loadHistoryOnly() async {
@@ -206,11 +274,18 @@ class _SearchScreenState extends State<SearchScreen> {
     );
 
     if (result != null) {
+      await _preferenceService.saveBudget(result.budget);
+      await _preferenceService.saveUserPreferences(result.preferences.toList());
       setState(() {
         _currentBudget = result.budget;
         _currentPlaceTypes = result.placeTypes;
         _currentPreferences = result.preferences;
       });
+      widget.onFilterChanged?.call(
+        result.budget,
+        result.placeTypes.isNotEmpty ? result.placeTypes.first : null,
+        _currentRegion,
+      );
       _performSearch(_searchController.text);
     }
   }
@@ -311,20 +386,23 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   if (_searchController.text.isNotEmpty)
                     IconButton(
-                      icon: Icon(Icons.close, color: colors.textSecondary, size: 18),
+                      icon: Icon(
+                        Icons.close,
+                        color: colors.textSecondary,
+                        size: 18,
+                      ),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _hasSearched = false);
                       },
                     ),
-                  Container(
-                    width: 1,
-                    height: 22,
-                    color: colors.borderNavy,
-                  ),
+                  Container(width: 1, height: 22, color: colors.borderNavy),
                   IconButton(
-                    icon: const Icon(Icons.tune_rounded,
-                        color: AppTheme.gold, size: 20),
+                    icon: const Icon(
+                      Icons.tune_rounded,
+                      color: AppTheme.gold,
+                      size: 20,
+                    ),
                     onPressed: _openFilterModal,
                   ),
                 ],
@@ -379,8 +457,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.history_rounded,
-                          size: 54, color: colors.textMuted.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.history_rounded,
+                        size: 54,
+                        color: colors.textMuted.withValues(alpha: 0.5),
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         'Belum ada riwayat pencarian',
@@ -397,14 +478,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: colors.cardNavy,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: colors.borderNavy),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: colors.isDark ? 0.25 : 0.04),
+                            color: Colors.black.withValues(
+                              alpha: colors.isDark ? 0.25 : 0.04,
+                            ),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -412,8 +497,11 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.history,
-                              color: AppTheme.gold, size: 22),
+                          const Icon(
+                            Icons.history,
+                            color: AppTheme.gold,
+                            size: 22,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: GestureDetector(
@@ -431,13 +519,19 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                             ),
                           ),
-                          const Icon(Icons.chevron_right,
-                              color: AppTheme.gold, size: 20),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: AppTheme.gold,
+                            size: 20,
+                          ),
                           const SizedBox(width: 10),
                           GestureDetector(
                             onTap: () => _deleteHistoryItem(item),
-                            child: Icon(Icons.close,
-                                color: colors.textSecondary, size: 18),
+                            child: Icon(
+                              Icons.close,
+                              color: colors.textSecondary,
+                              size: 18,
+                            ),
                           ),
                         ],
                       ),
@@ -527,23 +621,57 @@ class _SearchScreenState extends State<SearchScreen> {
 
         // List Hasil Pencarian
         Expanded(
-          child: _searchResults.isEmpty
+          child: _isLoadingGooglePlaces
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.search_off_rounded,
-                          size: 54, color: colors.textMuted),
+                      const CircularProgressIndicator(color: AppTheme.gold),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Mencari di Google Maps...',
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Menghubungkan ke warung makan asli di Purwokerto',
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : _searchResults.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.search_off_rounded,
+                        size: 54,
+                        color: colors.textMuted,
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         'Tidak ada tempat yang sesuai',
-                        style: TextStyle(color: colors.textSecondary, fontSize: 16),
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       TextButton(
                         onPressed: _openFilterModal,
-                        child: const Text('Ubah Filter Budget',
-                            style: TextStyle(color: AppTheme.gold)),
+                        child: const Text(
+                          'Ubah Filter Budget',
+                          style: TextStyle(color: AppTheme.gold),
+                        ),
                       ),
                     ],
                   ),
@@ -580,7 +708,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           border: Border.all(color: colors.borderNavy),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: colors.isDark ? 0.25 : 0.05),
+                              color: Colors.black.withValues(
+                                alpha: colors.isDark ? 0.25 : 0.05,
+                              ),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
@@ -600,8 +730,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                   width: 90,
                                   height: 90,
                                   color: colors.searchNavy,
-                                  child: const Icon(Icons.restaurant,
-                                      color: AppTheme.orange),
+                                  child: const Icon(
+                                    Icons.restaurant,
+                                    color: AppTheme.orange,
+                                  ),
                                 ),
                               ),
                             ),
@@ -619,11 +751,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 3),
+                                          horizontal: 10,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
                                           gradient: AppTheme.primaryGradient,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: Text(
                                           place.category,
@@ -677,8 +812,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                   // Rating, Reviews & Distance
                                   Row(
                                     children: [
-                                      const Icon(Icons.star_rounded,
-                                          color: AppTheme.gold, size: 16),
+                                      const Icon(
+                                        Icons.star_rounded,
+                                        color: AppTheme.gold,
+                                        size: 16,
+                                      ),
                                       const SizedBox(width: 2),
                                       Text(
                                         '${place.rating.toStringAsFixed(1)} (${place.formattedReviewCount})',
@@ -689,8 +827,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Icon(Icons.location_on,
-                                          color: AppTheme.orange, size: 14),
+                                      const Icon(
+                                        Icons.location_on,
+                                        color: AppTheme.orange,
+                                        size: 14,
+                                      ),
                                       const SizedBox(width: 2),
                                       Text(
                                         place.formattedDistance(),

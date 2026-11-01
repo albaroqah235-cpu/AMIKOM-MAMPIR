@@ -36,7 +36,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
               children: [
                 // Header Bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       IconButton(
@@ -155,7 +158,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   decoration: BoxDecoration(
                                     color: colors.cardNavy,
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: colors.borderNavy),
+                                    border: Border.all(
+                                      color: colors.borderNavy,
+                                    ),
                                   ),
                                   child: const Icon(
                                     Icons.notifications_none_rounded,
@@ -188,7 +193,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 8),
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
                           itemCount: displayedList.length,
                           separatorBuilder: (context, index) =>
                               Divider(color: colors.borderNavy, height: 28),
@@ -206,14 +213,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   decoration: BoxDecoration(
                                     color: colors.surfaceNavy,
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: colors.borderNavy),
+                                    border: Border.all(
+                                      color: colors.borderNavy,
+                                    ),
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(16),
                                     child: isMascot
                                         ? Transform.scale(
                                             scale: 1.35,
-                                            alignment: const Alignment(0, -0.04),
+                                            alignment: const Alignment(
+                                              0,
+                                              -0.04,
+                                            ),
                                             child: Image.asset(
                                               'assets/images/app_icon.jpeg',
                                               fit: BoxFit.cover,
@@ -224,9 +236,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                             fit: BoxFit.cover,
                                             errorBuilder: (ctx, err, st) =>
                                                 const Icon(
-                                              Icons.local_cafe_rounded,
-                                              color: AppTheme.gold,
-                                            ),
+                                                  Icons.local_cafe_rounded,
+                                                  color: AppTheme.gold,
+                                                ),
                                           ),
                                   ),
                                 ),
@@ -235,7 +247,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 // Detail Notifikasi
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         notif['title'] as String,

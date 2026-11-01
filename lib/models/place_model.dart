@@ -26,10 +26,7 @@ class MenuHighlight {
   }
 
   /// Konversi ke Map untuk dikirim ke Web Service (HTTP POST).
-  Map<String, dynamic> toJson() => {
-        'name': name,
-        'price': price,
-      };
+  Map<String, dynamic> toJson() => {'name': name, 'price': price};
 }
 
 /// Model utama yang merepresentasikan satu tempat makan/nongkrong.
@@ -72,9 +69,9 @@ class PlaceModel {
     required this.longitude,
     required this.imageUrl,
     required this.menuHighlights,
-  })  : avgPrice = avgPrice ?? ((minPrice + maxPrice) ~/ 2),
-        facilities = facilities ?? tags ?? const [],
-        tags = tags ?? facilities ?? const [];
+  }) : avgPrice = avgPrice ?? ((minPrice + maxPrice) ~/ 2),
+       facilities = facilities ?? tags ?? const [],
+       tags = tags ?? facilities ?? const [];
 
   /// Alias getter averagePrice bertipe double untuk kompatibilitas spesifikasi
   double get averagePrice => avgPrice.toDouble();
@@ -132,7 +129,8 @@ class PlaceModel {
 
     final min = (json['min_price'] as num?)?.toInt() ?? 0;
     final max = (json['max_price'] as num?)?.toInt() ?? min;
-    final avg = (json['avg_price'] as num?)?.toInt() ??
+    final avg =
+        (json['avg_price'] as num?)?.toInt() ??
         (json['average_price'] as num?)?.toInt() ??
         ((min + max) ~/ 2);
 
@@ -145,21 +143,25 @@ class PlaceModel {
       maxPrice: max,
       avgPrice: avg,
       rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
-      reviewCount: (json['review_count'] as num?)?.toInt() ??
+      reviewCount:
+          (json['review_count'] as num?)?.toInt() ??
           (json['reviewCount'] as num?)?.toInt() ??
           250,
       facilities: parsedFacilities,
       tags: parsedFacilities,
       address: json['address'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      openHours: json['open_hours'] as String? ??
+      openHours:
+          json['open_hours'] as String? ??
           json['openHours'] as String? ??
           '09:00 - 22:00',
       latitude: (json['latitude'] as num?)?.toDouble() ?? -7.424,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 109.230,
-      imageUrl: json['image_url'] as String? ?? json['imageUrl'] as String? ?? '',
+      imageUrl:
+          json['image_url'] as String? ?? json['imageUrl'] as String? ?? '',
       menuHighlights: parseMenuHighlights(
-          json['menu_highlights'] ?? json['menuHighlights']),
+        json['menu_highlights'] ?? json['menuHighlights'],
+      ),
     );
   }
 
@@ -167,25 +169,25 @@ class PlaceModel {
   /// toJson — Serialisasi data untuk dikirim via HTTP POST
   /// ================================================================
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'city': city,
-        'category': category,
-        'min_price': minPrice,
-        'max_price': maxPrice,
-        'avg_price': avgPrice,
-        'rating': rating,
-        'review_count': reviewCount,
-        'facilities': facilities,
-        'tags': tags,
-        'address': address,
-        'description': description,
-        'open_hours': openHours,
-        'latitude': latitude,
-        'longitude': longitude,
-        'image_url': imageUrl,
-        'menu_highlights': menuHighlights.map((m) => m.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'city': city,
+    'category': category,
+    'min_price': minPrice,
+    'max_price': maxPrice,
+    'avg_price': avgPrice,
+    'rating': rating,
+    'review_count': reviewCount,
+    'facilities': facilities,
+    'tags': tags,
+    'address': address,
+    'description': description,
+    'open_hours': openHours,
+    'latitude': latitude,
+    'longitude': longitude,
+    'image_url': imageUrl,
+    'menu_highlights': menuHighlights.map((m) => m.toJson()).toList(),
+  };
 
   /// Helper: cek apakah harga rata-rata tempat ini di bawah budget user.
   bool isWithinBudget(int userBudget) =>
@@ -209,7 +211,8 @@ class PlaceModel {
   /// Hitung estimasi jarak dari koordinat referensi dalam kilometer
   double distanceInKmFrom(double refLat, double refLng) {
     const double p = 0.017453292519943295; // Math.PI / 180
-    final double a = 0.5 -
+    final double a =
+        0.5 -
         math.cos((latitude - refLat) * p) / 2 +
         math.cos(refLat * p) *
             math.cos(latitude * p) *
@@ -219,7 +222,10 @@ class PlaceModel {
   }
 
   /// Format teks jarak (contoh: '1.2 km' atau '800 m')
-  String formattedDistance([double refLat = -7.4244, double refLng = 109.2302]) {
+  String formattedDistance([
+    double refLat = -7.4244,
+    double refLng = 109.2302,
+  ]) {
     final dist = distanceInKmFrom(refLat, refLng);
     if (dist < 1.0) {
       final m = (dist * 1000).round();

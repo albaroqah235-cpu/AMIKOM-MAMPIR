@@ -67,7 +67,8 @@ class AuthService {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final user = (body['user'] as Map<String, dynamic>?) ??
+        final user =
+            (body['user'] as Map<String, dynamic>?) ??
             (body.containsKey('id') ? body : null);
         final meta = user?['user_metadata'] as Map<String, dynamic>?;
         final resolvedName =
@@ -79,15 +80,17 @@ class AuthService {
           userEmail: email,
         );
       } else {
-        final msg = body['msg'] as String? ??
+        final msg =
+            body['msg'] as String? ??
             body['message'] as String? ??
             'Gagal membuat akun. Pastikan email valid.';
         return AuthResult(success: false, message: msg);
       }
     } catch (e) {
       return const AuthResult(
-          success: false,
-          message: 'Koneksi gagal. Periksa sambungan internet kamu.');
+        success: false,
+        message: 'Koneksi gagal. Periksa sambungan internet kamu.',
+      );
     }
   }
 
@@ -109,10 +112,12 @@ class AuthService {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200) {
-        final user = (body['user'] as Map<String, dynamic>?) ??
+        final user =
+            (body['user'] as Map<String, dynamic>?) ??
             (body.containsKey('id') ? body : null);
         final meta = user?['user_metadata'] as Map<String, dynamic>?;
-        final resolvedName = meta?['name'] as String? ??
+        final resolvedName =
+            meta?['name'] as String? ??
             meta?['full_name'] as String? ??
             email.split('@').first;
         return AuthResult(
@@ -122,15 +127,17 @@ class AuthService {
           userEmail: email,
         );
       } else {
-        final msg = body['error_description'] as String? ??
+        final msg =
+            body['error_description'] as String? ??
             body['msg'] as String? ??
             'Email atau kata sandi salah.';
         return AuthResult(success: false, message: msg);
       }
     } catch (e) {
       return const AuthResult(
-          success: false,
-          message: 'Koneksi gagal. Periksa sambungan internet kamu.');
+        success: false,
+        message: 'Koneksi gagal. Periksa sambungan internet kamu.',
+      );
     }
   }
 
@@ -139,7 +146,8 @@ class AuthService {
   Future<AuthResult> sendPasswordResetOtp(String email) async {
     final cleanEmail = email.trim().toLowerCase();
     // Generate kode OTP 6-digit untuk verifikasi instan & andal
-    final generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
+    final generatedOtp =
+        (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
     _pendingOtps[cleanEmail] = generatedOtp;
 
     try {
