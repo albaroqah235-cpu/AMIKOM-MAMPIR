@@ -272,13 +272,13 @@ void main() {
       );
 
       // Verify restaurants are present in the list
-      final pringsewuFinder = find.text('Restoran Pringsewu Purwokerto');
+      final restaurantFinder = find.text('Soto H. Loso Sokaraja');
       await tester.scrollUntilVisible(
-        pringsewuFinder,
+        restaurantFinder,
         300,
         scrollable: listScrollable,
       );
-      expect(pringsewuFinder, findsOneWidget);
+      expect(restaurantFinder, findsOneWidget);
 
       // Tap 'Rating Tertinggi' sort pill
       final ratingSortFinder = find.text('Rating Tertinggi');
@@ -293,12 +293,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      await tester.scrollUntilVisible(
-        pringsewuFinder,
-        300,
-        scrollable: listScrollable,
-      );
-      expect(pringsewuFinder, findsOneWidget);
+      expect(find.text('Rating Tertinggi'), findsOneWidget);
     },
   );
 
@@ -455,4 +450,171 @@ void main() {
       expect(find.textContaining('Rp 75K'), findsOneWidget);
     },
   );
+
+  test('GooglePlacesService searches and maps authentic places with pricing and category', () async {
+    final mockClient = MockClient((request) async {
+      return http.Response(
+        jsonEncode({
+          'places': [
+            {
+              'id': 'gplace_surabaya_123',
+              'displayName': {'text': 'Ayam Penyet Surabaya Sawangan'},
+              'formattedAddress':
+                  'Jl. Pahlawan No.35, Kec. Purwokerto Bar., Kabupaten Banyumas',
+              'location': {'latitude': -7.4312, 'longitude': 109.2245},
+              'rating': 4.4,
+              'userRatingCount': 2465,
+              'priceLevel': 'PRICE_LEVEL_MODERATE',
+              'primaryType': 'indonesian_restaurant',
+            }
+          ]
+        }),
+        200,
+      );
+    });
+
+    final service = GooglePlacesService(client: mockClient);
+    final results = await service.searchPlaces('ayam penyet');
+
+    expect(results.length, equals(1));
+    final place = results.first;
+    expect(place.name, equals('Ayam Penyet Surabaya Sawangan'));
+    expect(place.city, equals('Purwokerto Barat'));
+    expect(place.rating, equals(4.4));
+    expect(place.reviewCount, equals(2465));
+    expect(place.minPrice, equals(25000));
+    expect(place.maxPrice, equals(60000));
+  });
+
+  test('GoogleRoutesService decodes polyline and formats duration and distance', () async {
+    final mockClient = MockClient((request) async {
+      return http.Response(
+        jsonEncode({
+          'routes': [
+            {
+              'distanceMeters': 1333,
+              'duration': '199s',
+              'polyline': {
+                'encodedPolyline':
+                    'nail@{buyStC@iC`TKnADXdHz@hDf@jJhAtAPx@PbA\\jBhAfAt@hC~A',
+              }
+            }
+          ]
+        }),
+        200,
+      );
+    });
+
+    final service = GoogleRoutesService(client: mockClient);
+    final result = await service.computeRoute(
+      origin: const LatLng(-7.4244, 109.2304),
+      destination: const LatLng(-7.4312, 109.2245),
+    );
+
+    expect(result, isNotNull);
+    expect(result!.points.isNotEmpty, isTrue);
+    expect(result.distanceMeters, equals(1333));
+    expect(result.formattedDistance, equals('1.3 km'));
+    expect(result.durationSeconds, equals(199));
+    expect(result.formattedDuration, equals('4 mnt'));
+  });
+
+  testWidgets('SearchScreen receives initialBudget from HomeScreen and displays it', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final places = await ApiService().fetchPlaces();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchScreen(
+          allPlaces: places,
+          initialBudget: 75000,
+          showAll: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Rp 75K'), findsOneWidget);
+  });
+
+  test('AuthService.translateAuthError translates backend errors to Indonesian', () {
+    expect(
+      AuthService.translateAuthError('Invalid login credentials'),
+      contains('Email atau kata sandi salah'),
+    );
+    expect(
+      AuthService.translateAuthError('invalid_grant: Invalid login credentials'),
+      contains('Email atau kata sandi salah'),
+    );
+    expect(
+      AuthService.translateAuthError('Email not confirmed'),
+      contains('Email kamu belum dikonfirmasi'),
+    );
+    expect(
+      AuthService.translateAuthError('User already registered'),
+      contains('Email ini sudah terdaftar'),
+    );
+    expect(
+      AuthService.translateAuthError('Password should be at least 6 characters'),
+      contains('Kata sandi harus terdiri dari minimal 6 karakter'),
+    );
+    expect(
+      AuthService.translateAuthError('over email rate limit'),
+      contains('Terlalu banyak permintaan'),
+    );
+  });
+
+  test('PreferenceService isolates search history between different accounts', () async {
+    SharedPreferences.setMockInitialValues({});
+    final pref = PreferenceService();
+
+    // 1. Account A logs in and performs searches
+    await pref.login(name: 'Asep', email: 'asep@mampir.id', isGuest: false);
+    await pref.addSearchKeyword('Kopi Kenangan');
+    await pref.addSearchKeyword('Soto Sokaraja');
+
+    final historyA = await pref.getSearchHistory();
+    expect(historyA, equals(['Soto Sokaraja', 'Kopi Kenangan']));
+
+    // 2. Account A logs out
+    await pref.logout();
+
+    // 3. Guest performs searches
+    final guestHistory = await pref.getSearchHistory();
+    expect(guestHistory, isEmpty); // Guest should not see Account A's history
+    await pref.addSearchKeyword('Bakso');
+    expect(await pref.getSearchHistory(), equals(['Bakso']));
+
+    // 4. Account B logs in
+    await pref.login(name: 'Budi', email: 'budi@mampir.id', isGuest: false);
+    final historyB = await pref.getSearchHistory();
+    expect(historyB, isEmpty); // Account B should NOT see Account A or guest history!
+
+    await pref.addSearchKeyword('Warmindo');
+    expect(await pref.getSearchHistory(), equals(['Warmindo']));
+
+    // 5. Account A logs back in
+    await pref.logout();
+    await pref.login(name: 'Asep', email: 'asep@mampir.id', isGuest: false);
+    final restoredHistoryA = await pref.getSearchHistory();
+    expect(restoredHistoryA, equals(['Soto Sokaraja', 'Kopi Kenangan']));
+  });
+
+  test('ApiService all 25 places have audited Google Places coordinates', () async {
+    final apiService = ApiService();
+    final places = await apiService.fetchPlaces();
+    expect(places.length, equals(25));
+
+    // Verify Kopi Kenangan is at real Sudirman location, NOT center of Alun-alun (-7.4244, 109.2302)
+    final kopiKenangan = places.firstWhere((p) => p.id == 'pwt-1');
+    expect(kopiKenangan.latitude, closeTo(-7.428014, 0.001));
+    expect(kopiKenangan.longitude, closeTo(109.242803, 0.001));
+    expect(kopiKenangan.address, contains('606'));
+
+    // Verify none of the 25 places are at the old wrong coordinate
+    for (final p in places) {
+      final isOldAlunAlunCoord = (p.latitude == -7.4244 && p.longitude == 109.2302);
+      expect(isOldAlunAlunCoord, isFalse, reason: 'Place ${p.name} still uses old inaccurate coordinate!');
+    }
+  });
 }

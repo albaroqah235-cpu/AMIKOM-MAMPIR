@@ -1,5 +1,5 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../config/api_config.dart';
 import '../services/auth_service.dart';
@@ -38,6 +38,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkUrlForAuthToken();
+    });
+  }
 
   @override
   void dispose() {
@@ -85,9 +93,9 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.message ?? 'Email atau kata sandi salah.'),
+          content: Text(result.message ?? 'Email atau kata sandi salah. Silakan periksa kembali.'),
           backgroundColor: Colors.redAccent,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -114,55 +122,236 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message ?? 'Akun berhasil dibuat!'),
-          backgroundColor: Colors.green.shade700,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      // Langsung simpan dan lanjut ke pemilihan wilayah
-      await _prefService.login(
-        name: name.isNotEmpty ? name : 'Penjelajah MAMPIR',
-        email: email,
-        isGuest: false,
-      );
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
-      );
+      if (result.requiresEmailConfirmation) {
+        // Tampilkan dialog instruksi konfirmasi email dan alihkan ke tab Masuk
+        _showEmailConfirmationRequiredDialog(email);
+        setState(() {
+          _isRegisterMode = false;
+          _emailController.text = email;
+          _passwordController.clear();
+          _confirmPasswordController.clear();
+        });
+      } else {
+        // Jika tidak perlu konfirmasi email, langsung simpan dan lanjutkan
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Akun berhasil dibuat! Silakan masuk.'),
+            backgroundColor: Colors.green.shade700,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        await _prefService.login(
+          name: name.isNotEmpty ? name : 'Penjelajah MAMPIR',
+          email: email,
+          isGuest: false,
+        );
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result.message ?? 'Gagal membuat akun.'),
           backgroundColor: Colors.redAccent,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 4),
         ),
       );
     }
   }
 
+  void _showEmailConfirmationRequiredDialog(String email) {
+    final colors = AppTheme.colors(context);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.surfaceNavy,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: colors.borderNavy),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.mark_email_unread_rounded, color: AppTheme.orange, size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Konfirmasi Email Anda',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pendaftaran akun berhasil!',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Kami telah mengirimkan tautan konfirmasi ke:',
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: colors.cardNavy,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colors.borderNavy),
+              ),
+              child: Text(
+                email,
+                style: const TextStyle(
+                  color: AppTheme.gold,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Silakan periksa kotak masuk (atau folder Spam/Promosi) email Anda dan klik tautan konfirmasi terlebih dahulu sebelum masuk ke MAMPIR.',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.orange,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Saya Mengerti, Masuk Sekarang',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ===========================================================
   // 3. SSO: MASUK DENGAN GOOGLE (SUPABASE OAUTH ASLI)
   // ===========================================================
+
+  /// Decode payload JWT Supabase tanpa library eksternal
+  Map<String, dynamic>? _parseJwtPayload(String token) {
+    final parts = token.trim().split('.');
+    if (parts.length != 3) return null;
+    try {
+      var output = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+      switch (output.length % 4) {
+        case 0:
+          break;
+        case 2:
+          output += '==';
+          break;
+        case 3:
+          output += '=';
+          break;
+        default:
+          return null;
+      }
+      final decoded = utf8.decode(base64Url.decode(output));
+      return jsonDecode(decoded) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Eksekusi proses token sesi Google OAuth (baik dari redirect URL maupun tempel manual)
+  Future<bool> _processTokenString(String raw) async {
+    String token = raw.trim();
+    if (token.contains('access_token=')) {
+      final startIndex =
+          token.indexOf('access_token=') + 'access_token='.length;
+      final endIndex = token.indexOf('&', startIndex);
+      token = (endIndex != -1)
+          ? token.substring(startIndex, endIndex)
+          : token.substring(startIndex);
+    }
+    if (token.contains('&')) {
+      token = token.split('&').first;
+    }
+
+    final payload = _parseJwtPayload(token);
+    if (payload != null) {
+      final email = payload['email'] as String? ?? 'user@mampir.id';
+      final meta = payload['user_metadata'] as Map<String, dynamic>?;
+      final name = meta?['full_name'] as String? ??
+          meta?['name'] as String? ??
+          email.split('@').first;
+
+      await _prefService.login(
+        name: name.isNotEmpty ? name : 'Pengguna Google',
+        email: email,
+        isGuest: false,
+      );
+      if (!mounted) return true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Berhasil masuk dengan Google! Selamat datang, $name! ✨'),
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const RegionSelectionScreen()),
+      );
+      return true;
+    }
+    return false;
+  }
+
+  /// Memeriksa URL fragment atau parameter saat halaman login dimuat
+  void _checkUrlForAuthToken() {
+    try {
+      final fragment = Uri.base.fragment;
+      if (fragment.contains('access_token=')) {
+        _processTokenString(fragment);
+        return;
+      }
+      final query = Uri.base.queryParameters;
+      if (query.containsKey('access_token')) {
+        _processTokenString(query['access_token']!);
+        return;
+      }
+    } catch (_) {}
+  }
+
   Future<void> _handleGoogleLogin() async {
     setState(() => _isLoading = true);
 
+    // Ambil origin browser saat ini (misal http://localhost:45543)
+    final origin = Uri.base.origin;
     final oauthUrl =
-        '${ApiConfig.supabaseUrl}/auth/v1/authorize?provider=google';
+        '${ApiConfig.supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${Uri.encodeComponent(origin)}';
 
     try {
-      // Periksa status provider Google di Supabase
-      final checkRes = await http.get(Uri.parse(oauthUrl));
-      if (checkRes.statusCode == 400 &&
-          checkRes.body.contains('provider is not enabled')) {
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-        _showGoogleProviderNoticeDialog();
-        return;
-      }
-
       final uri = Uri.parse(oauthUrl);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -178,8 +367,10 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (err) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Gagal membuka alur masuk Google: $err'),
+            const SnackBar(
+              content: Text(
+                'Gagal membuka alur masuk Google. Silakan periksa koneksi internet Anda atau gunakan fitur Masuk dengan Email.',
+              ),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -190,141 +381,144 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showGoogleProviderNoticeDialog() {
+  /// Dialog untuk menempelkan URL redirect atau token Google jika browser dialihkan ke port lain
+  void _showPasteGoogleTokenDialog() {
     final colors = AppTheme.colors(context);
+    final textController = TextEditingController();
+    String? localError;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surfaceNavy,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: colors.borderNavy),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: colors.surfaceNavy,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: colors.borderNavy),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  'G',
+                  style: TextStyle(
+                    color: Color(0xFF4285F4),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                  ),
+                ),
               ),
-              alignment: Alignment.center,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Tempel Tautan / Token Google',
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Jika setelah memilih akun Google browser dialihkan ke localhost:3000 atau halaman lain, salin seluruh URL dari bilah alamat browser lalu tempelkan di bawah ini:',
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: textController,
+                  maxLines: 4,
+                  style: TextStyle(color: colors.textPrimary, fontSize: 12),
+                  decoration: InputDecoration(
+                    hintText:
+                        'Contoh: http://localhost:3000/#access_token=ey... atau token access_token Anda',
+                    hintStyle:
+                        TextStyle(color: colors.textMuted, fontSize: 11),
+                    filled: true,
+                    fillColor: colors.cardNavy,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: colors.borderNavy),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.orange),
+                    ),
+                  ),
+                ),
+                if (localError != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    localError!,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Batal',
+                style: TextStyle(color: colors.textSecondary),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () async {
+                final text = textController.text.trim();
+                if (text.isEmpty) {
+                  setDialogState(() {
+                    localError = 'Silakan tempel URL atau token terlebih dahulu.';
+                  });
+                  return;
+                }
+                final success = await _processTokenString(text);
+                if (success) {
+                  if (ctx.mounted) Navigator.pop(ctx);
+                } else {
+                  setDialogState(() {
+                    localError =
+                        'Tautan atau token tidak valid. Pastikan Anda menyalin URL lengkap yang memuat access_token.';
+                  });
+                }
+              },
               child: const Text(
-                'G',
+                'Masuk Sekarang',
                 style: TextStyle(
-                  color: Color(0xFF4285F4),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 20,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            Text(
-              'Google Sign-In Supabase',
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Alur Google SSO menghubungkan aplikasi ke akun Google resmi pengguna via Supabase Auth.',
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colors.cardNavy,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colors.borderNavy),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: AppTheme.orange,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Status Provider:',
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Provider Google belum diaktifkan di dashboard Supabase proyek kamu (vdqdithxujxvzyybjtpn).',
-                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Cara Mengaktifkan di Dashboard Supabase:',
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '1. Buka Supabase Dashboard > Authentication > Providers > Google.\n'
-              '2. Masukkan Client ID & Client Secret dari Google Cloud Console.\n'
-              '3. Klik Simpan. Setelah aktif, Google SSO akan langsung membuka pemilih akun Google resmi.',
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 12,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup', style: TextStyle(color: AppTheme.gold)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4285F4),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final url = Uri.parse(
-                'https://supabase.com/dashboard/project/vdqdithxujxvzyybjtpn/auth/providers',
-              );
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              }
-            },
-            child: const Text(
-              'Buka Dashboard',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -771,7 +965,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 6),
+
+                      // Bantuan jika redirect dialihkan ke port lain (misal localhost:3000)
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _showPasteGoogleTokenDialog,
+                          icon: const Icon(
+                            Icons.link_rounded,
+                            size: 15,
+                            color: AppTheme.gold,
+                          ),
+                          label: const Text(
+                            'Punya tautan / token Google? Tempel di sini',
+                            style: TextStyle(
+                              color: AppTheme.gold,
+                              fontSize: 12,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
 
                       // Tombol Tamu
                       SizedBox(

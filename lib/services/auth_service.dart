@@ -10,6 +10,7 @@ import '../config/api_config.dart';
 /// ============================================================
 class AuthResult {
   final bool success;
+  final bool requiresEmailConfirmation;
   final String? message;
   final String? accessToken;
   final String? userName;
@@ -18,6 +19,7 @@ class AuthResult {
 
   const AuthResult({
     required this.success,
+    this.requiresEmailConfirmation = false,
     this.message,
     this.accessToken,
     this.userName,
@@ -31,6 +33,54 @@ class AuthService {
   static final Map<String, String> _pendingOtps = {};
 
   AuthService({http.Client? client}) : _client = client ?? http.Client();
+
+  /// Penerjemah terpusat galat Supabase Auth ke Bahasa Indonesia yang ramah & jelas
+  static String translateAuthError(String? rawError) {
+    if (rawError == null || rawError.trim().isEmpty) {
+      return 'Terjadi kendala pada sistem. Silakan coba kembali.';
+    }
+    final lower = rawError.toLowerCase();
+
+    if (lower.contains('invalid login credentials') ||
+        lower.contains('invalid_grant')) {
+      return 'Email atau kata sandi salah. Silakan periksa kembali.';
+    }
+    if (lower.contains('email not confirmed')) {
+      return 'Email kamu belum dikonfirmasi. Silakan buka email kamu dan klik tautan verifikasi sebelum masuk.';
+    }
+    if (lower.contains('user already registered') ||
+        lower.contains('already been registered')) {
+      return 'Email ini sudah terdaftar. Silakan masuk menggunakan kata sandi kamu atau gunakan fitur Lupa Kata Sandi.';
+    }
+    if (lower.contains('password should be at least 6 characters')) {
+      return 'Kata sandi harus terdiri dari minimal 6 karakter.';
+    }
+    if (lower.contains('signup requires a valid password')) {
+      return 'Pendaftaran memerlukan kata sandi yang valid.';
+    }
+    if (lower.contains('unable to validate email address') ||
+        lower.contains('invalid email')) {
+      return 'Format alamat email tidak valid.';
+    }
+    if (lower.contains('rate limit') ||
+        lower.contains('too many requests') ||
+        lower.contains('over email rate limit')) {
+      return 'Terlalu banyak permintaan. Silakan tunggu beberapa saat lagi.';
+    }
+    if (lower.contains('user not found')) {
+      return 'Akun dengan email ini tidak ditemukan.';
+    }
+    if (lower.contains('token has expired') ||
+        lower.contains('otp_expired') ||
+        lower.contains('invalid token')) {
+      return 'Kode OTP verifikasi telah kedaluwarsa atau tidak valid.';
+    }
+    if (lower.contains('for security purposes')) {
+      return 'Demi keamanan, silakan tunggu beberapa saat sebelum meminta pengiriman ulang.';
+    }
+
+    return rawError;
+  }
 
   static String get _baseUrl {
     final raw = ApiConfig.supabaseUrl.trim();
@@ -73,18 +123,30 @@ class AuthService {
         final meta = user?['user_metadata'] as Map<String, dynamic>?;
         final resolvedName =
             meta?['name'] as String? ?? meta?['full_name'] as String? ?? name;
+
+        // Cek apakah Supabase memerlukan konfirmasi email
+        final hasSession = body.containsKey('session') && body['session'] != null;
+        final isConfirmed = user?['confirmed_at'] != null;
+        final needsConfirmation = !hasSession || !isConfirmed;
+
         return AuthResult(
           success: true,
-          message: 'Akun berhasil dibuat! Silakan masuk.',
+          requiresEmailConfirmation: needsConfirmation,
+          message: needsConfirmation
+              ? 'Pendaftaran berhasil! Kami telah mengirimkan tautan konfirmasi ke $email. Silakan periksa kotak masuk atau spam email Anda dan klik konfirmasi sebelum masuk.'
+              : 'Akun berhasil dibuat! Silakan masuk.',
           userName: resolvedName,
           userEmail: email,
         );
       } else {
-        final msg =
+        final rawMsg =
             body['msg'] as String? ??
             body['message'] as String? ??
-            'Gagal membuat akun. Pastikan email valid.';
-        return AuthResult(success: false, message: msg);
+            body['error_description'] as String?;
+        return AuthResult(
+          success: false,
+          message: translateAuthError(rawMsg),
+        );
       }
     } catch (e) {
       return const AuthResult(
@@ -127,11 +189,14 @@ class AuthService {
           userEmail: email,
         );
       } else {
-        final msg =
+        final rawMsg =
             body['error_description'] as String? ??
             body['msg'] as String? ??
-            'Email atau kata sandi salah.';
-        return AuthResult(success: false, message: msg);
+            body['message'] as String?;
+        return AuthResult(
+          success: false,
+          message: translateAuthError(rawMsg),
+        );
       }
     } catch (e) {
       return const AuthResult(

@@ -195,6 +195,8 @@ class PreferenceService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(keyIsLoggedIn, false);
     await prefs.setBool(keyIsGuest, false);
+    await prefs.remove(keyUserName);
+    await prefs.remove(keyUserEmail);
   }
 
   // ======================== USER BUDGET ========================
@@ -292,12 +294,37 @@ class PreferenceService {
 
   // ======================== SEARCH HISTORY ========================
 
+  /// Kunci riwayat pencarian terisolasi berdasarkan akun yang sedang aktif
+  Future<String> _getScopedSearchHistoryKey() async {
+    final loggedIn = await isLoggedIn();
+    final guest = await isGuest();
+    if (!loggedIn || guest) {
+      return 'search_history_guest';
+    }
+    final email = await getUserEmail();
+    final clean = email.trim().toLowerCase().replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
+    return clean.isNotEmpty ? 'search_history_$clean' : 'search_history_guest';
+  }
+
+  /// Kunci daftar favorit terisolasi per akun
+  Future<String> _getScopedFavoritesKey() async {
+    final loggedIn = await isLoggedIn();
+    final guest = await isGuest();
+    if (!loggedIn || guest) {
+      return 'favorite_places_guest';
+    }
+    final email = await getUserEmail();
+    final clean = email.trim().toLowerCase().replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
+    return clean.isNotEmpty ? 'favorite_places_$clean' : 'favorite_places_guest';
+  }
+
   /// Ambil seluruh riwayat pencarian pengguna (maksimal 10 item).
   Future<List<String>> getSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(keySearchHistory);
+    final key = await _getScopedSearchHistoryKey();
+    final raw = prefs.getString(key);
     if (raw == null) {
-      // Kembalikan list kosong jika pengguna belum pernah melakukan pencarian
+      // Kembalikan list kosong jika akun ini belum pernah melakukan pencarian
       return [];
     }
     try {
@@ -317,6 +344,7 @@ class PreferenceService {
     if (trimmed.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
+    final key = await _getScopedSearchHistoryKey();
     final list = await getSearchHistory();
 
     // Hapus jika sudah pernah ada agar pindah ke urutan paling atas
@@ -327,23 +355,25 @@ class PreferenceService {
       list.removeRange(10, list.length);
     }
 
-    await prefs.setString(keySearchHistory, jsonEncode(list));
+    await prefs.setString(key, jsonEncode(list));
   }
 
   /// Hapus satu kata kunci dari riwayat pencarian.
   Future<void> removeSearchKeyword(String keyword) async {
     final prefs = await SharedPreferences.getInstance();
+    final key = await _getScopedSearchHistoryKey();
     final list = await getSearchHistory();
     list.removeWhere(
       (item) => item.toLowerCase() == keyword.trim().toLowerCase(),
     );
-    await prefs.setString(keySearchHistory, jsonEncode(list));
+    await prefs.setString(key, jsonEncode(list));
   }
 
   /// Hapus seluruh riwayat pencarian.
   Future<void> clearSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(keySearchHistory, jsonEncode([]));
+    final key = await _getScopedSearchHistoryKey();
+    await prefs.setString(key, jsonEncode([]));
   }
 
   // ======================== FAVORITE PLACES ========================
@@ -351,6 +381,8 @@ class PreferenceService {
   /// Simpan daftar ID tempat favorit.
   Future<void> saveFavorites(List<String> ids) async {
     final prefs = await SharedPreferences.getInstance();
+    final key = await _getScopedFavoritesKey();
+    await prefs.setString(key, jsonEncode(ids));
     await prefs.setString(keyFavorites, jsonEncode(ids));
     await prefs.setString(_legacyKeyFavorites, jsonEncode(ids));
   }
@@ -358,8 +390,10 @@ class PreferenceService {
   /// Ambil daftar ID tempat favorit.
   Future<List<String>> getFavorites() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw =
-        prefs.getString(keyFavorites) ?? prefs.getString(_legacyKeyFavorites);
+    final key = await _getScopedFavoritesKey();
+    final raw = prefs.getString(key) ??
+        prefs.getString(keyFavorites) ??
+        prefs.getString(_legacyKeyFavorites);
     if (raw == null) return [];
     try {
       final decoded = jsonDecode(raw) as List;
