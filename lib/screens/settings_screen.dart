@@ -266,7 +266,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(width: 8),
                       ],
                       Text(
-                        'Pengaturan & Akun',
+                        'Profil Pengguna',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,

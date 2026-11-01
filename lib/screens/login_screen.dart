@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/api_config.dart';
@@ -353,17 +354,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final uri = Uri.parse(oauthUrl);
-      if (await canLaunchUrl(uri)) {
+      if (kIsWeb) {
+        // Di web: buka di tab yang sama agar token dikembalikan ke app
+        await launchUrl(uri, webOnlyWindowName: '_self');
+      } else if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         await launchUrl(uri);
       }
     } catch (_) {
       try {
-        await launchUrl(
-          Uri.parse(oauthUrl),
-          mode: LaunchMode.externalApplication,
-        );
+        if (kIsWeb) {
+          await launchUrl(Uri.parse(oauthUrl), webOnlyWindowName: '_self');
+        } else {
+          await launchUrl(
+            Uri.parse(oauthUrl),
+            mode: LaunchMode.externalApplication,
+          );
+        }
       } catch (err) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -398,21 +406,14 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           title: Row(
             children: [
-              Container(
+              Image.asset(
+                'assets/images/google_logo.png',
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'G',
-                  style: TextStyle(
-                    color: Color(0xFF4285F4),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 20,
-                  ),
+                errorBuilder: (_, _, _) => const Icon(
+                  Icons.g_mobiledata,
+                  color: Color(0xFF4285F4),
+                  size: 28,
                 ),
               ),
               const SizedBox(width: 10),
@@ -935,21 +936,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Container(
+                              Image.asset(
+                                'assets/images/google_logo.png',
                                 width: 22,
                                 height: 22,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                ),
-                                alignment: Alignment.center,
-                                child: const Text(
-                                  'G',
-                                  style: TextStyle(
-                                    color: Color(0xFF4285F4),
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 16,
-                                  ),
+                                errorBuilder: (_, _, _) => const Icon(
+                                  Icons.g_mobiledata,
+                                  color: Color(0xFF4285F4),
+                                  size: 24,
                                 ),
                               ),
                               const SizedBox(width: 10),

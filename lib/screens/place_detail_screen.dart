@@ -59,8 +59,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
         SnackBar(
           content: Text(
             newStatus
-                ? 'Disimpan ke daftar favorit'
-                : 'Dihapus dari daftar favorit',
+                ? 'Ditambahkan ke Favorit ❤️'
+                : 'Dihapus dari Favorit',
           ),
           duration: const Duration(seconds: 1),
         ),
@@ -110,40 +110,6 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                         ),
                       ),
                       const Spacer(),
-                      CircleAvatar(
-                        backgroundColor: colors.surfaceNavy,
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.share_outlined,
-                            color: colors.iconColor,
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Tautan ${place.name} disalin!'),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      CircleAvatar(
-                        backgroundColor: colors.surfaceNavy,
-                        child: IconButton(
-                          icon: Icon(
-                            _isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: _isFavorite
-                                ? AppTheme.orange
-                                : colors.iconColor,
-                            size: 20,
-                          ),
-                          onPressed: _toggleFavorite,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -245,12 +211,16 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                   IconButton(
                                     icon: Icon(
                                       _isFavorite
-                                          ? Icons.bookmark
-                                          : Icons.bookmark_border_rounded,
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
                                       color: _isFavorite
-                                          ? AppTheme.gold
+                                          ? Colors.redAccent
                                           : colors.textSecondary,
+                                      size: 26,
                                     ),
+                                    tooltip: _isFavorite
+                                        ? 'Hapus dari Favorit'
+                                        : 'Tambah ke Favorit',
                                     onPressed: _toggleFavorite,
                                   ),
                                 ],
@@ -447,24 +417,6 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                           ),
                         ),
                       ),
-                      if (_isFavorite) ...[
-                        const SizedBox(height: 8),
-                        TextButton.icon(
-                          onPressed: _toggleFavorite,
-                          icon: const Icon(
-                            Icons.delete_outline,
-                            color: Colors.redAccent,
-                            size: 18,
-                          ),
-                          label: const Text(
-                            'Hapus dari Favorit',
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -543,7 +495,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate:
+                      'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                  subdomains: const ['mt0', 'mt1', 'mt2', 'mt3'],
                   userAgentPackageName: 'com.mampir.mampir_app',
                 ),
                 MarkerLayer(

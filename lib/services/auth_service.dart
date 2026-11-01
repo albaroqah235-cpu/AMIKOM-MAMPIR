@@ -78,6 +78,26 @@ class AuthService {
     if (lower.contains('for security purposes')) {
       return 'Demi keamanan, silakan tunggu beberapa saat sebelum meminta pengiriman ulang.';
     }
+    if (lower.contains('network') ||
+        lower.contains('connection refused') ||
+        lower.contains('failed host lookup') ||
+        lower.contains('clientexception')) {
+      return 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+    }
+    if (lower.contains('bad request')) {
+      return 'Permintaan tidak valid. Silakan periksa kembali data Anda.';
+    }
+    if (lower.contains('unauthorized')) {
+      return 'Akses tidak diizinkan. Silakan masuk kembali.';
+    }
+    if (lower.contains('server error') || lower.contains('internal')) {
+      return 'Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.';
+    }
+
+    // Jika pesan tidak dikenal dan berbahasa Inggris, kembalikan pesan Indonesia
+    if (RegExp(r'^[a-zA-Z0-9\s\-_.,:;!?"\(\)]+$').hasMatch(rawError.trim())) {
+      return 'Terjadi kendala pada akun atau sistem. Silakan coba beberapa saat lagi.';
+    }
 
     return rawError;
   }

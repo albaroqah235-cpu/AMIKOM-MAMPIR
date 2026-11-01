@@ -48,9 +48,9 @@ class _RouteScreenState extends State<RouteScreen> {
       _buildRoute();
     } else {
       // Titik awal sementara di dekat Purwokerto / lokasi tujuan
-      _userPos = LatLng(
-        widget.place.latitude - 0.009,
-        widget.place.longitude - 0.008,
+      _userPos = const LatLng(
+        -7.4244,
+        109.2304, // Pusat Alun-alun Purwokerto sebagai fallback
       );
       _buildRoute();
       _fetchUserLocation();
@@ -211,7 +211,9 @@ class _RouteScreenState extends State<RouteScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                subdomains: const ['mt0', 'mt1', 'mt2', 'mt3'],
                 userAgentPackageName: 'com.mampir.mampir_app',
               ),
 

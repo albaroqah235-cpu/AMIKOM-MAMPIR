@@ -224,11 +224,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildSearchTab(),
                 _buildFavoritesTab(),
                 _buildMapTab(),
-                SettingsScreen(
-                  isRootTab: true,
-                  currentRegion: _selectedRegion,
-                  key: ValueKey('settings_$_selectedRegion'),
-                ),
               ],
             ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -266,7 +261,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _buildNavItem(2, Icons.favorite_rounded, 'Favorit'),
               ),
               Expanded(child: _buildNavItem(3, Icons.map_outlined, 'Peta')),
-              Expanded(child: _buildNavItem(4, Icons.person_rounded, 'Akun')),
             ],
           ),
         ),
@@ -493,17 +487,36 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         // Pengaturan
+        // Profil Pengguna
         IconButton(
           padding: const EdgeInsets.all(6),
           constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          icon: Icon(
-            Icons.settings_outlined,
-            color: colors.iconColor,
-            size: 22,
+          icon: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppTheme.orange.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppTheme.orange.withValues(alpha: 0.5),
+              ),
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              color: AppTheme.orange,
+              size: 20,
+            ),
           ),
-          tooltip: 'Akun & Pengaturan',
+          tooltip: 'Profil Pengguna',
           onPressed: () {
-            setState(() => _currentTabIndex = 4);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SettingsScreen(
+                  isRootTab: false,
+                  currentRegion: _selectedRegion,
+                ),
+              ),
+            ).then((_) => _loadPreferencesAndData());
           },
         ),
       ],
@@ -1446,7 +1459,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate:
+                  'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+              subdomains: const ['mt0', 'mt1', 'mt2', 'mt3'],
               userAgentPackageName: 'com.mampir.mampir_app',
             ),
             MarkerLayer(

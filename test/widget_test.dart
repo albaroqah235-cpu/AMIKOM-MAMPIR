@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:mampir_app/main.dart';
 import 'package:mampir_app/screens/home_screen.dart';
 import 'package:mampir_app/screens/notification_screen.dart';
+import 'package:mampir_app/screens/place_detail_screen.dart';
 import 'package:mampir_app/screens/route_screen.dart';
 import 'package:mampir_app/screens/search_screen.dart';
 import 'package:mampir_app/screens/settings_screen.dart';
@@ -134,6 +135,10 @@ void main() {
       // Verify Direct Switch toggle for Notifikasi exists
       expect(find.text('Notifikasi'), findsOneWidget);
       expect(find.byType(Switch), findsOneWidget);
+
+      // Verify title is 'Profil Pengguna' and not 'Pengaturan & Akun'
+      expect(find.text('Profil Pengguna'), findsOneWidget);
+      expect(find.text('Pengaturan & Akun'), findsNothing);
 
       // Verify 'Beri Rating MAMPIR', 'Bagikan Aplikasi', 'Bahasa', and 'Bantuan & Hubungi Kami' are NOT present
       expect(find.text('Beri Rating MAMPIR'), findsNothing);
@@ -616,5 +621,63 @@ void main() {
       final isOldAlunAlunCoord = (p.latitude == -7.4244 && p.longitude == 109.2302);
       expect(isOldAlunAlunCoord, isFalse, reason: 'Place ${p.name} still uses old inaccurate coordinate!');
     }
+  });
+
+  testWidgets('Bottom navigation has 4 tabs and top-right header has Profile icon', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpAndSettle();
+
+    // Verify 4 tabs are present in bottom navigation
+    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Cari'), findsOneWidget);
+    expect(find.text('Favorit'), findsOneWidget);
+    expect(find.text('Peta'), findsOneWidget);
+
+    // Verify 5th tab 'Akun' is completely removed from bottom navigation
+    expect(find.text('Akun'), findsNothing);
+
+    // Verify top-right header has Profile icon with tooltip 'Profil Pengguna'
+    expect(find.byTooltip('Profil Pengguna'), findsOneWidget);
+    expect(find.byIcon(Icons.person_rounded), findsOneWidget);
+
+    // Verify Settings icon is NOT in header
+    expect(find.byTooltip('Akun & Pengaturan'), findsNothing);
+    expect(find.byIcon(Icons.settings_outlined), findsNothing);
+  });
+
+  testWidgets('PlaceDetailScreen uses Love icon for favorite, no share or duplicate buttons', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final place = (await ApiService().fetchPlaces()).first;
+
+    await tester.pumpWidget(MaterialApp(home: PlaceDetailScreen(place: place)));
+    await tester.pumpAndSettle();
+
+    // Verify back button is present
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+
+    // Verify share button and old top favorite button are removed from top bar
+    expect(find.byIcon(Icons.share_outlined), findsNothing);
+
+    // Verify favorite icon beside title is heart/favorite icon, not bookmark
+    expect(find.byIcon(Icons.bookmark), findsNothing);
+    expect(find.byIcon(Icons.bookmark_border_rounded), findsNothing);
+    expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+
+    // Tap favorite button to toggle to active
+    await tester.tap(find.byIcon(Icons.favorite_border));
+    await tester.pumpAndSettle();
+
+    // Verify it turns into solid favorite icon
+    expect(find.byIcon(Icons.favorite), findsOneWidget);
+
+    // Verify bottom bar does NOT have 'Hapus dari Favorit' button
+    expect(find.text('Hapus dari Favorit'), findsNothing);
+    // Verify 'Lihat Rute' is still present
+    expect(find.text('Lihat Rute'), findsOneWidget);
   });
 }

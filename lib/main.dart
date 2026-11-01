@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -100,6 +102,38 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startTimerAndRoute() async {
+    // Intersep token Google OAuth dari URL (untuk web SSO flow)
+    if (kIsWeb) {
+      try {
+        final fragment = Uri.base.fragment;
+        final query = Uri.base.queryParameters;
+        final hasToken =
+            fragment.contains('access_token=') ||
+            query.containsKey('access_token');
+        if (hasToken) {
+          final tokenStr =
+              fragment.isNotEmpty ? fragment : (query['access_token'] ?? '');
+          if (tokenStr.isNotEmpty) {
+            final processed = await _processUrlToken(tokenStr);
+            if (processed && mounted) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  transitionDuration: const Duration(milliseconds: 600),
+                  pageBuilder: (context, anim, secondAnim) =>
+                      const HomeScreen(),
+                  transitionsBuilder: (context, anim, secondAnim, child) {
+                    return FadeTransition(opacity: anim, child: child);
+                  },
+                ),
+              );
+              return;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     // Jalankan timer 2.5 detik
     await Future.delayed(const Duration(milliseconds: 2500));
 
@@ -133,6 +167,51 @@ class _SplashScreenState extends State<SplashScreen>
   void dispose() {
     _animController.dispose();
     super.dispose();
+  }
+
+  /// Memproses token OAuth dari URL fragment/query setelah Google SSO redirect
+  Future<bool> _processUrlToken(String tokenStr) async {
+    try {
+      String? accessToken;
+      // Parse fragment format: access_token=...&expires_in=...
+      if (tokenStr.contains('=')) {
+        final params = Uri.splitQueryString(tokenStr);
+        accessToken = params['access_token'];
+      } else {
+        accessToken = tokenStr;
+      }
+      if (accessToken == null || accessToken.isEmpty) return false;
+
+      // Decode JWT payload
+      final parts = accessToken.split('.');
+      if (parts.length != 3) return false;
+
+      String payload = parts[1];
+      // Tambah padding Base64 jika perlu
+      while (payload.length % 4 != 0) {
+        payload += '=';
+      }
+      final decodedBytes = base64Url.decode(payload);
+      final decodedStr = String.fromCharCodes(decodedBytes);
+      final Map<String, dynamic> claims = jsonDecode(decodedStr);
+
+      final email = claims['email'] as String? ?? '';
+      final name =
+          (claims['user_metadata']?['full_name'] as String?) ??
+          (claims['user_metadata']?['name'] as String?) ??
+          email.split('@').first;
+
+      if (email.isEmpty) return false;
+
+      await _prefService.login(
+        name: name,
+        email: email,
+        isGuest: false,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
