@@ -67,7 +67,7 @@ class GoogleRoutesService {
         Uri.parse(_endpoint),
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-Api-Key': ApiConfig.googleMapsApiKey,
+          'X-Goog-Api-Key': ApiConfig.googleRoutesApiKey,
           'X-Goog-FieldMask':
               'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline',
         },

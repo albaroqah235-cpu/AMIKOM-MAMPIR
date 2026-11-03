@@ -72,7 +72,7 @@ class GooglePlacesService {
         Uri.parse(_endpoint),
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-Api-Key': ApiConfig.googleMapsApiKey,
+          'X-Goog-Api-Key': ApiConfig.googlePlacesApiKey,
           'X-Goog-FieldMask':
               'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.editorialSummary,places.regularOpeningHours.weekdayDescriptions,places.photos',
         },

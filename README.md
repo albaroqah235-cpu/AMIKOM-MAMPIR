@@ -62,15 +62,17 @@ UIdanFitur/      # referensi tampilan/desain
    flutter run \
      --dart-define=SUPABASE_URL=https://PROJECT.supabase.co \
      --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY \
-     --dart-define=GOOGLE_MAPS_API_KEY=YOUR_RESTRICTED_GOOGLE_KEY
+     --dart-define=GOOGLE_PLACES_API_KEY=YOUR_PLACES_KEY \
+     --dart-define=GOOGLE_ROUTES_API_KEY=YOUR_ROUTES_KEY
    ```
 
 ## Konfigurasi Google Maps dan Supabase
 
 Google Places dan Google Routes memerlukan API key Google Cloud. Aktifkan
-Places API (New) dan Routes API, lalu batasi key berdasarkan API dan platform.
-Jangan menulis key langsung ke source code. Key yang pernah tertanam di source
-sebaiknya segera di-rotate dari Google Cloud Console.
+Places API (New) dan Routes API, lalu batasi setiap key berdasarkan API dan
+platform. Jangan menulis key langsung ke source code atau commit ke GitHub.
+Key yang pernah dibagikan atau tertanam di source sebaiknya segera di-rotate
+dari Google Cloud Console.
 
 Untuk Android, tambahkan key yang sudah dibatasi ke `android/gradle.properties`
 sebagai `GOOGLE_MAPS_API_KEY=...`; manifest mengambilnya melalui placeholder.
@@ -104,7 +106,7 @@ CLI:
 
 ```bash
 supabase functions deploy sync-places
-supabase secrets set GOOGLE_MAPS_API_KEY=YOUR_SERVER_KEY
+supabase secrets set GOOGLE_PLACES_API_KEY=YOUR_PLACES_SERVER_KEY
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
 ```
 

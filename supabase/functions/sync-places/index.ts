@@ -25,7 +25,9 @@ Deno.serve(async (request) => {
     .maybeSingle();
   if (profile?.role !== "admin") return json({ error: "Admin role required" }, 403);
 
-  const googleKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+  const googleKey =
+    Deno.env.get("GOOGLE_PLACES_API_KEY") ??
+    Deno.env.get("GOOGLE_MAPS_API_KEY");
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!googleKey || !serviceRole) {
     return json({ error: "Missing server configuration" }, 500);
