@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -5,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/place_model.dart';
 import '../services/google_routes_service.dart';
+import '../services/location_service.dart';
 import '../theme/app_theme.dart';
 
 /// ============================================================
@@ -35,26 +37,38 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _isLoadingRoute = false;
   String? _realDuration;
   String? _realDistance;
+  StreamSubscription<Position>? _trackingSub;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
     _destPos = LatLng(widget.place.latitude, widget.place.longitude);
-    // Jika ada lokasi dari parameter, gunakan langsung
+
+    final cachedLoc = LocationService.instance.currentLatLng;
     if (widget.userLocation != null) {
       _userPos = widget.userLocation!;
       _isLocating = false;
       _buildRoute();
+    } else if (cachedLoc != null) {
+      _userPos = cachedLoc;
+      _isLocating = false;
+      _buildRoute();
     } else {
-      // Titik awal sementara di dekat Purwokerto / lokasi tujuan
       _userPos = const LatLng(
         -7.4244,
         109.2304, // Pusat Alun-alun Purwokerto sebagai fallback
       );
       _buildRoute();
-      _fetchUserLocation();
     }
+
+    _fetchUserLocation();
+  }
+
+  @override
+  void dispose() {
+    _trackingSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _buildRoute() async {
@@ -89,48 +103,35 @@ class _RouteScreenState extends State<RouteScreen> {
 
   Future<void> _fetchUserLocation() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) setState(() => _isLocating = false);
-        return;
-      }
+      final position = await LocationService.instance.getCurrentLocation(
+        forceRefresh: true,
+      );
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.deniedForever ||
-          permission == LocationPermission.denied) {
-        if (mounted) setState(() => _isLocating = false);
-        return;
-      }
+      if (position != null && mounted) {
+        final newPos = LatLng(position.latitude, position.longitude);
+        final bool movedSignificantly = Geolocator.distanceBetween(
+              _userPos.latitude,
+              _userPos.longitude,
+              newPos.latitude,
+              newPos.longitude,
+            ) >
+            10;
 
-      Position? position;
-      try {
-        position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.best,
-            timeLimit: Duration(seconds: 12),
-          ),
-        );
-      } catch (_) {
-        position = await Geolocator.getLastKnownPosition();
-      }
-
-      final p = position;
-      if (p != null && mounted) {
         setState(() {
-          _userPos = LatLng(p.latitude, p.longitude);
+          _userPos = newPos;
           _isLocating = false;
         });
-        await _buildRoute();
-        _mapController.move(
-          LatLng(
-            (_userPos.latitude + _destPos.latitude) / 2,
-            (_userPos.longitude + _destPos.longitude) / 2,
-          ),
-          14.2,
-        );
+
+        if (movedSignificantly || _routePoints.length <= 2) {
+          await _buildRoute();
+          _mapController.move(
+            LatLng(
+              (_userPos.latitude + _destPos.latitude) / 2,
+              (_userPos.longitude + _destPos.longitude) / 2,
+            ),
+            14.2,
+          );
+        }
       } else if (mounted) {
         setState(() => _isLocating = false);
       }
@@ -139,6 +140,23 @@ class _RouteScreenState extends State<RouteScreen> {
         setState(() => _isLocating = false);
       }
     }
+
+    // Dengarkan pembaruan stream posisi jika user bergerak
+    _trackingSub?.cancel();
+    _trackingSub = LocationService.instance.onLocationChanged.listen((pos) {
+      if (!mounted) return;
+      final livePos = LatLng(pos.latitude, pos.longitude);
+      final distMeters = Geolocator.distanceBetween(
+        _userPos.latitude,
+        _userPos.longitude,
+        livePos.latitude,
+        livePos.longitude,
+      );
+      if (distMeters > 15) {
+        setState(() => _userPos = livePos);
+        _buildRoute();
+      }
+    });
   }
 
   Future<void> _launchGoogleMaps() async {
@@ -146,7 +164,7 @@ class _RouteScreenState extends State<RouteScreen> {
     final lng = widget.place.longitude;
     final navUri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
     final webUri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+      'https://www.google.com/maps/dir/?api=1&origin=${_userPos.latitude},${_userPos.longitude}&destination=$lat,$lng',
     );
 
     try {
@@ -228,54 +246,49 @@ class _RouteScreenState extends State<RouteScreen> {
                 ],
               ),
 
+              // Lingkaran Akurasi GPS Lokasi Pengguna
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: _userPos,
+                    radius: 20,
+                    useRadiusInMeter: false,
+                    color: Colors.blueAccent.withValues(alpha: 0.15),
+                    borderColor: Colors.blueAccent.withValues(alpha: 0.4),
+                    borderStrokeWidth: 1.5,
+                  ),
+                ],
+              ),
+
               // Marker Lokasi Anda & Tempat Tujuan
               MarkerLayer(
                 markers: [
-                  // Marker 1: Lokasi Anda (Titik Biru Berdenyut)
+                  // Marker 1: Lokasi Anda (Titik Biru Presisi Akurat)
                   Marker(
                     point: _userPos,
-                    width: 80,
-                    height: 80,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent.withValues(alpha: 0.6),
+                            blurRadius: 10,
+                            spreadRadius: 3,
                           ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceNavy,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.blueAccent),
-                          ),
-                          child: const Text(
-                            'Lokasi Anda',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.my_location,
+                          size: 14,
+                          color: Colors.white,
                         ),
-                        const SizedBox(height: 2),
-                        Container(
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blueAccent.withValues(alpha: 0.5),
-                                blurRadius: 10,
-                                spreadRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
 
@@ -526,7 +539,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   Row(
                     children: [
                       Text(
-                        'Rute Tercepat • ${_realDuration ?? '$estMinutes mnt'} (${_realDistance ?? widget.place.formattedDistance()})',
+                        'Rute Tercepat • ${_realDuration ?? '$estMinutes mnt'} (${_realDistance ?? widget.place.formattedDistance(_userPos.latitude, _userPos.longitude)})',
                         style: const TextStyle(
                           color: AppTheme.gold,
                           fontSize: 14,

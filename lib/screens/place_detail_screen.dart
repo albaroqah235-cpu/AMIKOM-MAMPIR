@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/place_model.dart';
+import '../services/location_service.dart';
 import '../services/preference_service.dart';
 import '../theme/app_theme.dart';
 import 'route_screen.dart';
@@ -13,8 +14,14 @@ import 'route_screen.dart';
 class PlaceDetailScreen extends StatefulWidget {
   final PlaceModel place;
   final int? userBudget;
+  final LatLng? userLocation;
 
-  const PlaceDetailScreen({super.key, required this.place, this.userBudget});
+  const PlaceDetailScreen({
+    super.key,
+    required this.place,
+    this.userBudget,
+    this.userLocation,
+  });
 
   @override
   State<PlaceDetailScreen> createState() => _PlaceDetailScreenState();
@@ -29,11 +36,22 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
   int _currentImageIndex = 0;
   bool _isFavorite = false;
   late List<String> _galleryImages;
+  LatLng? _userLocation;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _userLocation = widget.userLocation ?? LocationService.instance.currentLatLng;
+    if (_userLocation == null) {
+      LocationService.instance.getCurrentLocation().then((pos) {
+        if (pos != null && mounted) {
+          setState(() {
+            _userLocation = LatLng(pos.latitude, pos.longitude);
+          });
+        }
+      });
+    }
 
     _galleryImages = [
       widget.place.imageUrl,
@@ -245,7 +263,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    '• ${place.formattedDistance()}',
+                                    '• ${place.formattedDistance(_userLocation?.latitude, _userLocation?.longitude)}',
                                     style: TextStyle(
                                       color: colors.textSecondary,
                                       fontSize: 13,
@@ -392,7 +410,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (ctx) => RouteScreen(place: place),
+                                builder: (ctx) => RouteScreen(
+                                  place: place,
+                                  userLocation: _userLocation ??
+                                      LocationService.instance.currentLatLng,
+                                ),
                               ),
                             );
                           },

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/place_model.dart';
 import '../services/api_service.dart';
+import '../services/location_service.dart';
 import '../services/preference_service.dart';
 import '../services/recommendation_service.dart';
 import '../theme/app_theme.dart';
@@ -57,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   LatLng? _userLocation;
   bool _isFetchingLocation = false;
   double? _nearbyRadiusKm = 5;
+  StreamSubscription<Position>? _locationTrackingSub;
 
   // Favorit tab category filter
   String _selectedFavCategory = 'Semua';
@@ -151,6 +154,25 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadPreferencesAndData();
+    // Mengambil lokasi GPS di latar belakang sedini mungkin tanpa memicu spinner UI
+    _initBackgroundGps();
+  }
+
+  @override
+  void dispose() {
+    _locationTrackingSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initBackgroundGps() async {
+    try {
+      final pos = await LocationService.instance.getCurrentLocation();
+      if (pos != null && mounted) {
+        setState(() {
+          _userLocation = LatLng(pos.latitude, pos.longitude);
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadPreferencesAndData() async {
@@ -229,37 +251,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserGpsLocation({bool moveMap = false}) async {
     if (_isFetchingLocation) return;
     setState(() => _isFetchingLocation = true);
+
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) setState(() => _isFetchingLocation = false);
-        return;
-      }
+      final pos = await LocationService.instance.getCurrentLocation(
+        forceRefresh: true,
+      );
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.deniedForever ||
-          permission == LocationPermission.denied) {
-        if (mounted) setState(() => _isFetchingLocation = false);
-        return;
-      }
-
-      Position? bestPos;
-      try {
-        bestPos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.best,
-            timeLimit: Duration(seconds: 12),
-          ),
-        );
-      } catch (_) {
-        bestPos = await Geolocator.getLastKnownPosition();
-      }
-
-      if (bestPos != null && mounted) {
-        final pos = bestPos;
+      if (pos != null && mounted) {
+        final newLocation = LatLng(pos.latitude, pos.longitude);
         PlaceModel? nearest;
         if (_allPlaces.isNotEmpty) {
           nearest = _allPlaces.reduce((a, b) {
@@ -269,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
         setState(() {
-          _userLocation = LatLng(pos.latitude, pos.longitude);
+          _userLocation = newLocation;
           _isFetchingLocation = false;
           _selectedMapPlace ??= nearest;
         });
@@ -284,6 +283,28 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _isFetchingLocation = false);
       }
     }
+
+    // Dengarkan stream pergerakan GPS pengguna secara langsung
+    _locationTrackingSub?.cancel();
+    _locationTrackingSub = LocationService.instance.onLocationChanged.listen((pos) {
+      if (!mounted) return;
+      final liveLoc = LatLng(pos.latitude, pos.longitude);
+      final distMeters = _userLocation == null
+          ? double.infinity
+          : Geolocator.distanceBetween(
+              _userLocation!.latitude,
+              _userLocation!.longitude,
+              liveLoc.latitude,
+              liveLoc.longitude,
+            );
+
+      // Perbarui jika bergeser lebih dari 5 meter atau pertama kali terdeteksi
+      if (distMeters > 5) {
+        setState(() {
+          _userLocation = liveLoc;
+        });
+      }
+    });
   }
 
   @override
@@ -851,6 +872,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   builder: (ctx) => PlaceDetailScreen(
                     place: featured,
                     userBudget: _userBudget,
+                    userLocation: _userLocation ??
+                        LocationService.instance.currentLatLng,
                   ),
                 ),
               );
@@ -1099,6 +1122,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (ctx) => PlaceDetailScreen(
                       place: place,
                       userBudget: _userBudget,
+                      userLocation: _userLocation ??
+                          LocationService.instance.currentLatLng,
                     ),
                   ),
                 );
@@ -1411,6 +1436,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   builder: (ctx) => PlaceDetailScreen(
                                     place: place,
                                     userBudget: _userBudget,
+                                    userLocation: _userLocation ??
+                                        LocationService.instance.currentLatLng,
                                   ),
                                 ),
                               );
@@ -1564,61 +1591,48 @@ class _HomeScreenState extends State<HomeScreen> {
               subdomains: const ['mt0', 'mt1', 'mt2', 'mt3'],
               userAgentPackageName: 'com.mampir.mampir_app',
             ),
+            if (_userLocation != null)
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: _userLocation!,
+                    radius: 20,
+                    useRadiusInMeter: false,
+                    color: Colors.blueAccent.withValues(alpha: 0.15),
+                    borderColor: Colors.blueAccent.withValues(alpha: 0.4),
+                    borderStrokeWidth: 1.5,
+                  ),
+                ],
+              ),
             MarkerLayer(
               markers: [
-                // Marker GPS Lokasi Pengguna
+                // Marker GPS Lokasi Pengguna (Presisi Berada di Tengah Titik)
                 if (_userLocation != null)
                   Marker(
                     point: _userLocation!,
-                    width: 80,
-                    height: 80,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                    width: 26,
+                    height: 26,
+                    alignment: Alignment.center,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent.withValues(alpha: 0.6),
+                            blurRadius: 8,
+                            spreadRadius: 2,
                           ),
-                          decoration: BoxDecoration(
-                            color: colors.surfaceNavy,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.blueAccent),
-                          ),
-                          child: const Text(
-                            'Lokasi Kamu',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.my_location,
+                          size: 13,
+                          color: Colors.white,
                         ),
-                        const SizedBox(height: 2),
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blueAccent.withValues(alpha: 0.5),
-                                blurRadius: 6,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.my_location,
-                              size: 12,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
 
@@ -1832,6 +1846,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     builder: (ctx) => PlaceDetailScreen(
                                       place: _selectedMapPlace!,
                                       userBudget: _userBudget,
+                                      userLocation: _userLocation ??
+                                          LocationService.instance.currentLatLng,
                                     ),
                                   ),
                                 );

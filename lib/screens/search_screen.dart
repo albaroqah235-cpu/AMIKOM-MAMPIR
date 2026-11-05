@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/place_model.dart';
 import '../services/google_places_service.dart';
+import '../services/location_service.dart';
 import '../services/preference_service.dart';
 import '../services/recommendation_service.dart';
 import '../theme/app_theme.dart';
@@ -96,33 +96,13 @@ class _SearchScreenState extends State<SearchScreen> {
     final region =
         widget.initialRegion ?? await _preferenceService.getSelectedRegion();
 
-    try {
-      Position? pos;
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        var perm = await Geolocator.checkPermission();
-        if (perm == LocationPermission.denied) {
-          perm = await Geolocator.requestPermission();
-        }
-        if (perm == LocationPermission.whileInUse ||
-            perm == LocationPermission.always) {
-          try {
-            pos = await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(
-                accuracy: LocationAccuracy.best,
-                timeLimit: Duration(seconds: 8),
-              ),
-            );
-          } catch (_) {
-            pos = await Geolocator.getLastKnownPosition();
-          }
-        }
-      }
-      final p = pos;
+    _userLocation = LocationService.instance.currentLatLng;
+
+    LocationService.instance.getCurrentLocation().then((p) {
       if (p != null && mounted) {
         setState(() => _userLocation = LatLng(p.latitude, p.longitude));
       }
-    } catch (_) {}
+    });
 
     if (mounted) {
       setState(() {
@@ -691,6 +671,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             builder: (ctx) => PlaceDetailScreen(
                               place: place,
                               userBudget: _currentBudget,
+                              userLocation: _userLocation ??
+                                  LocationService.instance.currentLatLng,
                             ),
                           ),
                         );
@@ -834,7 +816,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                       ),
                                       const SizedBox(width: 2),
                                       Text(
-                                        place.formattedDistance(),
+                                        place.formattedDistance(
+                                          _userLocation?.latitude,
+                                          _userLocation?.longitude,
+                                        ),
                                         style: TextStyle(
                                           color: colors.textSecondary,
                                           fontSize: 12,

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:geolocator/geolocator.dart';
+import '../services/location_service.dart';
 
 /// ============================================================
 /// MODEL DATA TEMPAT MAKAN & NONGKRONG — MAMPIR APP
@@ -208,18 +210,29 @@ class PlaceModel {
     return reviewCount.toString();
   }
 
-  /// Hitung estimasi jarak dari koordinat referensi dalam kilometer
+  /// Hitung estimasi jarak dari koordinat referensi dalam kilometer (Geodesik WGS-84)
   double distanceInKmFrom(double refLat, double refLng) {
     if (!hasValidCoordinates) return double.infinity;
-    const double p = 0.017453292519943295; // Math.PI / 180
-    final double a =
-        0.5 -
-        math.cos((latitude - refLat) * p) / 2 +
-        math.cos(refLat * p) *
-            math.cos(latitude * p) *
-            (1 - math.cos((longitude - refLng) * p)) /
-            2;
-    return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
+    if (refLat == 0 && refLng == 0) return double.infinity;
+    try {
+      final meters = Geolocator.distanceBetween(
+        refLat,
+        refLng,
+        latitude,
+        longitude,
+      );
+      return meters / 1000.0;
+    } catch (_) {
+      const double p = 0.017453292519943295; // Math.PI / 180
+      final double a =
+          0.5 -
+          math.cos((latitude - refLat) * p) / 2 +
+          math.cos(refLat * p) *
+              math.cos(latitude * p) *
+              (1 - math.cos((longitude - refLng) * p)) /
+              2;
+      return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
+    }
   }
 
   bool get hasValidCoordinates =>
@@ -230,11 +243,17 @@ class PlaceModel {
       !(latitude == 0 && longitude == 0);
 
   /// Format teks jarak (contoh: '1.2 km' atau '800 m')
+  /// Otomatis memprioritaskan GPS pengguna dari LocationService jika koordinat referensi tidak diberikan.
   String formattedDistance([
-    double refLat = -7.4244,
-    double refLng = 109.2302,
+    double? refLat,
+    double? refLng,
   ]) {
-    final dist = distanceInKmFrom(refLat, refLng);
+    final double targetLat =
+        refLat ?? LocationService.instance.currentLatLng?.latitude ?? -7.4244;
+    final double targetLng =
+        refLng ?? LocationService.instance.currentLatLng?.longitude ?? 109.2302;
+
+    final dist = distanceInKmFrom(targetLat, targetLng);
     if (!dist.isFinite) return 'Jarak tidak tersedia';
     if (dist < 1.0) {
       final m = (dist * 1000).round();
