@@ -37,13 +37,40 @@ const MapController = {
     this.createCustomMarkerIcon();
   },
 
-  createCustomMarkerIcon(isActive = false) {
-    const bg = isActive ? '#FFB74D' : '#F57C00';
-    const border = isActive ? '#FFFFFF' : '#1A233A';
-    const size = isActive ? 38 : 32;
+  createCustomMarkerIcon(options = false) {
+    const opts = typeof options === 'boolean' ? { isActive: options } : (options || {});
+    const isActive = !!opts.isActive;
+    const isBestMatch = !!opts.isBestMatch;
+    const isOutBudget = !!opts.isOutBudget;
+
+    let bg = '#F57C00';
+    let border = '#1A233A';
+    let size = 32;
+    let iconChar = '📍';
+    let extraStyle = '';
+
+    if (isActive) {
+      bg = '#FF9800';
+      border = '#FFFFFF';
+      size = 40;
+      iconChar = '📍';
+      extraStyle = 'box-shadow: 0 0 16px rgba(255, 152, 0, 0.9); z-index: 1000;';
+    } else if (isBestMatch) {
+      bg = '#EA580C';
+      border = '#FFD700';
+      size = 38;
+      iconChar = '✨';
+      extraStyle = 'box-shadow: 0 0 14px rgba(255, 215, 0, 0.85);';
+    } else if (isOutBudget) {
+      bg = '#94A3B8';
+      border = '#64748B';
+      size = 26;
+      iconChar = '📍';
+      extraStyle = 'opacity: 0.45; filter: grayscale(0.6);';
+    }
 
     return L.divIcon({
-      className: 'mampir-map-pin',
+      className: `mampir-map-pin ${isBestMatch ? 'marker-best-match' : ''} ${isOutBudget ? 'marker-out-budget' : ''}`,
       html: `
         <div style="
           width: ${size}px;
@@ -52,19 +79,20 @@ const MapController = {
           border: 2px solid ${border};
           border-radius: 50% 50% 50% 0;
           transform: rotate(-45deg);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.35);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.25s ease;
+          ${extraStyle}
         ">
           <span style="
             transform: rotate(45deg);
             color: #FFFFFF;
-            font-size: ${size > 34 ? '16px' : '13px'};
+            font-size: ${size > 34 ? '16px' : (size < 30 ? '11px' : '13px')};
             font-weight: bold;
-          ">📍</span>
+          ">${iconChar}</span>
         </div>
       `,
       iconSize: [size, size],
@@ -72,19 +100,42 @@ const MapController = {
     });
   },
 
-  renderMarkers(places, onSelectPlace) {
+  renderMarkers(places, onSelectPlace, budgetFilterContext = null) {
     if (!this.map) return;
 
     // Bersihkan marker lama
     Object.values(this.markers).forEach(m => this.map.removeLayer(m));
     this.markers = {};
 
+    const isBudgetActive = budgetFilterContext && budgetFilterContext.isBudgetActive;
+    const maxBudget = budgetFilterContext ? budgetFilterContext.userBudget : null;
+
     places.forEach(place => {
       if (!place.latitude || !place.longitude) return;
 
+      const isOutBudget = isBudgetActive && maxBudget && (place.min_price || 0) > maxBudget;
+      const isBestMatch = isBudgetActive && !isOutBudget && !!place.isBestBudgetMatch;
+
       const marker = L.marker([place.latitude, place.longitude], {
-        icon: this.createCustomMarkerIcon(false)
+        icon: this.createCustomMarkerIcon({
+          isActive: false,
+          isBestMatch,
+          isOutBudget,
+          isBudgetActive
+        }),
+        opacity: isOutBudget ? 0.35 : 1.0
       }).addTo(this.map);
+
+      // Simpan metadata di marker untuk highlight
+      marker.placeMeta = { isBestMatch, isOutBudget, isBudgetActive };
+
+      const catLabel = typeof I18nService !== 'undefined'
+        ? I18nService.translateCategory(place.category || 'Cafe')
+        : (place.category || 'Cafe');
+      const detailLabel = typeof window.t === 'function' ? window.t('view_detail', 'Lihat Detail') : 'Lihat Detail';
+      const routeLabel = typeof window.t === 'function' ? window.t('route_label', 'Rute ↗') : 'Rute ↗';
+      const bestMatchLabel = typeof window.t === 'function' ? window.t('budget_badge_best_match', 'Pas di Budget') : 'Pas di Budget';
+      const canGetPrefix = typeof window.t === 'function' ? window.t('budget_can_get_prefix', 'Bisa dapet:') : 'Bisa dapet:';
 
       // Popup Content
       const popupHtml = `
@@ -92,21 +143,27 @@ const MapController = {
           <img src="${place.image_url || 'assets/images/beranda_mockup.jpeg'}" alt="${place.name}" class="map-popup-img" />
           <div class="map-popup-body">
             <div class="map-popup-header">
-              <span class="badge-cat">${place.category || 'Cafe'}</span>
+              <span class="badge-cat">${catLabel}</span>
+              ${isBestMatch ? `<span class="badge-best-budget">✨ ${bestMatchLabel}</span>` : ''}
               <span class="badge-rating">⭐ ${place.rating || 4.5}</span>
             </div>
             <h4 class="map-popup-title">${place.name}</h4>
             <p class="map-popup-city">📍 ${place.city || 'Purwokerto'}</p>
             <p class="map-popup-price">${RecommendationService.formatPrice(place)}</p>
+            ${place.affordableCombo ? `
+              <div class="map-popup-combo">
+                💡 ${canGetPrefix} <strong>${place.affordableCombo.text}</strong> <span style="color: var(--accent-orange); font-weight: 700;">(${place.affordableCombo.priceFormatted})</span>
+              </div>
+            ` : ''}
             <div class="map-popup-actions">
-              <button class="btn-popup-detail" onclick="window.App.openPlaceDetail('${place.id}')">Lihat Detail</button>
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}" target="_blank" class="btn-popup-route">Rute ↗</a>
+              <button class="btn-popup-detail" onclick="window.App.openPlaceDetail('${place.id}')">${detailLabel}</button>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}" target="_blank" class="btn-popup-route">${routeLabel}</a>
             </div>
           </div>
         </div>
       `;
 
-      marker.bindPopup(popupHtml, { maxWidth: 280, className: 'mampir-leaflet-popup' });
+      marker.bindPopup(popupHtml, { maxWidth: 290, className: 'mampir-leaflet-popup' });
 
       marker.on('click', () => {
         this.highlightMarker(place.id);
@@ -120,13 +177,28 @@ const MapController = {
   highlightMarker(placeId) {
     // Reset marker sebelumnya
     if (this.activePlaceId && this.markers[this.activePlaceId]) {
-      this.markers[this.activePlaceId].setIcon(this.createCustomMarkerIcon(false));
+      const prevMarker = this.markers[this.activePlaceId];
+      const meta = prevMarker.placeMeta || {};
+      prevMarker.setIcon(this.createCustomMarkerIcon({
+        isActive: false,
+        isBestMatch: meta.isBestMatch,
+        isOutBudget: meta.isOutBudget,
+        isBudgetActive: meta.isBudgetActive
+      }));
+      prevMarker.setOpacity(meta.isOutBudget ? 0.35 : 1.0);
     }
 
     this.activePlaceId = placeId;
     if (this.markers[placeId]) {
       const marker = this.markers[placeId];
-      marker.setIcon(this.createCustomMarkerIcon(true));
+      const meta = marker.placeMeta || {};
+      marker.setIcon(this.createCustomMarkerIcon({
+        isActive: true,
+        isBestMatch: meta.isBestMatch,
+        isOutBudget: false,
+        isBudgetActive: meta.isBudgetActive
+      }));
+      marker.setOpacity(1.0);
       marker.openPopup();
       const pos = marker.getLatLng();
       this.map.panTo(pos, { animate: true, duration: 0.8 });
