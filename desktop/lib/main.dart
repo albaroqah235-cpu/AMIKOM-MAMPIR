@@ -662,6 +662,8 @@ Future<Map<String, dynamic>?> showPlaceEditor(
             'longitude': double.tryParse(longitude.text) ?? source['longitude'],
             'min_price': int.tryParse(minPrice.text) ?? source['min_price'],
             'max_price': int.tryParse(maxPrice.text) ?? source['max_price'],
+            'avg_price': ((int.tryParse(minPrice.text) ?? (source['min_price'] ?? 0)) +
+                    (int.tryParse(maxPrice.text) ?? (source['max_price'] ?? 0))) ~/ 2,
           }),
           child: const Text('Simpan'),
         ),

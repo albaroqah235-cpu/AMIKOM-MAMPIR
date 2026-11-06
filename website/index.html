@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAMPIR Web — Rekomendasi Kuliner & Nongkrong Purwokerto</title>
+  <meta name="description" content="Makan, Ampir, Pilih, dan Rekomendasi Tempat Makan & Nongkrong Autentik di Kota Purwokerto dan Sekitarnya (Baturraden, Sokaraja)." />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="assets/images/app_icon.jpeg" />
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- MAMPIR Web Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css?v=1.1" />
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar" id="app-sidebar">
+      <div class="brand-section">
+        <img src="assets/images/app_icon.jpeg" alt="Logo MAMPIR" class="brand-logo" />
+        <div class="brand-info">
+          <h1>MAMPIR</h1>
+          <p>Purwokerto & Sekitarnya</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-view="beranda">
+          <span class="icon">🏠</span>
+          <span>Beranda</span>
+        </a>
+        <a class="nav-item" data-view="cari">
+          <span class="icon">🔍</span>
+          <span>Cari Tempat</span>
+        </a>
+        <a class="nav-item" data-view="favorit">
+          <span class="icon">❤️</span>
+          <span>Favorit Saya</span>
+        </a>
+        <a class="nav-item" data-view="pengaturan">
+          <span class="icon">⚙️</span>
+          <span>Pengaturan</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="api-status-badge" style="cursor: pointer;" onclick="window.App.fetchPlaces().then(() => { window.App.render(); window.App.showToast('Data berhasil disinkronkan!'); });" title="Klik untuk sinkronisasi ulang data dengan Supabase">
+          <span class="status-dot" id="api-status-dot"></span>
+          <span id="api-status-text">Menghubungkan...</span>
+          <span style="margin-left: auto; font-size: 11px;">🔄</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="main-wrapper">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="btn-icon mobile-menu-btn" onclick="document.getElementById('app-sidebar').classList.toggle('mobile-open')">
+            ☰
+          </button>
+          <div class="region-selector">
+            <span>📍</span>
+            <select id="global-region-select">
+              <option value="Semua Wilayah">Semua Wilayah</option>
+              <option value="Purwokerto Kota" selected>Purwokerto Kota</option>
+              <option value="Baturraden">Baturraden</option>
+              <option value="Purwokerto Utara (Unsoed)">Purwokerto Utara (Unsoed)</option>
+              <option value="Sokaraja">Sokaraja</option>
+              <option value="Purwokerto Timur & Sumbang">Purwokerto Timur & Sumbang</option>
+              <option value="Purwokerto Barat & Selatan">Purwokerto Barat & Selatan</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="header-center">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="global-search-input" placeholder="Cari kafe, mendoan, warkop, budget..." autocomplete="off" />
+            <button class="search-clear-btn" id="global-search-clear">✕</button>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Filter Budget Button -->
+          <button class="btn-filter-budget" id="btn-open-budget-modal">
+            <span>💰</span>
+            <span>Filter Budget</span>
+          </button>
+
+          <!-- Toggle Theme (Dark / Light) -->
+          <button class="btn-icon" id="btn-toggle-theme" title="Ganti Tema">
+            <span id="theme-icon">🌙</span>
+          </button>
+
+          <!-- User Profile Chip -->
+          <div class="user-profile-btn" id="btn-user-profile" title="Akun Pengguna">
+            <div class="user-avatar">👤</div>
+            <span class="user-name-text" id="user-profile-name">Tamu Purwokerto</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Split-Pane Body: Catalog + Live Interactive Map -->
+      <main class="content-body">
+        <!-- Catalog Column (Scrollable Left / Center) -->
+        <section class="catalog-column" id="catalog-content-area">
+          <!-- Diberikan konten secara dinamis oleh app.js -->
+        </section>
+
+        <!-- Live Map Column (Sticky Right) -->
+        <section class="map-column" id="map-column-area">
+          <div id="live-map-container"></div>
+          <div class="map-floating-controls">
+            <button class="btn-map-control" onclick="window.App.focusMap('pwt-center', -7.4243, 109.2303)">
+              📍 Pusat Alun-Alun
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Modal Detail Tempat -->
+  <div class="modal-backdrop" id="modal-place-detail">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Detail Tempat Kuliner</h3>
+        <button class="modal-close-btn" onclick="window.App.closeModal('modal-place-detail')">✕</button>
+      </div>
+      <div class="modal-body" id="modal-place-detail-body">
+        <!-- Konten diisi oleh app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Filter Budget & Fasilitas -->
+  <div class="modal-backdrop" id="modal-budget-filter">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>💰 Filter Anggaran & Fasilitas</h3>
+        <button class="modal-close-btn" onclick="window.App.closeModal('modal-budget-filter')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Batas Maksimal Anggaran / Orang:</label>
+          <div style="font-size: 20px; font-weight: 800; color: var(--accent-orange); margin: 6px 0;" id="filter-budget-val-display">
+            Rp 25.000
+          </div>
+          <input type="range" min="10000" max="100000" step="5000" value="25000" id="filter-budget-slider" style="width: 100%; accent-color: var(--accent-orange);" />
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+            <span>Rp 10.000 (Hemat)</span>
+            <span>Rp 100.000 (Sultan)</span>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 18px;">
+          <label>Prioritas Fasilitas:</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" checked /> WiFi Cepat
+            </label>
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" checked /> Colokan Listrik
+            </label>
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" /> Ruangan Ber-AC
+            </label>
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" /> Area Outdoor
+            </label>
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" /> Parkir Luas
+            </label>
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" /> Musholla
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="window.App.closeModal('modal-budget-filter')">Batal</button>
+        <button class="btn-primary" id="btn-apply-budget-filter">Terapkan Filter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Onboarding (First Launch) -->
+  <div class="modal-backdrop" id="modal-onboarding">
+    <div class="modal-card" style="max-width: 480px; text-align: center;">
+      <div class="modal-body" style="padding: 36px 24px;">
+        <img src="assets/images/app_icon.jpeg" alt="Logo MAMPIR" style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--accent-gold); margin-bottom: 16px; box-shadow: var(--shadow-glow);" />
+        <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Selamat Datang di MAMPIR!</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">
+          Temukan tempat makan, nongkrong, ngopi, dan kuliner autentik terbaik di wilayah Purwokerto dan sekitarnya (Baturraden, Sokaraja) sesuai selera dan isi kantongmu.
+        </p>
+
+        <div style="text-align: left; margin-bottom: 24px;">
+          <label style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; display: block;">
+            Pilih Zona Jelajah Utama Anda:
+          </label>
+          <select id="onboarding-region-select" class="form-control" style="width: 100%;">
+            <option value="Purwokerto Kota">Purwokerto Kota (Pusat Kota & Alun-Alun)</option>
+            <option value="Baturraden">Baturraden (Lereng Gunung Slamet & Kafe Alam)</option>
+            <option value="Purwokerto Utara (Unsoed)">Purwokerto Utara (Kampus Unsoed & Nongkrong Mahasiswa)</option>
+            <option value="Sokaraja">Sokaraja (Pusat Kuliner Soto & Getuk Goreng)</option>
+            <option value="Purwokerto Timur & Sumbang">Purwokerto Timur & Sumbang</option>
+            <option value="Purwokerto Barat & Selatan">Purwokerto Barat & Selatan</option>
+            <option value="Semua Wilayah">Semua Wilayah Banyumas</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;" onclick="window.App.completeOnboarding(document.getElementById('onboarding-region-select').value)">
+          Mulai Eksplorasi Sekarang 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Auth (Masuk / Daftar / Tamu) -->
+  <div class="modal-backdrop" id="modal-auth">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <div style="display: flex; gap: 8px;">
+          <button class="category-pill active" id="auth-tab-login" onclick="window.App.switchAuthTab('login')">
+            🔑 Masuk
+          </button>
+          <button class="category-pill" id="auth-tab-register" onclick="window.App.switchAuthTab('register')">
+            📝 Daftar Akun
+          </button>
+        </div>
+        <button class="modal-close-btn" onclick="window.App.closeModal('modal-auth')">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Alert Box untuk Notifikasi / Error -->
+        <div id="auth-alert-box" style="display: none; padding: 12px 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 13px; line-height: 1.5;"></div>
+
+        <!-- FORM MASUK (LOGIN) -->
+        <form id="form-login" onsubmit="event.preventDefault(); window.App.handleLogin(document.getElementById('auth-email').value, document.getElementById('auth-password').value);">
+          <div class="form-group">
+            <label>Alamat Email:</label>
+            <input type="email" id="auth-email" class="form-control" placeholder="nama@email.com" required />
+          </div>
+          <div class="form-group">
+            <label>Kata Sandi:</label>
+            <input type="password" id="auth-password" class="form-control" placeholder="••••••••" required />
+          </div>
+          <button type="submit" id="btn-submit-login" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 12px; padding: 11px;">
+            Masuk ke Akun
+          </button>
+        </form>
+
+        <!-- FORM DAFTAR (REGISTER) -->
+        <form id="form-register" style="display: none;" onsubmit="event.preventDefault(); window.App.handleRegister(document.getElementById('reg-name').value, document.getElementById('reg-email').value, document.getElementById('reg-password').value, document.getElementById('reg-confirm').value);">
+          <div class="form-group">
+            <label>Nama Lengkap:</label>
+            <input type="text" id="reg-name" class="form-control" placeholder="Nama Anda" required />
+          </div>
+          <div class="form-group">
+            <label>Alamat Email:</label>
+            <input type="email" id="reg-email" class="form-control" placeholder="nama@email.com" required />
+          </div>
+          <div class="form-group">
+            <label>Kata Sandi (min. 6 karakter):</label>
+            <input type="password" id="reg-password" class="form-control" placeholder="••••••••" minlength="6" required />
+          </div>
+          <div class="form-group">
+            <label>Konfirmasi Kata Sandi:</label>
+            <input type="password" id="reg-confirm" class="form-control" placeholder="••••••••" minlength="6" required />
+          </div>
+          <button type="submit" id="btn-submit-register" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 12px; padding: 11px;">
+            Daftar Akun Baru
+          </button>
+        </form>
+
+        <div style="margin: 20px 0; text-align: center; position: relative;">
+          <hr style="border: none; border-top: 1px solid var(--border-color);" />
+          <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--bg-surface); padding: 0 10px; font-size: 11px; color: var(--text-muted);">
+            ATAU
+          </span>
+        </div>
+
+        <button class="btn-secondary" style="width: 100%; text-align: center; padding: 10px;" onclick="window.App.handleGuestLogin()">
+          👤 Lanjut Jelajah sebagai Tamu (Mode Tanpa Akun)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- MAMPIR Web Scripts -->
+  <script src="js/config.js?v=1.1"></script>
+  <script src="js/data.js?v=1.1"></script>
+  <script src="js/storage.js?v=1.1"></script>
+  <script src="js/auth.js?v=1.1"></script>
+  <script src="js/recommendation.js?v=1.1"></script>
+  <script src="js/map.js?v=1.1"></script>
+  <script src="js/app.js?v=1.1"></script>
+</body>
+</html>
+
