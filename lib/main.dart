@@ -102,37 +102,42 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startTimerAndRoute() async {
-    // Intersep token Google OAuth dari URL (untuk web SSO flow)
-    if (kIsWeb) {
-      try {
+    // Intersep token Google OAuth dari URL (baik web maupun deep link cold-start Android)
+    try {
+      String? tokenStr;
+      if (kIsWeb) {
         final fragment = Uri.base.fragment;
         final query = Uri.base.queryParameters;
-        final hasToken =
-            fragment.contains('access_token=') ||
-            query.containsKey('access_token');
-        if (hasToken) {
-          final tokenStr =
-              fragment.isNotEmpty ? fragment : (query['access_token'] ?? '');
-          if (tokenStr.isNotEmpty) {
-            final processed = await _processUrlToken(tokenStr);
-            if (processed && mounted) {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  transitionDuration: const Duration(milliseconds: 600),
-                  pageBuilder: (context, anim, secondAnim) =>
-                      const HomeScreen(),
-                  transitionsBuilder: (context, anim, secondAnim, child) {
-                    return FadeTransition(opacity: anim, child: child);
-                  },
-                ),
-              );
-              return;
-            }
-          }
+        if (fragment.contains('access_token=')) {
+          tokenStr = fragment;
+        } else if (query.containsKey('access_token')) {
+          tokenStr = query['access_token'];
         }
-      } catch (_) {}
-    }
+      } else {
+        final defaultRoute =
+            WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+        if (defaultRoute.contains('access_token=')) {
+          tokenStr = defaultRoute;
+        }
+      }
+
+      if (tokenStr != null && tokenStr.isNotEmpty) {
+        final processed = await _processUrlToken(tokenStr);
+        if (processed && mounted) {
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 600),
+              pageBuilder: (context, anim, secondAnim) => const HomeScreen(),
+              transitionsBuilder: (context, anim, secondAnim, child) {
+                return FadeTransition(opacity: anim, child: child);
+              },
+            ),
+          );
+          return;
+        }
+      }
+    } catch (_) {}
 
     // Jalankan timer 2.5 detik
     await Future.delayed(const Duration(milliseconds: 2500));

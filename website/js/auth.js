@@ -77,6 +77,7 @@ const AuthService = {
         const meta = user.user_metadata || {};
         const name = meta.name || meta.full_name || email.split('@')[0];
         
+        StorageService.setAuthToken(data.access_token);
         StorageService.setUserSession({
           name: name,
           email: email,
@@ -119,6 +120,46 @@ const AuthService = {
       isGuest: true
     });
     return { success: true, name: guestName };
+  },
+
+  async verifyAdminRole(token, userId) {
+    if (!token) return false;
+    try {
+      // 1. Periksa fungsi RPC is_admin() resmi Supabase
+      const rpcRes = await fetch(`${AppConfig.supabaseUrl}/rest/v1/rpc/is_admin`, {
+        method: 'POST',
+        headers: {
+          'apikey': AppConfig.supabaseAnonKey,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (rpcRes.ok) {
+        const isAdminRpc = await rpcRes.json();
+        if (isAdminRpc === true) return true;
+      }
+    } catch (_) {}
+
+    try {
+      // 2. Fallback periksa role pada tabel public.user_profiles
+      const profileUrl = userId
+        ? `${AppConfig.supabaseUrl}/rest/v1/user_profiles?id=eq.${userId}&select=role`
+        : `${AppConfig.supabaseUrl}/rest/v1/user_profiles?select=role&limit=1`;
+      const res = await fetch(profileUrl, {
+        method: 'GET',
+        headers: {
+          'apikey': AppConfig.supabaseAnonKey,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].role === 'admin') {
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
   },
 
   signOut() {

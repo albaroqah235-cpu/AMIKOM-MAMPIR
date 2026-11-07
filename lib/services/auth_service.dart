@@ -30,7 +30,6 @@ class AuthResult {
 
 class AuthService {
   final http.Client _client;
-  static final Map<String, String> _pendingOtps = {};
 
   AuthService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -112,6 +111,11 @@ class AuthService {
     'apikey': ApiConfig.supabaseAnonKey,
     'Content-Type': 'application/json',
   };
+
+  /// Menghasilkan URL autorisasi Google OAuth resmi via Supabase Auth
+  static String getGoogleOAuthUrl({required String redirectUrl}) {
+    return '$_baseUrl/authorize?provider=google&redirect_to=${Uri.encodeComponent(redirectUrl)}';
+  }
 
   // ==================== SIGN UP ====================
   /// Daftar akun baru dengan email & password.
@@ -227,13 +231,9 @@ class AuthService {
   }
 
   // ==================== LUPA SANDI: KIRIM OTP ====================
-  /// Mengirimkan kode OTP reset sandi ke email pengguna.
+  /// Mengirimkan kode OTP reset sandi ke email pengguna via Supabase Auth.
   Future<AuthResult> sendPasswordResetOtp(String email) async {
     final cleanEmail = email.trim().toLowerCase();
-    // Generate kode OTP 6-digit untuk verifikasi instan & andal
-    final generatedOtp =
-        (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
-    _pendingOtps[cleanEmail] = generatedOtp;
 
     try {
       final response = await _client
@@ -247,32 +247,30 @@ class AuthService {
       if (response.statusCode == 200) {
         return AuthResult(
           success: true,
-          message: 'Kode OTP telah dikirim ke $email!',
-          otpCode: generatedOtp,
+          message:
+              'Kode verifikasi telah dikirim ke $email! Silakan periksa kotak masuk atau spam email Anda.',
         );
       } else {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
-        final msg = body['msg'] as String? ?? 'Gagal mengirim OTP.';
-        // Tetap berikan OTP fallback agar pengguna tidak terblokir
+        final rawMsg =
+            body['msg'] as String? ??
+            body['message'] as String? ??
+            body['error_description'] as String?;
         return AuthResult(
-          success: true,
-          message: msg.contains('rate limit')
-              ? 'Email dibatasi sementara. Gunakan kode verifikasi cadangan Anda.'
-              : 'Kode OTP verifikasi telah disiapkan.',
-          otpCode: generatedOtp,
+          success: false,
+          message: translateAuthError(rawMsg),
         );
       }
     } catch (_) {
-      return AuthResult(
-        success: true,
-        message: 'Kode OTP verifikasi telah disiapkan.',
-        otpCode: generatedOtp,
+      return const AuthResult(
+        success: false,
+        message: 'Gagal terhubung ke server. Periksa koneksi internet Anda.',
       );
     }
   }
 
   // ==================== VERIFIKASI OTP & RESET SANDI ====================
-  /// Memverifikasi kode OTP dan langsung mengubah kata sandi baru.
+  /// Memverifikasi kode OTP ke Supabase dan mengubah kata sandi baru.
   Future<AuthResult> verifyOtpAndResetPassword({
     required String email,
     required String token,
@@ -280,9 +278,7 @@ class AuthService {
   }) async {
     final cleanEmail = email.trim().toLowerCase();
     final cleanToken = token.trim();
-    final expectedOtp = _pendingOtps[cleanEmail];
 
-    // Coba verifikasi via Supabase REST API
     try {
       final verifyResponse = await _client
           .post(
@@ -301,7 +297,7 @@ class AuthService {
             jsonDecode(verifyResponse.body) as Map<String, dynamic>;
         final accessToken = verifyBody['access_token'] as String?;
 
-        if (accessToken != null) {
+        if (accessToken != null && accessToken.isNotEmpty) {
           final updateResponse = await _client
               .put(
                 Uri.parse('$_baseUrl/user'),
@@ -315,30 +311,47 @@ class AuthService {
               .timeout(const Duration(seconds: 15));
 
           if (updateResponse.statusCode == 200) {
-            _pendingOtps.remove(cleanEmail);
             return const AuthResult(
               success: true,
               message:
                   'Kata sandi berhasil diubah! Silakan masuk dengan kata sandi baru.',
             );
+          } else {
+            final updateBody =
+                jsonDecode(updateResponse.body) as Map<String, dynamic>;
+            final rawMsg =
+                updateBody['msg'] as String? ??
+                updateBody['message'] as String? ??
+                updateBody['error_description'] as String?;
+            return AuthResult(
+              success: false,
+              message: translateAuthError(rawMsg),
+            );
           }
+        } else {
+          return const AuthResult(
+            success: false,
+            message: 'Sesi verifikasi tidak valid. Silakan coba kembali.',
+          );
         }
+      } else {
+        final verifyBody =
+            jsonDecode(verifyResponse.body) as Map<String, dynamic>;
+        final rawMsg =
+            verifyBody['msg'] as String? ??
+            verifyBody['message'] as String? ??
+            verifyBody['error_description'] as String?;
+        return AuthResult(
+          success: false,
+          message: translateAuthError(rawMsg),
+        );
       }
-    } catch (_) {}
-
-    // Fallback verifikasi kode OTP sesi
-    if (expectedOtp != null && cleanToken == expectedOtp) {
-      _pendingOtps.remove(cleanEmail);
+    } catch (_) {
       return const AuthResult(
-        success: true,
+        success: false,
         message:
-            'Kata sandi berhasil diubah! Silakan masuk dengan kata sandi baru.',
+            'Koneksi gagal saat memverifikasi sandi. Periksa sambungan internet kamu.',
       );
     }
-
-    return const AuthResult(
-      success: false,
-      message: 'Kode OTP salah atau sudah kedaluwarsa. Coba kirim ulang.',
-    );
   }
 }

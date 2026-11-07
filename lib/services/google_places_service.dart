@@ -194,6 +194,20 @@ class GooglePlacesService {
           break;
       }
 
+      // Foto dari Google Places API (New) jika tersedia
+      String imageUrl = '';
+      final photos = item['photos'] as List<dynamic>?;
+      if (photos != null && photos.isNotEmpty) {
+        final firstPhoto = photos.first as Map<String, dynamic>?;
+        final photoName = firstPhoto?['name'] as String?;
+        if (photoName != null &&
+            photoName.isNotEmpty &&
+            ApiConfig.googlePlacesApiKey.isNotEmpty) {
+          imageUrl =
+              'https://places.googleapis.com/v1/$photoName/media?maxHeightPx=800&maxWidthPx=1200&key=${ApiConfig.googlePlacesApiKey}';
+        }
+      }
+
       return PlaceModel(
         id: id,
         name: name,
@@ -211,7 +225,7 @@ class GooglePlacesService {
             : openingDays.join('; '),
         latitude: lat,
         longitude: lng,
-        imageUrl: '',
+        imageUrl: imageUrl,
         facilities: const [],
         tags: [category, city, 'Google Maps'],
         menuHighlights: const [],

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mampir_app/config/api_config.dart';
 import 'package:mampir_app/main.dart';
 import 'package:mampir_app/screens/home_screen.dart';
 import 'package:mampir_app/screens/notification_screen.dart';
@@ -679,5 +680,20 @@ void main() {
     expect(find.text('Hapus dari Favorit'), findsNothing);
     // Verify 'Lihat Rute' is still present
     expect(find.text('Lihat Rute'), findsOneWidget);
+  });
+
+  test('Google OAuth URL generation & Android deep link callback configuration', () {
+    expect(ApiConfig.androidAuthCallback, equals('mampir://auth-callback'));
+
+    final androidUrl = AuthService.getGoogleOAuthUrl(
+      redirectUrl: ApiConfig.androidAuthCallback,
+    );
+    expect(androidUrl, contains('/auth/v1/authorize?provider=google'));
+    expect(androidUrl, contains('redirect_to=mampir%3A%2F%2Fauth-callback'));
+
+    final webUrl = AuthService.getGoogleOAuthUrl(
+      redirectUrl: 'https://mampir.id',
+    );
+    expect(webUrl, contains('redirect_to=https%3A%2F%2Fmampir.id'));
   });
 }

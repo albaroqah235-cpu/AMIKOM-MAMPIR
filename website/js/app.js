@@ -1400,8 +1400,8 @@ window.App = {
               </button>
 
               <div style="font-size: 11px; color: var(--text-muted); background: var(--bg-surface); border: 1px dashed var(--border-color); padding: 8px 12px; border-radius: var(--radius-sm); line-height: 1.5; margin-top: 4px;">
-                💡 <strong>${window.t('admin_gate_credentials_hint', 'Kredensial Admin Default:')}</strong><br/>
-                Email: <code style="color: var(--accent-orange);">admin@mampir.com</code> | Sandi: <code style="color: var(--accent-orange);">admin123</code>
+                🔒 <strong>${window.t('admin_gate_notice_title', 'Akses Terbatas Administrator:')}</strong><br/>
+                ${window.t('admin_gate_notice_desc', 'Masuk menggunakan akun Supabase Auth yang terdaftar dengan hak akses Administrator (role: admin) pada sistem MAMPIR.')}
               </div>
             </form>
           </div>
@@ -1592,41 +1592,42 @@ window.App = {
       btn.textContent = window.t('admin_gate_verifying', 'Memverifikasi Akses Admin...');
     }
 
-    // 1. Verifikasi Master Administrator Kredensial
-    if ((email === 'admin@mampir.com' || email === 'admin') && (pass === 'admin123' || pass === 'mampir2026' || pass === 'admin')) {
-      StorageService.setUserRole('admin');
-      StorageService.setUserSession({
-        name: 'Administrator MAMPIR',
-        email: 'admin@mampir.com',
-        isGuest: false
-      });
-      this.updateUserProfileUI();
-      this.render();
-      this.showToast(window.t('toast_admin_login_success', '✅ Otentikasi Administrator Berhasil! Hak akses penuh aktif.'));
+    // 1. Autentikasi kredensial resmi melalui Supabase Auth API
+    const res = await AuthService.signIn(email, pass);
+    if (!res.success) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = window.t('admin_gate_btn_submit', '🔐 Verifikasi & Buka Panel Admin');
+      }
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = res.message || window.t('admin_gate_err_invalid', '❌ Email atau kata sandi tidak valid.');
+      }
       return;
     }
 
-    // 2. Verifikasi via Supabase Auth jika email terdaftar sebagai admin
-    if (email.includes('admin')) {
-      const res = await AuthService.signIn(email, pass);
-      if (res.success) {
-        StorageService.setUserRole('admin');
-        this.updateUserProfileUI();
-        this.render();
-        this.showToast(window.t('toast_admin_login_success', '✅ Otentikasi Administrator Berhasil! Hak akses penuh aktif.'));
-        return;
+    // 2. Verifikasi hak akses role admin pada backend database Supabase (is_admin RPC / user_profiles)
+    const isAdmin = await AuthService.verifyAdminRole(res.token, res.user?.id);
+    if (!isAdmin) {
+      // Cabut sesi admin jika role akun bukan admin
+      StorageService.setUserRole('user');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = window.t('admin_gate_btn_submit', '🔐 Verifikasi & Buka Panel Admin');
       }
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.innerHTML = '⛔ <strong>Akses Ditolak:</strong> Akun ini berhasil masuk, namun tidak terdaftar sebagai Administrator pada basis data MAMPIR.';
+      }
+      this.updateUserProfileUI();
+      return;
     }
 
-    // Jika gagal verifikasi
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = window.t('admin_gate_btn_submit', '🔐 Verifikasi & Buka Panel Admin');
-    }
-    if (errorEl) {
-      errorEl.style.display = 'block';
-      errorEl.innerHTML = window.t('admin_gate_err_invalid', '❌ Kredensial Administrator tidak valid. Pengguna biasa tidak diizinkan mengakses panel ini.');
-    }
+    // 3. Hak akses admin terkonfirmasi
+    StorageService.setUserRole('admin');
+    this.updateUserProfileUI();
+    this.render();
+    this.showToast(window.t('toast_admin_login_success', '✅ Otentikasi Administrator Berhasil! Hak akses penuh aktif.'));
   },
 
   logoutAdmin() {
@@ -1645,33 +1646,92 @@ window.App = {
     this.render();
   },
 
-  saveCafeProfileChanges(cafeId) {
+  async saveCafeProfileChanges(cafeId) {
     if (!StorageService.isAdmin()) {
       this.showToast(window.t('toast_admin_denied', '⛔ Akses ditolak: Hanya Administrator resmi yang berwenang!'));
       return;
     }
 
-    const name = document.getElementById('admin-cafe-name')?.value;
-    const wa = document.getElementById('admin-cafe-wa')?.value;
+    const token = StorageService.getAuthToken();
+    if (!token) {
+      this.showToast('⛔ Sesi otentikasi admin tidak ditemukan. Silakan masuk ulang.');
+      return;
+    }
+
+    const name = document.getElementById('admin-cafe-name')?.value?.trim();
+    const wa = document.getElementById('admin-cafe-wa')?.value?.trim();
     const city = document.getElementById('admin-cafe-city')?.value;
-    const hours = document.getElementById('admin-cafe-hours')?.value;
-    const address = document.getElementById('admin-cafe-address')?.value;
-    const desc = document.getElementById('admin-cafe-desc')?.value;
+    const hours = document.getElementById('admin-cafe-hours')?.value?.trim();
+    const address = document.getElementById('admin-cafe-address')?.value?.trim();
+    const desc = document.getElementById('admin-cafe-desc')?.value?.trim();
     const facilitiesRaw = document.getElementById('admin-cafe-facilities')?.value;
     const facilities = facilitiesRaw ? facilitiesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-    StorageService.saveCafeOverrides(cafeId, {
+    const saveBtn = document.querySelector('#admin-tab-content-profile button[type="submit"]');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = '⏳ Menyimpan ke Supabase...';
+    }
+
+    const payload = {
       name,
-      whatsapp: wa,
       city,
       open_hours: hours,
       address,
       description: desc,
-      facilities
-    });
+      facilities,
+      override_fields: {
+        name,
+        city,
+        open_hours: hours,
+        address,
+        description: desc,
+        facilities,
+        whatsapp: wa
+      }
+    };
 
-    this.render();
-    this.showToast(window.t('toast_admin_saved', 'Perubahan profil kafe berhasil disimpan!'));
+    try {
+      const response = await fetch(`${AppConfig.supabaseUrl}/rest/v1/places?id=eq.${encodeURIComponent(cafeId)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': AppConfig.supabaseAnonKey,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || `HTTP ${response.status}`);
+      }
+
+      // Simpan juga di localStorage sebagai cache sinkron
+      StorageService.saveCafeOverrides(cafeId, payload);
+      const placeIdx = this.places.findIndex(p => p.id === cafeId);
+      if (placeIdx !== -1) {
+        this.places[placeIdx] = {
+          ...this.places[placeIdx],
+          ...payload,
+          whatsapp: wa
+        };
+      }
+
+      this.render();
+      this.showToast(window.t('toast_admin_saved', '✅ Perubahan profil kafe berhasil disimpan ke Supabase!'));
+    } catch (err) {
+      console.error('Gagal sinkron profil kafe ke Supabase:', err);
+      // Fallback simpan di cache lokal
+      StorageService.saveCafeOverrides(cafeId, payload);
+      this.showToast(`⚠️ Gagal sinkron ke database (${err.message}). Data disimpan ke cache lokal.`);
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 ' + window.t('btn_save_changes', 'Simpan Perubahan Profil');
+      }
+    }
   },
 
   openCreateEventModal(cafeId) {
