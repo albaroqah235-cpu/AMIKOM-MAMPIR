@@ -93,7 +93,7 @@ Aplikasi admin terpisah berada di [desktop/](desktop/). Jalankan:
 ```bash
 cd desktop
 flutter pub get
-flutter run -d linux \
+flutter run -d windows \
   --dart-define=SUPABASE_URL=https://vdqdithxujxvzyybjtpn.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWRpdGh4dWp4dnp5eWJqdHBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMzA2NTIsImV4cCI6MjEwODgwNjY1Mn0.7zE0gLxh0a2DNzdVcRfTj3EZDaqXWZ09kL5gcXTETXY
 ```
