@@ -1,6 +1,10 @@
 /**
  * MAMPIR Web - Runtime Configuration
- * Menyimpan URL API Supabase, Anon Key, Google Maps Key, dan endpoint
+ * Menyimpan URL API Supabase, Anon Key, Google Maps Key, dan endpoint.
+ * PERINGATAN KEAMANAN:
+ * File ini dieksekusi di sisi klien (browser). JANGAN PERNAH menambahkan
+ * SUPABASE_SERVICE_ROLE_KEY, database secret, atau kredensial privat di file ini.
+ * Seluruh akses data klien dikontrol oleh Supabase Row Level Security (RLS) menggunakan Anon Key.
  */
 const AppConfig = {
   supabaseUrl: 'https://vdqdithxujxvzyybjtpn.supabase.co',

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:url_launcher/url_launcher.dart';
 import '../config/api_config.dart';
 import '../services/auth_service.dart';
@@ -25,7 +26,10 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
+  static const MethodChannel _oauthChannel =
+      MethodChannel('com.mampir.mampir_app/oauth');
+
   final PreferenceService _prefService = PreferenceService();
   final AuthService _authService = AuthService();
 
@@ -43,18 +47,92 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkUrlForAuthToken();
+      _checkIncomingLinks();
     });
+    _setupNativeChannelListener();
+  }
+
+  void _setupNativeChannelListener() {
+    if (!kIsWeb) {
+      _oauthChannel.setMethodCallHandler((call) async {
+        if (call.method == 'onDeepLink') {
+          final uriStr = call.arguments as String?;
+          if (uriStr != null && uriStr.isNotEmpty) {
+            _handleIncomingUriString(uriStr);
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _checkIncomingLinks() async {
+    // 1. Cek Web URL
+    if (kIsWeb) {
+      _checkUrlForAuthToken();
+      return;
+    }
+
+    // 2. Cek Native Android Initial Link via MethodChannel
+    try {
+      final initial = await _oauthChannel.invokeMethod<String>('getInitialLink');
+      if (initial != null && initial.isNotEmpty) {
+        _handleIncomingUriString(initial);
+        return;
+      }
+    } catch (_) {}
+
+    // 3. Fallback route name bawaan framework Flutter
+    try {
+      final defaultRoute =
+          WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+      if (defaultRoute.contains('access_token=') ||
+          defaultRoute.contains('auth-callback') ||
+          defaultRoute.contains('login-callback')) {
+        _handleIncomingUriString(defaultRoute);
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  @override
+  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+    final uri = routeInformation.uri;
+    final handled = _handleIncomingUriString(uri.toString());
+    if (handled) return true;
+    return super.didPushRouteInformation(routeInformation);
+  }
+
+  bool _handleIncomingUriString(String uriStr) {
+    if (uriStr.isEmpty) return false;
+
+    if (uriStr.contains('error=')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Proses masuk Google dibatalkan atau tidak selesai.'),
+            backgroundColor: Colors.orangeAccent,
+          ),
+        );
+      }
+      return true;
+    }
+
+    if (uriStr.contains('access_token=')) {
+      _processTokenString(uriStr);
+      return true;
+    }
+    return false;
   }
 
   // ===========================================================
@@ -344,13 +422,24 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (_) {}
   }
 
+  String _getOAuthRedirectUrl() {
+    if (kIsWeb) {
+      try {
+        final origin = Uri.base.origin;
+        if (origin.isNotEmpty && origin != 'null') {
+          return origin;
+        }
+      } catch (_) {}
+      return 'http://localhost';
+    }
+    return ApiConfig.androidAuthCallback;
+  }
+
   Future<void> _handleGoogleLogin() async {
     setState(() => _isLoading = true);
 
-    // Ambil origin browser saat ini (misal http://localhost:45543)
-    final origin = Uri.base.origin;
-    final oauthUrl =
-        '${ApiConfig.supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${Uri.encodeComponent(origin)}';
+    final redirectUrl = _getOAuthRedirectUrl();
+    final oauthUrl = AuthService.getGoogleOAuthUrl(redirectUrl: redirectUrl);
 
     try {
       final uri = Uri.parse(oauthUrl);

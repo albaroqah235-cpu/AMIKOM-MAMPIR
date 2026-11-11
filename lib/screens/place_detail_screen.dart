@@ -53,13 +53,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
       });
     }
 
-    _galleryImages = [
-      widget.place.imageUrl,
-      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-    ];
+    final rawImg = widget.place.imageUrl.trim();
+    _galleryImages = rawImg.isNotEmpty ? [rawImg] : [];
 
     _checkFavorite();
   }
@@ -138,7 +133,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Image Carousel with counter badge
+                        // Image Carousel or Hero Image / Placeholder
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Stack(
@@ -148,59 +143,120 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: AppTheme.borderNavy,
+                                    color: colors.borderNavy,
                                   ),
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(20),
-                                  child: PageView.builder(
-                                    controller: _imagePageController,
-                                    onPageChanged: (i) =>
-                                        setState(() => _currentImageIndex = i),
-                                    itemCount: _galleryImages.length,
-                                    itemBuilder: (context, idx) {
-                                      return Image.network(
-                                        _galleryImages[idx],
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        errorBuilder: (ctx, err, st) =>
-                                            Container(
-                                              color: AppTheme.surfaceNavy,
-                                              child: const Icon(
+                                  child: _galleryImages.isEmpty
+                                      ? Container(
+                                          width: double.infinity,
+                                          color: colors.surfaceNavy,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
                                                 Icons.restaurant_rounded,
-                                                size: 64,
+                                                size: 54,
                                                 color: AppTheme.orange,
                                               ),
+                                              const SizedBox(height: 10),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 20,
+                                                ),
+                                                child: Text(
+                                                  place.name,
+                                                  style: TextStyle(
+                                                    color: colors.textPrimary,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 16,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Foto tempat belum tersedia',
+                                                style: TextStyle(
+                                                  color: colors.textSecondary,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : _galleryImages.length == 1
+                                          ? Image.network(
+                                              _galleryImages.first,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              errorBuilder: (ctx, err, st) =>
+                                                  Container(
+                                                color: colors.surfaceNavy,
+                                                child: const Icon(
+                                                  Icons.restaurant_rounded,
+                                                  size: 64,
+                                                  color: AppTheme.orange,
+                                                ),
+                                              ),
+                                            )
+                                          : PageView.builder(
+                                              controller: _imagePageController,
+                                              onPageChanged: (i) => setState(
+                                                  () => _currentImageIndex = i),
+                                              itemCount: _galleryImages.length,
+                                              itemBuilder: (context, idx) {
+                                                return Image.network(
+                                                  _galleryImages[idx],
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  errorBuilder:
+                                                      (ctx, err, st) =>
+                                                          Container(
+                                                    color: colors.surfaceNavy,
+                                                    child: const Icon(
+                                                      Icons.restaurant_rounded,
+                                                      size: 64,
+                                                      color: AppTheme.orange,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
                                             ),
-                                      );
-                                    },
-                                  ),
                                 ),
                               ),
 
-                              // Counter Badge (1/5)
-                              Positioned(
-                                right: 14,
-                                bottom: 14,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.65),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '${_currentImageIndex + 1}/${_galleryImages.length}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
+                              // Counter Badge (only when multiple images exist)
+                              if (_galleryImages.length > 1)
+                                Positioned(
+                                  right: 14,
+                                  bottom: 14,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.65),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${_currentImageIndex + 1}/${_galleryImages.length}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
@@ -285,33 +341,43 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                               const SizedBox(height: 12),
 
                               // Facility Chips
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: place.facilities.map((fac) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: colors.surfaceNavy,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: colors.borderNavy,
+                              if (place.facilities.isNotEmpty)
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: place.facilities.map((fac) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 6,
                                       ),
-                                    ),
-                                    child: Text(
-                                      fac,
-                                      style: TextStyle(
-                                        color: colors.textPrimary,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
+                                      decoration: BoxDecoration(
+                                        color: colors.surfaceNavy,
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: colors.borderNavy,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
+                                      child: Text(
+                                        fac,
+                                        style: TextStyle(
+                                          color: colors.textPrimary,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                )
+                              else
+                                Text(
+                                  'Informasi fasilitas belum tercatat',
+                                  style: TextStyle(
+                                    color: colors.textSecondary,
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -555,7 +621,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
     if (place.menuHighlights.isEmpty) {
       return Center(
         child: Text(
-          'Daftar menu belum tersedia',
+          'Belum ada daftar menu andalan tercatat untuk tempat ini.',
           style: TextStyle(color: colors.textSecondary),
         ),
       );

@@ -151,12 +151,80 @@ class _AdminDashboardState extends State<AdminDashboard> {
   bool loading = true;
   String? error;
 
+  final TextEditingController searchController = TextEditingController();
+  String selectedZone = 'Semua Wilayah';
+
+  static const List<String> zones = [
+    'Semua Wilayah',
+    'Purwokerto Kota',
+    'Baturraden',
+    'Purwokerto Utara (Unsoed)',
+    'Sokaraja',
+    'Purwokerto Timur & Sumbang',
+    'Purwokerto Barat & Selatan',
+  ];
+
   Map<String, String> get headers => {
     'apikey': supabaseAnonKey,
     'Authorization': 'Bearer ${widget.token}',
     'Content-Type': 'application/json',
     'Prefer': 'return=representation',
   };
+
+  static String _getZoneKeyword(String zone) {
+    final l = zone.toLowerCase();
+    if (l.contains('baturraden')) return 'baturraden';
+    if (l.contains('sokaraja')) return 'sokaraja';
+    if (l.contains('utara') || l.contains('unsoed')) return 'utara';
+    if (l.contains('timur') || l.contains('sumbang')) return 'timur';
+    if (l.contains('barat')) return 'barat';
+    if (l.contains('selatan')) return 'selatan';
+    return 'purwokerto';
+  }
+
+  List<Map<String, dynamic>> get filteredPlaces {
+    return places.where((place) {
+      if (selectedZone != 'Semua Wilayah') {
+        final city = (place['city'] as String? ?? '').toLowerCase();
+        final addr = (place['address'] as String? ?? '').toLowerCase();
+        final kw = _getZoneKeyword(selectedZone);
+        if (!city.contains(kw) && !addr.contains(kw)) {
+          return false;
+        }
+      }
+      final query = searchController.text.trim().toLowerCase();
+      if (query.isNotEmpty) {
+        final name = (place['name'] as String? ?? '').toLowerCase();
+        final cat = (place['category'] as String? ?? '').toLowerCase();
+        final addr = (place['address'] as String? ?? '').toLowerCase();
+        if (!name.contains(query) && !cat.contains(query) && !addr.contains(query)) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
+
+  double get _averageRating {
+    if (places.isEmpty) return 0;
+    return places.fold<double>(
+          0,
+          (sum, place) => sum + ((place['rating'] as num?)?.toDouble() ?? 0),
+        ) /
+        places.length;
+  }
+
+  double get _averageBudget {
+    if (places.isEmpty) return 0;
+    return places.fold<double>(
+          0,
+          (sum, place) =>
+              sum +
+              ((place['avg_price'] as num?)?.toDouble() ??
+                  ((place['min_price'] as num?)?.toDouble() ?? 0)),
+        ) /
+        places.length;
+  }
 
   Future<void> loadPlaces() async {
     setState(() {
@@ -365,6 +433,65 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  Future<void> addPlace(Map<String, dynamic> place) async {
+    final response = await http.post(
+      Uri.parse('$supabaseUrl/rest/v1/places'),
+      headers: headers,
+      body: jsonEncode(place),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Gagal menambahkan tempat (${response.statusCode}): ${response.body}');
+    }
+    await loadPlaces();
+  }
+
+  Future<void> deletePlace(Map<String, dynamic> place) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Konfirmasi Hapus Tempat'),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus "${place['name']}" dari katalog? '
+          'Tindakan ini akan menghapus data dari sistem database Supabase.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$supabaseUrl/rest/v1/places?id=eq.${place['id']}'),
+        headers: headers,
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('Gagal menghapus tempat (${response.statusCode}).');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Tempat "${place['name']}" berhasil dihapus.')),
+        );
+      }
+      await loadPlaces();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
   Future<void> showStats() async {
     final response = await http.get(
       Uri.parse(
@@ -376,26 +503,105 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final eventCount = response.statusCode == 200
         ? (jsonDecode(response.body) as List<dynamic>).length
         : 0;
+
+    final avgRating = _averageRating;
+    final avgBudget = _averageBudget;
+
+    // Hitung sebaran tempat per 7 zona wilayah Purwokerto
+    final zoneCounts = <String, int>{};
+    for (final z in zones.where((z) => z != 'Semua Wilayah')) {
+      final kw = _getZoneKeyword(z);
+      final count = places.where((p) {
+        final c = (p['city'] as String? ?? '').toLowerCase();
+        final a = (p['address'] as String? ?? '').toLowerCase();
+        return c.contains(kw) || a.contains(kw);
+      }).length;
+      zoneCounts[z] = count;
+    }
+
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Statistik aplikasi'),
-        content: Text(
-          'Tempat aktif: ${places.length}\n'
-          'Event analitik terbaca: $eventCount\n'
-          'Rating rata-rata: ${_averageRating.toStringAsFixed(2)}',
+        title: const Row(
+          children: [
+            Icon(Icons.analytics_rounded, color: Color(0xffd99b25)),
+            SizedBox(width: 10),
+            Text('Statistik Kuliner Purwokerto (WADM-1)'),
+          ],
         ),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Column(
+                          children: [
+                            const Text('Total Tempat', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            const SizedBox(height: 4),
+                            Text('${places.length}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            const Text('Rating Rata-rata', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            const SizedBox(height: 4),
+                            Text('${avgRating.toStringAsFixed(1)} ★', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.amber)),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            const Text('Rata-rata Budget', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            const SizedBox(height: 4),
+                            Text('Rp ${avgBudget.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xffd99b25))),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Distribusi Sebaran Tempat per 7 Zona Wilayah:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                ...zoneCounts.entries.map((e) {
+                  final pct = places.isNotEmpty ? (e.value / places.length * 100).toStringAsFixed(1) : '0';
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(e.key, style: const TextStyle(fontSize: 13))),
+                        Text('${e.value} tempat ($pct%)', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  );
+                }),
+                const Divider(height: 24),
+                Text(
+                  'Event analitik tercatat: $eventCount interaksi',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
       ),
     );
-  }
-
-  double get _averageRating {
-    if (places.isEmpty) return 0;
-    return places.fold<double>(
-          0,
-          (sum, place) => sum + ((place['rating'] as num?)?.toDouble() ?? 0),
-        ) /
-        places.length;
   }
 
   @override
@@ -467,51 +673,176 @@ class _AdminDashboardState extends State<AdminDashboard> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Katalog tempat (${places.length})',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Katalog tempat (${filteredPlaces.length} dari ${places.length})',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    FilledButton.icon(
+                      onPressed: () async {
+                        final newPlace = await showAddPlaceDialog(
+                          context,
+                          categories: categories,
+                          preferences: preferences,
+                        );
+                        if (newPlace != null) {
+                          try {
+                            await addPlace(newPlace);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Tempat baru berhasil ditambahkan ke Supabase!'),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('$e'),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Tambah Tempat Baru (WADM-3)'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Cari tempat berdasarkan nama, kategori, atau alamat (WADM-2)...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () => setState(() => searchController.clear()),
+                                )
+                              : null,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: selectedZone,
+                        decoration: InputDecoration(
+                          labelText: 'Filter 7 Zona Wilayah (WADM-2)',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: zones
+                            .map((z) => DropdownMenuItem(value: z, child: Text(z, overflow: TextOverflow.ellipsis)))
+                            .toList(),
+                        onChanged: (val) => setState(() => selectedZone = val ?? 'Semua Wilayah'),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 Expanded(
                   child: Card(
-                    child: ListView.separated(
-                      itemCount: places.length,
-                      separatorBuilder: (_, index) => const Divider(height: 1),
-                      itemBuilder: (_, index) {
-                        final place = places[index];
-                        return ListTile(
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.restaurant),
-                          ),
-                          title: Text('${place['name'] ?? '-'}'),
-                          subtitle: Text(
-                            '${place['address'] ?? '-'}\nRating Google: ${place['rating'] ?? '-'}',
-                          ),
-                          isThreeLine: true,
-                          trailing: FilledButton.tonal(
-                            onPressed: () async {
-                              final edited = await showPlaceEditor(
-                                context,
-                                place,
-                                categories: categories,
-                                preferences: preferences,
+                    child: filteredPlaces.isEmpty
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Text(
+                                'Tidak ada tempat kuliner yang sesuai dengan pencarian atau filter zona.',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: filteredPlaces.length,
+                            separatorBuilder: (_, index) => const Divider(height: 1),
+                            itemBuilder: (_, index) {
+                              final place = filteredPlaces[index];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                  child: Icon(
+                                    place['category'] == 'Warkop'
+                                        ? Icons.coffee_rounded
+                                        : place['category'] == 'Restoran'
+                                            ? Icons.restaurant_rounded
+                                            : Icons.local_cafe_rounded,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                title: Row(
+                                  children: [
+                                    Text(
+                                      '${place['name'] ?? '-'}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '${place['category'] ?? 'Cafe'} • ${place['city'] ?? 'Purwokerto'}',
+                                        style: const TextStyle(fontSize: 11),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: Text(
+                                  '${place['address'] ?? '-'}\nBudget: Rp ${place['min_price'] ?? 0} - Rp ${place['max_price'] ?? 0} • Rating: ${place['rating'] ?? '-'} ★',
+                                ),
+                                isThreeLine: true,
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    FilledButton.tonal(
+                                      onPressed: () async {
+                                        final edited = await showPlaceEditor(
+                                          context,
+                                          place,
+                                          categories: categories,
+                                          preferences: preferences,
+                                        );
+                                        if (edited == null) return;
+                                        try {
+                                          await savePlace(edited);
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(SnackBar(content: Text('$e')));
+                                          }
+                                        }
+                                      },
+                                      child: const Text('Edit'),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                      tooltip: 'Hapus Tempat (WADM-5)',
+                                      onPressed: () => deletePlace(place),
+                                    ),
+                                  ],
+                                ),
                               );
-                              if (edited == null) return;
-                              try {
-                                await savePlace(edited);
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).showSnackBar(SnackBar(content: Text('$e')));
-                                }
-                              }
                             },
-                            child: const Text('Edit'),
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ),
               ],
@@ -668,6 +999,250 @@ Future<Map<String, dynamic>?> showPlaceEditor(
           child: const Text('Simpan'),
         ),
       ],
+    ),
+  );
+}
+
+Future<Map<String, dynamic>?> showAddPlaceDialog(
+  BuildContext context, {
+  required List<Map<String, dynamic>> categories,
+  required List<Map<String, dynamic>> preferences,
+}) {
+  final name = TextEditingController();
+  final address = TextEditingController();
+  final description = TextEditingController();
+  final image = TextEditingController(text: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80');
+  final openHours = TextEditingController(text: '09.00 - 22.00 WIB');
+  final minPrice = TextEditingController(text: '15000');
+  final maxPrice = TextEditingController(text: '40000');
+  final latitude = TextEditingController(text: '-7.4244');
+  final longitude = TextEditingController(text: '109.2302');
+  final facilities = TextEditingController(text: 'WiFi, Colokan, Parkir');
+
+  var selectedCategory = categories.firstOrNull?['name']?.toString() ?? 'Cafe';
+  var selectedCity = 'Purwokerto Kota';
+
+  final availableZones = [
+    'Purwokerto Kota',
+    'Baturraden',
+    'Purwokerto Utara (Unsoed)',
+    'Sokaraja',
+    'Purwokerto Timur & Sumbang',
+    'Purwokerto Barat & Selatan',
+  ];
+
+  return showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (dialogCtx) => StatefulBuilder(
+      builder: (ctx, setModalState) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.add_location_alt_rounded, color: Color(0xffd99b25)),
+            SizedBox(width: 10),
+            Text('Tambah Tempat Baru (WADM-3)'),
+          ],
+        ),
+        content: SizedBox(
+          width: 620,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: name,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama Tempat *',
+                    hintText: 'Contoh: Kopi Roemah Baturraden',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: selectedCategory,
+                        decoration: const InputDecoration(labelText: 'Kategori *'),
+                        items: (categories.isNotEmpty ? categories : [{'name': 'Cafe'}, {'name': 'Warkop'}, {'name': 'Restoran'}])
+                            .map((item) => DropdownMenuItem<String>(
+                                  value: '${item['name']}',
+                                  child: Text('${item['name']}'),
+                                ))
+                            .toList(),
+                        onChanged: (val) => setModalState(() => selectedCategory = val ?? selectedCategory),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: selectedCity,
+                        decoration: const InputDecoration(labelText: 'Zona Wilayah *'),
+                        items: availableZones
+                            .map((z) => DropdownMenuItem(value: z, child: Text(z, overflow: TextOverflow.ellipsis)))
+                            .toList(),
+                        onChanged: (val) => setModalState(() => selectedCity = val ?? selectedCity),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: address,
+                  decoration: const InputDecoration(
+                    labelText: 'Alamat Lengkap *',
+                    hintText: 'Jl. Raya Purwokerto No. 12',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: latitude,
+                        decoration: const InputDecoration(
+                          labelText: 'Latitude (-7.6 s/d -7.2) *',
+                          hintText: '-7.4244',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: longitude,
+                        decoration: const InputDecoration(
+                          labelText: 'Longitude (109.0 s/d 109.5) *',
+                          hintText: '109.2302',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: minPrice,
+                        decoration: const InputDecoration(labelText: 'Harga Min (Rp)'),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: maxPrice,
+                        decoration: const InputDecoration(labelText: 'Harga Max (Rp)'),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: openHours,
+                  decoration: const InputDecoration(labelText: 'Jam Operasional'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: image,
+                  decoration: const InputDecoration(labelText: 'URL Gambar'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: description,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Deskripsi Singkat'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: facilities,
+                  decoration: const InputDecoration(
+                    labelText: 'Fasilitas (pisahkan dengan koma)',
+                    hintText: 'WiFi, Colokan, AC, Parkir',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final n = name.text.trim();
+              final addr = address.text.trim();
+              final lat = double.tryParse(latitude.text.trim());
+              final lng = double.tryParse(longitude.text.trim());
+              final min = int.tryParse(minPrice.text.trim()) ?? 0;
+              final max = int.tryParse(maxPrice.text.trim()) ?? 0;
+
+              if (n.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nama tempat wajib diisi.'), backgroundColor: Colors.redAccent),
+                );
+                return;
+              }
+              if (addr.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Alamat tempat wajib diisi.'), backgroundColor: Colors.redAccent),
+                );
+                return;
+              }
+              if (lat == null || lat < -7.6 || lat > -7.2) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Latitude tidak valid untuk wilayah Purwokerto/Banyumas (-7.6 s/d -7.2).'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+              if (lng == null || lng < 109.0 || lng > 109.5) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Longitude tidak valid untuk wilayah Purwokerto/Banyumas (109.0 s/d 109.5).'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+
+              final facList = facilities.text
+                  .split(',')
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .toList();
+
+              final newId = 'pwt-${DateTime.now().millisecondsSinceEpoch}';
+              final newPlace = {
+                'id': newId,
+                'name': n,
+                'city': selectedCity,
+                'category': selectedCategory,
+                'address': addr,
+                'description': description.text.trim(),
+                'open_hours': openHours.text.trim(),
+                'image_url': image.text.trim(),
+                'latitude': lat,
+                'longitude': lng,
+                'min_price': min,
+                'max_price': max,
+                'avg_price': (min + max) ~/ 2,
+                'rating': 4.5,
+                'review_count': 10,
+                'facilities': facList,
+                'menu_highlights': <Map<String, dynamic>>[],
+                'data_source': 'admin',
+              };
+
+              Navigator.pop(dialogCtx, newPlace);
+            },
+            child: const Text('Simpan Tempat'),
+          ),
+        ],
+      ),
     ),
   );
 }

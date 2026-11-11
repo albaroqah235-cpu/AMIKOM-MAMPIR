@@ -16,6 +16,7 @@ const StorageService = {
     IS_GUEST: 'is_guest_mode',
     USER_NAME: 'user_name',
     USER_EMAIL: 'user_email',
+    AUTH_TOKEN: 'mampir_auth_token',
     USER_ROLE: 'user_role', // 'user', 'partner', 'admin'
     PARTNER_CAFE_ID: 'partner_cafe_id',
     THEME: 'setting_theme',
@@ -149,6 +150,20 @@ const StorageService = {
     localStorage.removeItem(this.KEYS.IS_GUEST);
     localStorage.removeItem(this.KEYS.USER_NAME);
     localStorage.removeItem(this.KEYS.USER_EMAIL);
+    localStorage.removeItem(this.KEYS.AUTH_TOKEN);
+    localStorage.removeItem(this.KEYS.USER_ROLE);
+  },
+
+  getAuthToken() {
+    return localStorage.getItem(this.KEYS.AUTH_TOKEN) || '';
+  },
+
+  setAuthToken(token) {
+    if (token) {
+      localStorage.setItem(this.KEYS.AUTH_TOKEN, token);
+    } else {
+      localStorage.removeItem(this.KEYS.AUTH_TOKEN);
+    }
   },
 
   getTheme() {
@@ -165,7 +180,8 @@ const StorageService = {
   },
 
   isAdmin() {
-    return this.getUserRole() === 'admin';
+    // Admin wajib memiliki role 'admin' DAN token otentikasi aktif
+    return this.getUserRole() === 'admin' && Boolean(this.getAuthToken());
   },
 
   isPartnerOrAdmin() {

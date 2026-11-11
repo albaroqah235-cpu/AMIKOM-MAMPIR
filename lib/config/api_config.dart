@@ -16,15 +16,25 @@ class ApiConfig {
     defaultValue: 'sb_publishable_9-reGMqpk71zyWtbiBvOQA_kjQ9sbmS',
   );
 
+  /// Service role key & backend secrets must NEVER be hardcoded into the client app.
+  /// Privileged operations must be executed in secure backend environments
+  /// (e.g. Supabase Edge Functions / Admin servers) where keys are kept in environment variables.
   static const String supabaseServiceRoleKey = String.fromEnvironment(
     'SUPABASE_SERVICE_ROLE_KEY',
-    defaultValue:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWRpdGh4dWp4dnp5eWJqdHBuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MzIzMDY1MiwiZXhwIjoyMTA4ODA2NjUyfQ.9nGWj3OIhRnOdloWDnQ3XGanKLJwgbng20BqGMWk0hc',
+    defaultValue: '',
   );
 
   static const String supabaseApiSecretKey = String.fromEnvironment(
     'SUPABASE_SECRET_KEY',
-    defaultValue: 'sb_secret_yhkjmZ6AT_6vv2Np8q_BLw_qpuFOOt3',
+    defaultValue: '',
+  );
+
+  /// Callback redirect URL untuk Google OAuth via Supabase:
+  /// - Pada Android Native: mampir://auth-callback (dapat dioverride via AUTH_CALLBACK_URL)
+  /// - Pada Web: menggunakan runtime browser origin (Uri.base.origin)
+  static const String androidAuthCallback = String.fromEnvironment(
+    'AUTH_CALLBACK_URL',
+    defaultValue: 'mampir://auth-callback',
   );
 
   // Google Maps API Keys
