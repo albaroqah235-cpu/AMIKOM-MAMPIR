@@ -132,7 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _showAllPlaces() {
-    // Tampilkan semua tempat tanpa filter kategori saat showAll=true
+    // Tampilkan semua tempat tanpa batasan saat showAll=true (Lihat Semua)
     List<PlaceModel> results = List.from(widget.allPlaces);
     _sortResults(results);
     setState(() {
@@ -180,9 +180,49 @@ class _SearchScreenState extends State<SearchScreen> {
       } catch (_) {}
     }
 
-    // Jalankan Algoritma Rekomendasi Cerdas untuk tempat lokal
+    // Saring kandidat tempat lokal berdasarkan wilayah
+    List<PlaceModel> localCandidates = widget.allPlaces;
+    if (_currentRegion.isNotEmpty && !_currentRegion.toLowerCase().contains('semua')) {
+      final regionKeywords = RecommendationService.getRegionKeywords(_currentRegion);
+      localCandidates = localCandidates.where((place) {
+        final pCity = place.city.toLowerCase();
+        final pAddr = place.address.toLowerCase();
+        final pName = place.name.toLowerCase();
+        final combined = '$pCity $pAddr $pName';
+        return regionKeywords.any((kw) => combined.contains(kw));
+      }).toList();
+    }
+
+    // Saring kandidat tempat lokal secara ketat jika user mengetik kata kunci
+    if (trimmed.isNotEmpty) {
+      final queryLower = trimmed.toLowerCase();
+      final tokens = queryLower.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+      localCandidates = localCandidates.where((p) {
+        final pName = p.name.toLowerCase();
+        final pCat = p.category.toLowerCase();
+        final pAddr = p.address.toLowerCase();
+        final pDesc = p.description.toLowerCase();
+        final pTags = p.tags.map((t) => t.toLowerCase()).join(' ');
+        final pMenu = p.menuHighlights.map((m) => m.name.toLowerCase()).join(' ');
+        final combined = '$pName $pCat $pAddr $pDesc $pTags $pMenu';
+
+        if (combined.contains(queryLower)) return true;
+        return tokens.every((token) => combined.contains(token));
+      }).toList();
+    }
+
+    // Saring budget ketat jika filter budget aktif (< 150.000)
+    // Sesuai instruksi: jika budget maksimal 10k, tempat dengan minPrice > 10k DILARANG muncul
+    if (_currentBudget > 0 && _currentBudget < 150000) {
+      localCandidates = localCandidates.where((p) => p.minPrice <= _currentBudget).toList();
+      if (googlePlaces.isNotEmpty) {
+        googlePlaces = googlePlaces.where((p) => p.minPrice <= _currentBudget).toList();
+      }
+    }
+
+    // Jalankan Algoritma Rekomendasi Cerdas untuk tempat lokal yang lolos kriteria
     final recs = RecommendationService.getRecommendations(
-      allPlaces: widget.allPlaces,
+      allPlaces: localCandidates,
       userBudget: _currentBudget,
       userInputQuery: trimmed,
       userPreferences: _currentPreferences.toList(),
@@ -203,20 +243,30 @@ class _SearchScreenState extends State<SearchScreen> {
 
     List<PlaceModel> results = unifiedMap.values.toList();
 
-    // Saring berdasarkan jenis tempat jika ada filter aktif
+    // Pastikan hasil akhir mematuhi batas budget maksimal (< 150.000)
+    if (_currentBudget > 0 && _currentBudget < 150000) {
+      results = results.where((p) => p.minPrice <= _currentBudget).toList();
+    }
+
+    // Saring berdasarkan jenis tempat (Kategori Google Maps) jika ada filter aktif
     if (_currentPlaceTypes.isNotEmpty) {
       final filtered = results.where((p) {
-        return _currentPlaceTypes.any(
-          (type) =>
-              p.category.toLowerCase().contains(type.toLowerCase()) ||
-              p.facilities.any(
-                (f) => f.toLowerCase().contains(type.toLowerCase()),
-              ),
-        );
+        return _currentPlaceTypes.any((type) {
+          final t = type.toLowerCase();
+          final cat = p.category.toLowerCase();
+          final name = p.name.toLowerCase();
+          if (cat.contains(t) || t.contains(cat)) return true;
+          if (name.contains(t)) return true;
+          if (t == 'warung makan' && (cat.contains('warung') || cat.contains('restoran') || name.contains('warung') || name.contains('soto') || name.contains('bakso') || name.contains('makan'))) return true;
+          if (t == 'coffee shop' && (cat.contains('cafe') || cat.contains('kopi') || name.contains('kopi') || name.contains('coffee'))) return true;
+          if (t == 'warkop' && (cat.contains('warkop') || name.contains('warkop') || name.contains('kopi'))) return true;
+          if (t == 'fast food' && (cat.contains('fast food') || name.contains('burger') || name.contains('pizza') || name.contains('fried chicken') || name.contains('cepat saji'))) return true;
+          if (t == 'bakery' && (cat.contains('bakery') || cat.contains('roti') || name.contains('roti') || name.contains('kue') || name.contains('getuk') || name.contains('serabi'))) return true;
+          if (t == 'bar' && (cat.contains('bar') || name.contains('bar') || name.contains('lounge'))) return true;
+          return p.facilities.any((f) => f.toLowerCase().contains(t));
+        });
       }).toList();
-      if (filtered.isNotEmpty) {
-        results = filtered;
-      }
+      results = filtered;
     }
 
     // Urutkan berdasarkan sortOption (0: Terdekat via GPS / Alun-alun, 1: Rating Tertinggi)
@@ -526,16 +576,12 @@ class _SearchScreenState extends State<SearchScreen> {
   /// Tampilan Hasil Pencarian (hasil pencarian_mampir.jpeg)
   Widget _buildSearchResultsView() {
     final colors = AppTheme.colors(context);
-    final count = _searchResults.length;
 
     // Filter Chips Info string (misal: "Rp 25K • WiFi • Nongkrong")
     final budgetStr = _currentBudget >= 150000
         ? 'Bebas'
         : 'Rp ${(_currentBudget ~/ 1000)}K';
     final parts = [budgetStr];
-    if (_currentPreferences.isNotEmpty) {
-      parts.add(_currentPreferences.first);
-    }
     if (_currentPlaceTypes.isNotEmpty) {
       parts.add(_currentPlaceTypes.first);
     }
@@ -544,32 +590,6 @@ class _SearchScreenState extends State<SearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title & Count
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hasil Pencarian',
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Menampilkan $count tempat sesuai dengan budget dan preferensimu',
-                style: const TextStyle(
-                  color: AppTheme.gold,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 12),
 
         // Sort Pills: Terdekat vs Rating Tertinggi

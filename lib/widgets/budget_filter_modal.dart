@@ -17,15 +17,14 @@ class BudgetFilterData {
 }
 
 /// ============================================================
-/// BUDGET FILTER MODAL — SESUAI MOCKUP cariFavorit_mampir.jpeg
+/// BUDGET FILTER MODAL — KATEGORI GOOGLE MAPS
 /// ============================================================
 /// Menampilkan:
 /// 1. Input Ketik Manual (TextFormField) format Rupiah
-/// 2. Interactive Slider Rp 5.000 - Rp 150.000+
-/// 3. Quick Chips: 25K, 50K, 75K, 100K, Bebas
-/// 4. Jenis Tempat: Makan, Nongkrong, Cafe, Restoran, Outdoor, Indoor, Rooftop, Rumahan
-/// 5. Preferensi: WiFi, Colokan, AC, Parkir, Musik, Romantis, Ramah Hewan
-/// 6. Tombol "Terapkan Filter" & "Reset"
+/// 2. Interactive Slider Rp 10.000 - Rp 150.000+
+/// 3. Quick Chips: 10K, 15K, 25K, 50K, 75K, 100K, Bebas
+/// 4. Jenis Tempat: Restoran, Warung Makan, Cafe, Coffee Shop, Warkop, Fast Food, Bakery, Bar (Kategori Google Maps)
+/// 5. Tombol "Terapkan Filter" & "Reset"
 /// ============================================================
 class BudgetFilterModal extends StatefulWidget {
   final int initialBudget;
@@ -76,8 +75,10 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
     decimalDigits: 0,
   );
 
-  // Quick Chips sesuai mockup
+  // Quick Chips sesuai mockup (Minimal 10K sesuai feedback)
   static const List<Map<String, dynamic>> _quickChips = [
+    {'label': '10K', 'value': 10000},
+    {'label': '15K', 'value': 15000},
     {'label': '25K', 'value': 25000},
     {'label': '50K', 'value': 50000},
     {'label': '75K', 'value': 75000},
@@ -85,24 +86,16 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
     {'label': 'Bebas', 'value': 150000},
   ];
 
+  // Jenis tempat disesuaikan dengan kategori resmi Google Maps (Places API)
   static const List<String> _allPlaceTypes = [
-    'Cafe',
-    'Warkop',
     'Restoran',
-    'Outdoor',
-    'Indoor',
-    'Rooftop',
-    'Rumahan',
-  ];
-
-  static const List<String> _allPreferences = [
-    'WiFi',
-    'Colokan',
-    'AC',
-    'Parkir',
-    'Musik',
-    'Romantis',
-    'Ramah Hewan',
+    'Warung Makan',
+    'Cafe',
+    'Coffee Shop',
+    'Warkop',
+    'Fast Food',
+    'Bakery',
+    'Bar',
   ];
 
   @override
@@ -111,10 +104,6 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
     _selectedBudget = widget.initialBudget;
     _selectedPlaceTypes = Set<String>.from(widget.initialPlaceTypes);
     _selectedPreferences = Set<String>.from(widget.initialPreferences);
-
-    if (_selectedPreferences.isEmpty) {
-      _selectedPreferences.addAll(['WiFi', 'Colokan']);
-    }
 
     _textController = TextEditingController(
       text: _selectedBudget >= 150000
@@ -146,7 +135,7 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
     final int? parsed = int.tryParse(cleanDigits);
     if (parsed != null) {
       setState(() {
-        _selectedBudget = parsed.clamp(5000, 200000);
+        _selectedBudget = parsed.clamp(10000, 200000);
       });
     }
   }
@@ -155,7 +144,7 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
     setState(() {
       _selectedBudget = 25000;
       _selectedPlaceTypes = {};
-      _selectedPreferences = {'WiFi', 'Colokan'};
+      _selectedPreferences = {};
       _textController.text = _currencyFormatter.format(25000);
     });
   }
@@ -291,10 +280,10 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                       ),
                     ),
                     child: Slider(
-                      value: _selectedBudget.toDouble().clamp(5000.0, 150000.0),
-                      min: 5000,
+                      value: _selectedBudget.toDouble().clamp(10000.0, 150000.0),
+                      min: 10000,
                       max: 150000,
-                      divisions: 29,
+                      divisions: 28,
                       onChanged: (val) => _onBudgetChanged(val.toInt()),
                     ),
                   ),
@@ -392,67 +381,6 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                           ),
                           child: Text(
                             type,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : colors.textSecondary,
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 22),
-
-                  // Section 3: Preferensi
-                  Text(
-                    'Preferensi',
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _allPreferences.map((pref) {
-                      final isSelected = _selectedPreferences.contains(pref);
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedPreferences.remove(pref);
-                            } else {
-                              _selectedPreferences.add(pref);
-                            }
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: isSelected
-                                ? AppTheme.primaryGradient
-                                : null,
-                            color: isSelected ? null : colors.surfaceNavy,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isSelected
-                                  ? Colors.transparent
-                                  : colors.borderNavy,
-                            ),
-                          ),
-                          child: Text(
-                            pref,
                             style: TextStyle(
                               color: isSelected
                                   ? Colors.white

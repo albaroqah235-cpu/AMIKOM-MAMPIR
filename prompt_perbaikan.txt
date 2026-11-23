@@ -1,0 +1,79 @@
+
+Buat fitur pencarian tempat makan dan tempat nongkrong terdekat seperti fitur Nearby di aplikasi Gojek.
+
+1. Deteksi Lokasi Pengguna
+
+* Gunakan Geolocation API browser untuk mendeteksi lokasi pengguna secara real-time setelah mendapatkan izin akses lokasi.
+* Jadikan posisi pengguna sebagai titik pusat pencarian.
+* Tampilkan lokasi pengguna pada Google Maps dengan marker khusus.
+* Sediakan fitur untuk memperbarui lokasi pengguna.
+
+2. Filter Jarak Terdekat
+Buat pilihan filter jarak:
+
+* 0–1 km
+* 1–3 km
+* 3–5 km
+* 5–10 km
+* Lebih dari 10 km
+
+Jarak dihitung berdasarkan koordinat lokasi pengguna ke koordinat setiap tempat, bukan berdasarkan perkiraan atau alamat saja.
+
+3. Pencarian Tempat
+Integrasikan Google Maps Platform Places API agar dapat menemukan tempat berdasarkan kategori:
+
+* Rumah makan / restoran
+* Warung makan
+* Cafe
+* Coffee shop
+* Tempat nongkrong
+* Fast food
+
+Pastikan hasil pencarian menampilkan tempat yang relevan dan tidak hanya mengambil beberapa tempat secara acak.
+
+4. Tampilan Google Maps
+
+* Tampilkan seluruh tempat yang ditemukan sesuai radius pencarian pada peta.
+* Gunakan marker berbeda untuk lokasi pengguna dan setiap tempat.
+* Ketika marker diklik, tampilkan informasi tempat tersebut.
+* Sinkronkan marker pada peta dengan daftar tempat di halaman.
+* Pastikan peta otomatis menyesuaikan area pencarian.
+
+
+5. Daftar Tempat Terdekat
+Tampilkan hasil pencarian dalam bentuk card seperti aplikasi Gojek, meliputi:
+
+* Foto tempat.
+* Nama tempat.
+* Kategori tempat.
+* Jarak dari lokasi pengguna (meter/km).
+* Rating Google Maps.
+* Alamat.
+* Status buka/tutup jika tersedia.
+* Tombol Lihat Detail dan Petunjuk Arah.
+
+6. Pengurutan dan Filter
+Sediakan fitur:
+
+* Terdekat dari lokasi pengguna.
+* Rating tertinggi.
+* Filter kategori tempat.
+* Filter jarak.
+
+7. Perbaikan Integrasi Google Maps API
+Saat ini fitur Maps pada aplikasi mobile MAMPIR masih belum akurat dan hasil tempat yang muncul belum lengkap. Tolong audit dan perbaiki implementasinya.
+
+Pastikan hasil pencarian berasal dari data Google Maps API yang sebenarnya. Tangani juga kondisi ketika lokasi pengguna tidak diizinkan, API gagal, atau tidak ditemukan tempat dalam radius yang dipilih.
+
+PENTING:
+
+* Periksa terlebih dahulu source code, sistem Maps, konfigurasi API, dan database yang sudah digunakan.
+* Pertahankan desain UI/UX MAMPIR yang sudah ada.
+* Gunakan warna dan komponen desain yang konsisten dengan website MAMPIR.
+* Implementasikan fitur sampai benar-benar berfungsi, bukan hanya membuat tampilan UI.
+* Pastikan API key disimpan dengan aman dan tidak mengekspos secret key di frontend.
+
+Target akhir: fitur Near Me MAMPIR berfungsi seperti fitur pencarian tempat terdekat di Gojek, dengan deteksi lokasi pengguna, pencarian tempat berdasarkan radius, peta interaktif, dan daftar tempat yang akurat.
+
+
+jika butuh api key apa tinggal bilang aja.. kalo butuh apa apa bilang aja, biar saya tau.. biar saya tau apa yang kurang gitu....

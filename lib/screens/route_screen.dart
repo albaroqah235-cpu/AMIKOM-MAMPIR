@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/place_model.dart';
 import '../services/google_routes_service.dart';
 import '../services/location_service.dart';
@@ -35,6 +34,7 @@ class _RouteScreenState extends State<RouteScreen> {
   List<LatLng> _routePoints = [];
   bool _isLocating = true;
   bool _isLoadingRoute = false;
+  bool _isNavigating = false;
   String? _realDuration;
   String? _realDistance;
   StreamSubscription<Position>? _trackingSub;
@@ -68,6 +68,7 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   void dispose() {
     _trackingSub?.cancel();
+    LocationService.instance.stopTracking();
     super.dispose();
   }
 
@@ -89,6 +90,7 @@ class _RouteScreenState extends State<RouteScreen> {
           _realDistance = result.formattedDistance;
           _isLoadingRoute = false;
         });
+        _fitRouteBounds();
         return;
       }
     } catch (_) {}
@@ -98,7 +100,37 @@ class _RouteScreenState extends State<RouteScreen> {
         _routePoints = [_userPos, _destPos];
         _isLoadingRoute = false;
       });
+      _fitRouteBounds();
     }
+  }
+
+  void _fitRouteBounds() {
+    if (!mounted || _routePoints.length < 2) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        final bounds = LatLngBounds.fromPoints(_routePoints);
+        _mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: bounds,
+            padding: const EdgeInsets.only(
+              top: 130,
+              bottom: 240,
+              left: 45,
+              right: 45,
+            ),
+          ),
+        );
+      } catch (_) {
+        _mapController.move(
+          LatLng(
+            (_userPos.latitude + _destPos.latitude) / 2,
+            (_userPos.longitude + _destPos.longitude) / 2,
+          ),
+          14.2,
+        );
+      }
+    });
   }
 
   Future<void> _fetchUserLocation() async {
@@ -141,8 +173,12 @@ class _RouteScreenState extends State<RouteScreen> {
       }
     }
 
-    // Dengarkan pembaruan stream posisi jika user bergerak
+    // Mulai dan dengarkan pelacakan GPS real-time saat pengguna bergerak
     _trackingSub?.cancel();
+    LocationService.instance.startTracking(
+      distanceFilter: 2,
+      accuracy: LocationAccuracy.bestForNavigation,
+    );
     _trackingSub = LocationService.instance.onLocationChanged.listen((pos) {
       if (!mounted) return;
       final livePos = LatLng(pos.latitude, pos.longitude);
@@ -152,42 +188,51 @@ class _RouteScreenState extends State<RouteScreen> {
         livePos.latitude,
         livePos.longitude,
       );
-      if (distMeters > 15) {
+      if (distMeters > 3) {
         setState(() => _userPos = livePos);
-        _buildRoute();
+        if (_isNavigating) {
+          _mapController.move(livePos, 17.0);
+        }
+        if (distMeters > 20) {
+          _buildRoute();
+        }
       }
     });
   }
 
-  Future<void> _launchGoogleMaps() async {
-    final lat = widget.place.latitude;
-    final lng = widget.place.longitude;
-    final navUri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
-    final webUri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&origin=${_userPos.latitude},${_userPos.longitude}&destination=$lat,$lng',
-    );
+  void _toggleInAppNavigation() {
+    setState(() {
+      _isNavigating = !_isNavigating;
+    });
 
-    try {
-      if (await canLaunchUrl(navUri)) {
-        await launchUrl(navUri, mode: LaunchMode.externalApplication);
-      } else if (await canLaunchUrl(webUri)) {
-        await launchUrl(webUri, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(webUri);
-      }
-    } catch (_) {
-      if (!mounted) return;
+    if (_isNavigating) {
+      _mapController.move(_userPos, 17.0);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tidak dapat membuka Google Maps'),
-          backgroundColor: Colors.redAccent,
+        SnackBar(
+          content: Text(
+            'Navigasi In-App aktif menuju ${widget.place.name}. Mengikuti pergerakan rute di dalam aplikasi.',
+          ),
+          backgroundColor: const Color(0xFF0B8043),
+          duration: const Duration(seconds: 3),
         ),
+      );
+    } else {
+      _mapController.move(
+        LatLng(
+          (_userPos.latitude + _destPos.latitude) / 2,
+          (_userPos.longitude + _destPos.longitude) / 2,
+        ),
+        14.2,
       );
     }
   }
 
   void _recenter() {
-    _mapController.move(_destPos, 14.5);
+    if (_isNavigating) {
+      _mapController.move(_userPos, 17.0);
+    } else {
+      _mapController.move(_destPos, 14.5);
+    }
   }
 
   void _zoomIn() {
@@ -235,13 +280,20 @@ class _RouteScreenState extends State<RouteScreen> {
                 userAgentPackageName: 'com.mampir.mampir_app',
               ),
 
-              // Polyline Rute (Warna Oranye Hangat)
+              // Polyline Rute Jalan Raya (Dual-Layer Kontras Tinggi ala Google Maps)
               PolylineLayer(
                 polylines: [
+                  // Layer Luar: Border Gelap Kontras
                   Polyline(
                     points: _routePoints,
-                    strokeWidth: 5.5,
-                    color: AppTheme.orange,
+                    strokeWidth: 8.5,
+                    color: const Color(0xFF0D47A1),
+                  ),
+                  // Layer Dalam: Biru Navigasi Terang Google Maps
+                  Polyline(
+                    points: _routePoints,
+                    strokeWidth: 6.0,
+                    color: const Color(0xFF1E88E5),
                   ),
                 ],
               ),
@@ -260,7 +312,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 ],
               ),
 
-              // Marker Lokasi Anda & Tempat Tujuan
+              // Marker Lokasi Anda, Tempat Tujuan & Indikator Rute Maps
               MarkerLayer(
                 markers: [
                   // Marker 1: Lokasi Anda (Titik Biru Presisi Akurat)
@@ -357,6 +409,70 @@ class _RouteScreenState extends State<RouteScreen> {
                       ],
                     ),
                   ),
+
+                  // Marker 3: Indikator Rute Maps (Callout Badge Durasi & Jarak ala Google Maps)
+                  if (_routePoints.length > 2)
+                    Marker(
+                      point: _routePoints[_routePoints.length ~/ 2],
+                      width: 130,
+                      height: 52,
+                      alignment: Alignment.center,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A73E8), // Google Navigation Blue
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.two_wheeler_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _realDuration ?? '$estMinutes mnt',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                Text(
+                                  _realDistance ??
+                                      '${distKm.toStringAsFixed(1)} km',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -474,6 +590,79 @@ class _RouteScreenState extends State<RouteScreen> {
                       ),
                     ],
                   ),
+                  if (_isNavigating)
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0F9D58), Color(0xFF0B8043)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.navigation_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Sedang Menavigasi ke ${widget.place.name}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  'Sisa: ${_realDistance ?? '${distKm.toStringAsFixed(1)} km'} • Estimasi ${_realDuration ?? '$estMinutes mnt'}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black26,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'In-App GPS',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -631,30 +820,41 @@ class _RouteScreenState extends State<RouteScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Tombol "Mulai Navigasi"
+                  // Tombol "Mulai / Akhiri Navigasi In-App"
                   Container(
                     width: double.infinity,
                     height: 50,
                     decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
+                      gradient: _isNavigating
+                          ? const LinearGradient(
+                              colors: [Color(0xFFE53935), Color(0xFFC62828)],
+                            )
+                          : AppTheme.primaryGradient,
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.orange.withValues(alpha: 0.4),
+                          color: (_isNavigating
+                                  ? Colors.redAccent
+                                  : AppTheme.orange)
+                              .withValues(alpha: 0.4),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: ElevatedButton.icon(
-                      onPressed: _launchGoogleMaps,
-                      icon: const Icon(
-                        Icons.near_me_rounded,
+                      onPressed: _toggleInAppNavigation,
+                      icon: Icon(
+                        _isNavigating
+                            ? Icons.stop_circle_rounded
+                            : Icons.navigation_rounded,
                         color: Colors.white,
                       ),
-                      label: const Text(
-                        'Mulai Navigasi',
-                        style: TextStyle(
+                      label: Text(
+                        _isNavigating
+                            ? 'Akhiri Navigasi'
+                            : 'Mulai Navigasi',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,

@@ -42,6 +42,10 @@
           <span class="icon">🔍</span>
           <span data-i18n="nav_search">Cari Tempat</span>
         </a>
+        <a class="nav-item" data-view="nearby" id="nav-nearby-btn" onclick="window.NearbyController.activate()">
+          <span class="icon">📍</span>
+          <span>Near Me (Terdekat)</span>
+        </a>
         <a class="nav-item" data-view="favorit">
           <span class="icon">❤️</span>
           <span data-i18n="nav_favorites">Favorit Saya</span>
@@ -81,9 +85,10 @@
           <button class="btn-icon mobile-menu-btn" onclick="document.getElementById('app-sidebar').classList.toggle('mobile-open')">
             ☰
           </button>
-          <div class="region-selector">
-            <span>📍</span>
-            <select id="global-region-select">
+          <div class="region-selector" id="top-region-selector-box">
+            <span id="top-location-icon" onclick="window.App.toggleNearMe()" style="cursor: pointer;" title="Klik untuk mengaktifkan Lokasi Terdekat Saya">📍</span>
+            <span id="top-near-me-label" style="display: none; font-size: 13px; font-weight: 800; color: var(--accent-gold); margin-right: 6px; cursor: pointer;" onclick="window.App.toggleNearMe()" title="Klik untuk kembali ke pilihan wilayah">Lokasi Terdekat Saya ✨</span>
+            <select id="global-region-select" onchange="window.App.isNearMeActive = false;">
               <option value="Semua Wilayah" data-i18n="region_all">Semua Wilayah</option>
               <option value="Purwokerto Kota" selected data-i18n="region_pwt_kota">Purwokerto Kota</option>
               <option value="Baturraden" data-i18n="region_baturraden">Baturraden</option>
@@ -112,6 +117,12 @@
               <option value="en">EN</option>
             </select>
           </div>
+
+          <!-- Near Me CTA Button (Req Client Nearby) -->
+          <button class="btn-nearby-cta" id="btn-top-nearby" onclick="window.App.toggleNearMe()" title="Cari tempat makan terdekat dari lokasi Anda">
+            <span>📍</span>
+            <span>Lokasi Terdekat</span>
+          </button>
 
           <!-- Filter Budget Button (Dynamic Active State & Reset) -->
           <button class="btn-filter-budget" id="btn-open-budget-modal">
@@ -175,6 +186,13 @@
             <button class="btn-map-control" onclick="window.App.focusMap('pwt-center', -7.4243, 109.2303)" data-i18n="map_btn_center">
               📍 Pusat Alun-Alun
             </button>
+            <button class="btn-map-control" onclick="window.MapController && window.MapController.recenterUser()" title="Pusatkan ke Lokasi Saya">
+              🎯 Lokasi Saya
+            </button>
+            <div class="map-zoom-group" aria-label="Zoom Controls">
+              <button class="btn-map-zoom" onclick="window.MapController && window.MapController.zoomIn()" title="Perbesar (Zoom In)">+</button>
+              <button class="btn-map-zoom" onclick="window.MapController && window.MapController.zoomOut()" title="Perkecil (Zoom Out)">−</button>
+            </div>
           </div>
         </section>
       </main>
@@ -200,7 +218,7 @@
   <div class="modal-backdrop" id="modal-budget-filter">
     <div class="modal-card" style="max-width: 440px;">
       <div class="modal-header">
-        <h3 data-i18n="budget_modal_title">💰 Filter Anggaran & Fasilitas</h3>
+        <h3 data-i18n="budget_modal_title">💰 Filter Anggaran & Jenis Tempat</h3>
         <button class="modal-close-btn" onclick="window.App.closeModal('modal-budget-filter')">✕</button>
       </div>
       <div class="modal-body">
@@ -226,6 +244,9 @@
               Pilihan Cepat:
             </label>
             <div class="budget-presets-row">
+              <button type="button" class="budget-preset-chip" data-preset="10000" onclick="window.App.setModalBudgetPreset(10000)">
+                🪙 <span>Hemat (&le; 10k)</span>
+              </button>
               <button type="button" class="budget-preset-chip" data-preset="20000" onclick="window.App.setModalBudgetPreset(20000)">
                 🎓 <span data-i18n="budget_preset_student">Mahasiswa (&lt; 20k)</span>
               </button>
@@ -240,26 +261,18 @@
         </div>
 
         <div class="form-group" style="margin-top: 18px;">
-          <label data-i18n="fac_priority_label">Prioritas Fasilitas:</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" checked /> <span data-i18n="fac_wifi">WiFi Cepat</span>
-            </label>
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" checked /> <span data-i18n="fac_power">Colokan Listrik</span>
-            </label>
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" /> <span data-i18n="fac_ac">Ruangan Ber-AC</span>
-            </label>
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" /> <span data-i18n="fac_outdoor">Area Outdoor</span>
-            </label>
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" /> <span data-i18n="fac_parking">Parkir Luas</span>
-            </label>
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" /> <span data-i18n="fac_prayer">Musholla</span>
-            </label>
+          <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;" data-i18n="place_types_label">
+            Jenis Tempat (Kategori Google Maps):
+          </label>
+          <div class="category-pills" style="margin-top: 8px; flex-wrap: wrap; gap: 6px;" id="modal-category-pills">
+            <button type="button" class="category-pill active" data-cat="Semua" onclick="window.App.selectCategory('Semua')">✨ Semua</button>
+            <button type="button" class="category-pill" data-cat="Restoran" onclick="window.App.selectCategory('Restoran')">🍽️ Restoran</button>
+            <button type="button" class="category-pill" data-cat="Warung Makan" onclick="window.App.selectCategory('Warung Makan')">🍲 Warung Makan</button>
+            <button type="button" class="category-pill" data-cat="Cafe" onclick="window.App.selectCategory('Cafe')">☕ Cafe</button>
+            <button type="button" class="category-pill" data-cat="Coffee Shop" onclick="window.App.selectCategory('Coffee Shop')">🧋 Coffee Shop</button>
+            <button type="button" class="category-pill" data-cat="Warkop" onclick="window.App.selectCategory('Warkop')">🍵 Warkop</button>
+            <button type="button" class="category-pill" data-cat="Fast Food" onclick="window.App.selectCategory('Fast Food')">🍔 Fast Food</button>
+            <button type="button" class="category-pill" data-cat="Bakery" onclick="window.App.selectCategory('Bakery')">🥐 Bakery</button>
           </div>
         </div>
       </div>
@@ -497,15 +510,19 @@
           <!-- 4 Slot Kafe Kandidat -->
           <div class="roulette-slots-wrapper">
             <div class="roulette-slots-header">
-              <span style="font-weight: 700; font-size: 13px; color: var(--text-primary);">Kandidat Kafe (2 - 4 Tempat):</span>
+              <span style="font-weight: 700; font-size: 13px; color: var(--text-primary);">Kandidat Tempat (2 - 4):</span>
               <div class="roulette-quick-actions">
+                <button type="button" class="btn-pill-action active-gold" id="btn-realtime-top-rated" onclick="window.Roulette.fetchRealtimeTopRated(4.0, 3)" title="Ambil tempat realtime Google Maps dengan rating 4.0 ke atas">
+                  <span>⭐</span>
+                  <span>Realtime 4★+</span>
+                </button>
                 <button type="button" class="btn-pill-action" onclick="window.Roulette.autoFillNearbyCandidates(3)">
                   <span>⚡</span>
-                  <span data-i18n="wheel_btn_random_fill">Acak dari Sekitarmu</span>
+                  <span data-i18n="wheel_btn_random_fill">Acak Sekitar</span>
                 </button>
                 <button type="button" class="btn-pill-action" onclick="window.Roulette.fillFromFavorites()">
                   <span>❤️</span>
-                  <span data-i18n="wheel_btn_from_fav">Dari Favorit</span>
+                  <span data-i18n="wheel_btn_from_fav">Favorit</span>
                 </button>
               </div>
             </div>
@@ -517,7 +534,12 @@
 
             <!-- Dropdown Pencarian Slot Popover -->
             <div class="roulette-search-popover" id="roulette-search-dropdown" style="display: none;">
-              <input type="text" class="form-control" id="roulette-search-input" placeholder="Ketik nama kafe / lokasi..." oninput="window.Roulette.renderDropdownPlaces(this.value)" />
+              <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                <input type="text" class="form-control" id="roulette-search-input" placeholder="Ketik nama tempat / lokasi..." oninput="window.Roulette.renderDropdownPlaces(this.value)" style="flex: 1;" />
+                <button type="button" class="btn-pill-action active-gold" id="btn-toggle-filter-4star" onclick="window.Roulette.toggleRatingFilter()" title="Klik untuk beralih filter hanya bintang 4 ke atas">
+                  ⭐ 4.0+
+                </button>
+              </div>
               <div class="roulette-dropdown-list" id="roulette-search-list"></div>
             </div>
           </div>
@@ -563,14 +585,15 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <!-- MAMPIR Web Scripts -->
-  <script src="js/i18n.js?v=1.8"></script>
-  <script src="js/config.js?v=1.8"></script>
-  <script src="js/data.js?v=1.8"></script>
-  <script src="js/storage.js?v=1.8"></script>
-  <script src="js/auth.js?v=1.8"></script>
-  <script src="js/recommendation.js?v=1.8"></script>
-  <script src="js/map.js?v=1.8"></script>
-  <script src="js/roulette.js?v=1.8"></script>
-  <script src="js/app.js?v=1.8"></script>
+  <script src="js/i18n.js?v=2.9"></script>
+  <script src="js/config.js?v=2.9"></script>
+  <script src="js/data.js?v=2.9"></script>
+  <script src="js/storage.js?v=2.9"></script>
+  <script src="js/auth.js?v=2.9"></script>
+  <script src="js/recommendation.js?v=2.9"></script>
+  <script src="js/map.js?v=2.9"></script>
+  <script src="js/roulette.js?v=2.9"></script>
+  <script src="js/nearby.js?v=2.9"></script>
+  <script src="js/app.js?v=2.9"></script>
 </body>
 </html>

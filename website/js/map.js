@@ -157,7 +157,7 @@ const MapController = {
             ` : ''}
             <div class="map-popup-actions">
               <button class="btn-popup-detail" onclick="window.App.openPlaceDetail('${place.id}')">${detailLabel}</button>
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}" target="_blank" class="btn-popup-route">${routeLabel}</a>
+              <button class="btn-popup-route" onclick="if(window.NearbyController && typeof window.NearbyController.showInAppRoute === 'function'){ window.NearbyController.showInAppRoute('${place.id}'); } else { window.open('https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}', '_blank'); }">${routeLabel}</button>
             </div>
           </div>
         </div>
@@ -208,6 +208,27 @@ const MapController = {
   panTo(lat, lng, zoom = 15) {
     if (this.map && lat && lng) {
       this.map.flyTo([lat, lng], zoom, { duration: 1.2 });
+    }
+  },
+
+  zoomIn() {
+    if (this.map) {
+      this.map.zoomIn();
+    }
+  },
+
+  zoomOut() {
+    if (this.map) {
+      this.map.zoomOut();
+    }
+  },
+
+  recenterUser() {
+    if (window.NearbyController && window.NearbyController.userCoords) {
+      const u = window.NearbyController.userCoords;
+      this.panTo(u.latitude, u.longitude, 16);
+    } else {
+      this.panTo(AppConfig.centerCoordinates.lat, AppConfig.centerCoordinates.lng, 15);
     }
   },
 

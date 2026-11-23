@@ -289,33 +289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildUserProfileCard(),
                       const SizedBox(height: 16),
 
-                      // 1. Notifikasi (Direct Switch Toggle)
-                      _buildSwitchSettingItem(
-                        icon: Icons.notifications_none_rounded,
-                        title: 'Notifikasi',
-                        subtitle: _isNotificationEnabled
-                            ? 'Notifikasi rekomendasi & promo aktif'
-                            : 'Notifikasi dimatikan',
-                        value: _isNotificationEnabled,
-                        onChanged: (val) async {
-                          setState(() => _isNotificationEnabled = val);
-                          await _prefService.setNotificationEnabled(val);
-                        },
-                      ),
-                      _buildDivider(),
-
-                      // 2. Izin Lokasi
-                      _buildSettingItem(
-                        icon: Icons.location_on_outlined,
-                        title: 'Izin Lokasi',
-                        trailingText: _isLocationEnabled
-                            ? 'Diizinkan'
-                            : 'Ditolak',
-                        onTap: _showLocationSettingsModal,
-                      ),
-                      _buildDivider(),
-
-                      // 3. Tema
+                      // 1. Tema
                       _buildSettingItem(
                         icon: Icons.nightlight_round,
                         title: 'Tema',
@@ -324,7 +298,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       _buildDivider(),
 
-                      // 4. Tentang MAMPIR
+                      // 2. Tentang MAMPIR
                       _buildSettingItem(
                         icon: Icons.info_outline_rounded,
                         title: 'Tentang MAMPIR',

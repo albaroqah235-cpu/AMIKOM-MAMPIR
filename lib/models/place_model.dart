@@ -251,7 +251,7 @@ class PlaceModel {
     final double targetLat =
         refLat ?? LocationService.instance.currentLatLng?.latitude ?? -7.4244;
     final double targetLng =
-        refLng ?? LocationService.instance.currentLatLng?.longitude ?? 109.2302;
+        refLng ?? LocationService.instance.currentLatLng?.longitude ?? 109.2304;
 
     final dist = distanceInKmFrom(targetLat, targetLng);
     if (!dist.isFinite) return 'Jarak tidak tersedia';

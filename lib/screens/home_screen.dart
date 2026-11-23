@@ -5,12 +5,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/place_model.dart';
 import '../services/api_service.dart';
+import '../services/google_places_service.dart';
 import '../services/location_service.dart';
 import '../services/preference_service.dart';
 import '../services/recommendation_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/budget_filter_modal.dart';
 
+import 'nearby_screen.dart';
 import 'notification_screen.dart';
 import 'place_detail_screen.dart';
 import 'route_screen.dart';
@@ -38,6 +40,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
   final PreferenceService _prefService = PreferenceService();
+  final GooglePlacesService _placesService = GooglePlacesService();
 
   int _currentTabIndex = 0; // 0: Beranda, 1: Cari, 2: Favorit, 3: Peta
 
@@ -52,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Set<String> _favoriteIds = {};
   String?
   _selectedCategory; // null = semua, or Makan, Nongkrong, Cafe, Restoran, Lainnya
+  bool _isNearMeActive = false; // Mode 'Lokasi Terdekat Saya' (Feedback Client)
 
   // Map state
   PlaceModel? _selectedMapPlace;
@@ -76,33 +80,41 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   List<PlaceModel> get _nearbyPlaces {
-    final places = List<PlaceModel>.from(_allPlaces);
-    if (_userLocation == null &&
+    List<PlaceModel> places = List<PlaceModel>.from(_allPlaces);
+    if (!_isNearMeActive &&
         _selectedRegion.isNotEmpty &&
         !_selectedRegion.toLowerCase().contains('semua')) {
-      final region = _selectedRegion.split('(').first.trim().toLowerCase();
-      places.removeWhere(
-        (place) =>
-            !place.city.toLowerCase().contains(region) &&
-            !place.address.toLowerCase().contains(region),
-      );
-    }
-    if (_userLocation != null) {
+      final regionKeywords = RecommendationService.getRegionKeywords(_selectedRegion);
       places.removeWhere((place) {
-        final distance = place.distanceInKmFrom(
-          _userLocation!.latitude,
-          _userLocation!.longitude,
-        );
-        return !distance.isFinite ||
-            (_nearbyRadiusKm != null && distance > _nearbyRadiusKm!);
+        final pCity = place.city.toLowerCase();
+        final pAddr = place.address.toLowerCase();
+        final pName = place.name.toLowerCase();
+        final combined = '$pCity $pAddr $pName';
+        return !regionKeywords.any((kw) => combined.contains(kw));
       });
+    }
+
+    final loc = _userLocation ?? LocationService.instance.currentLatLng;
+    if (loc != null) {
+      if (_nearbyRadiusKm != null) {
+        final inRadius = places.where((place) {
+          final distance = place.distanceInKmFrom(
+            loc.latitude,
+            loc.longitude,
+          );
+          return distance.isFinite && distance <= _nearbyRadiusKm!;
+        }).toList();
+        if (inRadius.isNotEmpty) {
+          places = inRadius;
+        }
+      }
       places.sort(
         (a, b) => a
-            .distanceInKmFrom(_userLocation!.latitude, _userLocation!.longitude)
+            .distanceInKmFrom(loc.latitude, loc.longitude)
             .compareTo(
               b.distanceInKmFrom(
-                _userLocation!.latitude,
-                _userLocation!.longitude,
+                loc.latitude,
+                loc.longitude,
               ),
             ),
       );
@@ -111,43 +123,141 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _formatDistance(PlaceModel place) {
-    if (_userLocation == null) return 'Jarak GPS belum tersedia';
+    final loc = _userLocation ?? LocationService.instance.currentLatLng;
+    if (loc == null) return 'Jarak GPS belum tersedia';
     return place.formattedDistance(
-      _userLocation!.latitude,
-      _userLocation!.longitude,
+      loc.latitude,
+      loc.longitude,
     );
   }
 
   Future<void> _openNearbyFilter() async {
+    final colors = AppTheme.colors(context);
     final selected = await showModalBottomSheet<double>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: colors.surfaceNavy,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ListTile(
-              title: Text('Jarak tempat terdekat'),
-              subtitle: Text('GPS dipakai bila lokasi sudah diizinkan'),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: colors.textMuted.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  title: Text(
+                    'Jarak tempat terdekat',
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                  ),
+                  subtitle: Text(
+                    (_userLocation != null || LocationService.instance.currentLatLng != null)
+                        ? '📍 GPS aktif: Menampilkan tempat di sekitarmu'
+                        : 'GPS dipakai bila lokasi sudah diizinkan',
+                    style: TextStyle(
+                      color: (_userLocation != null || LocationService.instance.currentLatLng != null)
+                          ? AppTheme.gold
+                          : colors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                ...<double>[1, 3, 5, 10, -1].map(
+                  (radius) => RadioListTile<double>(
+                    value: radius,
+                    // ignore: deprecated_member_use
+                    groupValue: _nearbyRadiusKm ?? 5,
+                    activeColor: AppTheme.orange,
+                    title: Text(
+                      radius < 0 ? 'Semua jarak' : '<= ${radius.toInt()} km',
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    // ignore: deprecated_member_use
+                    onChanged: (value) => Navigator.pop(context, value),
+                  ),
+                ),
+              ],
             ),
-            ...<double>[1, 3, 5, 10, -1].map(
-              (radius) => RadioListTile<double>(
-                value: radius,
-                // TODO: Migrate to RadioGroup when the minimum Flutter version
-                // supports the replacement API.
-                // ignore: deprecated_member_use
-                groupValue: _nearbyRadiusKm,
-                title: Text(radius < 0 ? 'Semua jarak' : '<= $radius km'),
-                // ignore: deprecated_member_use
-                onChanged: (value) => Navigator.pop(context, value),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
     if (mounted && selected != null) {
-      setState(() => _nearbyRadiusKm = selected < 0 ? null : selected);
+      setState(() {
+        _nearbyRadiusKm = selected < 0 ? null : selected;
+        _isNearMeActive = true;
+      });
+
+      if (_userLocation == null) {
+        await _fetchUserGpsLocation();
+      }
+      await _loadNearbyGooglePlaces();
+
+      if (mounted) {
+        final radiusStr = selected < 0 ? 'semua jarak' : '<= ${selected.toInt()} km';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('📍 Menampilkan rekomendasi tempat terdekat ($radiusStr)'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
+  }
+
+  Future<void> _loadNearbyGooglePlaces() async {
+    final loc = _userLocation ?? LocationService.instance.currentLatLng;
+    if (loc == null) return;
+    try {
+      final queryRadiusKm = _nearbyRadiusKm ?? 5.0;
+      final types = (_selectedCategory != null &&
+              GooglePlacesService.nearbyCategoryTypes.containsKey(_selectedCategory))
+          ? GooglePlacesService.nearbyCategoryTypes[_selectedCategory!]
+          : GooglePlacesService.nearbyAllTypes;
+
+      final places = await _placesService.searchNearby(
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        radiusKm: queryRadiusKm,
+        includedTypes: types,
+        maxResultCount: 20,
+        rankPreference: 'DISTANCE',
+      );
+
+      if (mounted && places.isNotEmpty) {
+        setState(() {
+          final Map<String, PlaceModel> unified = {};
+          for (final p in places) {
+            unified[p.id] = p;
+          }
+          for (final p in _allPlaces) {
+            if (!unified.containsKey(p.id)) {
+              unified[p.id] = p;
+            }
+          }
+          _allPlaces = unified.values.toList();
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -171,6 +281,9 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _userLocation = LatLng(pos.latitude, pos.longitude);
         });
+        if (_isNearMeActive) {
+          _loadNearbyGooglePlaces();
+        }
       }
     } catch (_) {}
   }
@@ -235,12 +348,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final result = await BudgetFilterModal.show(
       context,
       currentBudget: _userBudget,
+      currentPlaceTypes: _selectedCategory != null ? {_selectedCategory!} : {},
       currentPreferences: _userPreferences,
     );
 
     if (result != null) {
       setState(() {
         _userBudget = result.budget;
+        if (result.placeTypes.isNotEmpty) {
+          _selectedCategory = result.placeTypes.first;
+        } else {
+          _selectedCategory = null;
+        }
         _userPreferences = result.preferences;
       });
       await _prefService.saveBudget(result.budget);
@@ -272,6 +391,9 @@ class _HomeScreenState extends State<HomeScreen> {
           _isFetchingLocation = false;
           _selectedMapPlace ??= nearest;
         });
+        if (_isNearMeActive) {
+          _loadNearbyGooglePlaces();
+        }
         if (moveMap) {
           _mapTabController.move(_userLocation!, 15.0);
         }
@@ -320,7 +442,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildHomeTab(),
                 _buildSearchTab(),
                 _buildFavoritesTab(),
-                _buildMapTab(),
+                // Tab "Dekat" membuka NearbyScreen lewat Navigator, jadi
+                // placeholder ini hanya menjaga indeks IndexedStack tetap valid.
+                const SizedBox.shrink(),
               ],
             ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -357,7 +481,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _buildNavItem(2, Icons.favorite_rounded, 'Favorit'),
               ),
-              Expanded(child: _buildNavItem(3, Icons.map_outlined, 'Peta')),
+              Expanded(
+                child: _buildNavItem(3, Icons.near_me_rounded, 'Dekat'),
+              ),
             ],
           ),
         ),
@@ -370,14 +496,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final isActive = _currentTabIndex == index;
     return GestureDetector(
       onTap: () async {
+        if (index == 3) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NearbyScreen()),
+          );
+          return;
+        }
         setState(() => _currentTabIndex = index);
         // Reload favorit setiap pindah tab agar sinkronisasi selalu up-to-date
         final favs = await _prefService.getFavorites();
         if (mounted) {
           setState(() => _favoriteIds = favs.toSet());
-        }
-        if (index == 3 && _userLocation == null) {
-          _fetchUserGpsLocation(moveMap: true);
         }
       },
       behavior: HitTestBehavior.opaque,
@@ -414,37 +544,109 @@ class _HomeScreenState extends State<HomeScreen> {
   // TAB 1: BERANDA (SESUAI beranda.jpeg)
   // ===========================================================================
   Widget _buildHomeTab() {
-    // Jalankan Algoritma Rekomendasi Cerdas Hybrid
-    final visiblePlaces = _nearbyPlaces;
+    // 1. Ambil tempat berdasarkan wilayah dan radius GPS
+    var visiblePlaces = List<PlaceModel>.from(_nearbyPlaces);
+
+    // 2. Filter budget ketat jika user menetapkan budget tertentu (< 150.000)
+    // Sesuai instruksi: jika budget maksimal 10k, maka HANYA tempat dengan harga <= 10k yang boleh muncul. Lebih dari 10k DILARANG muncul.
+    if (_userBudget > 0 && _userBudget < 150000) {
+      visiblePlaces = visiblePlaces.where((p) => p.minPrice <= _userBudget).toList();
+    }
+
+    // 3. Algoritma Rekomendasi Cerdas untuk tempat yang lolos kriteria budget & wilayah
     final recommendations = RecommendationService.getRecommendations(
       allPlaces: visiblePlaces,
       userBudget: _userBudget,
-      selectedRegion: _selectedRegion,
+      selectedRegion: _isNearMeActive ? null : _selectedRegion,
       selectedCategory: _selectedCategory,
       userPreferences: _userPreferences.toList(),
     );
 
-    // Tempat Populer di wilayah terpilih
-    List<PlaceModel> popularPlaces = visiblePlaces.where((p) {
-      if (_selectedRegion.isNotEmpty &&
-          !_selectedRegion.toLowerCase().contains('semua')) {
-        final regClean = _selectedRegion.split('(')[0].trim().toLowerCase();
-        final pCity = p.city.toLowerCase();
-        final pAddr = p.address.toLowerCase();
-        if (!pCity.contains(regClean) && !pAddr.contains(regClean)) {
-          return false;
-        }
-      }
-      return true;
-    }).toList();
-    if (popularPlaces.isEmpty) {
-      popularPlaces = List.from(visiblePlaces);
+    final loc = _userLocation ?? LocationService.instance.currentLatLng;
+    // Jika mode lokasi terdekat aktif, urutkan rekomendasi berdasarkan jarak terdekat dari lokasi user
+    if (_isNearMeActive && loc != null) {
+      recommendations.sort((a, b) {
+        final distA = a.place.distanceInKmFrom(loc.latitude, loc.longitude);
+        final distB = b.place.distanceInKmFrom(loc.latitude, loc.longitude);
+        return distA.compareTo(distB);
+      });
     }
-    popularPlaces.sort((a, b) => b.reviewCount.compareTo(a.reviewCount));
+
+    // 4. Tempat Populer di wilayah terpilih (selaras dengan filter wilayah, budget, dan kategori)
+    List<PlaceModel> popularPlaces = List.from(visiblePlaces);
+    if (_selectedCategory != null &&
+        _selectedCategory!.isNotEmpty &&
+        _selectedCategory != 'Semua') {
+      final sel = _selectedCategory!.toLowerCase();
+      bool matchesCat(PlaceModel p) {
+        final cat = p.category.toLowerCase();
+        final name = p.name.toLowerCase();
+        final desc = p.description.toLowerCase();
+        if (cat.contains(sel) || sel.contains(cat) || name.contains(sel)) return true;
+        if (sel == 'cafe' || sel == 'coffee shop') {
+          return cat.contains('cafe') ||
+              cat.contains('kopi') ||
+              name.contains('kopi') ||
+              name.contains('coffee') ||
+              desc.contains('cafe');
+        }
+        if (sel == 'warkop') {
+          return cat.contains('warkop') ||
+              cat.contains('warung') ||
+              name.contains('warkop') ||
+              name.contains('angkringan') ||
+              name.contains('warmindo');
+        }
+        if (sel == 'restoran' || sel == 'resto' || sel == 'warung makan') {
+          return cat.contains('restoran') ||
+              cat.contains('resto') ||
+              cat.contains('warung') ||
+              name.contains('resto') ||
+              name.contains('soto') ||
+              name.contains('bakso') ||
+              desc.contains('restoran');
+        }
+        if (sel == 'bakery') {
+          return cat.contains('bakery') ||
+              cat.contains('roti') ||
+              cat.contains('kue') ||
+              name.contains('roti') ||
+              name.contains('bakery') ||
+              name.contains('kue') ||
+              name.contains('getuk') ||
+              name.contains('serabi') ||
+              name.contains('nopia');
+        }
+        if (sel == 'fast food') {
+          return cat.contains('fast food') ||
+              name.contains('burger') ||
+              name.contains('pizza') ||
+              name.contains('fried chicken') ||
+              name.contains('cepat saji');
+        }
+        if (sel == 'bar') {
+          return cat.contains('bar') || name.contains('bar') || name.contains('lounge');
+        }
+        return false;
+      }
+
+      popularPlaces = popularPlaces.where(matchesCat).toList();
+    }
+    if (_isNearMeActive && loc != null) {
+      popularPlaces.sort((a, b) {
+        final distA = a.distanceInKmFrom(loc.latitude, loc.longitude);
+        final distB = b.distanceInKmFrom(loc.latitude, loc.longitude);
+        return distA.compareTo(distB);
+      });
+    } else {
+      popularPlaces.sort((a, b) => b.reviewCount.compareTo(a.reviewCount));
+    }
 
     final featured = recommendations.isNotEmpty
         ? recommendations.first.place
-        : (visiblePlaces.isNotEmpty ? visiblePlaces.first : null);
+        : (popularPlaces.isNotEmpty
+            ? popularPlaces.first
+            : (visiblePlaces.isNotEmpty ? visiblePlaces.first : null));
 
     return Stack(
       children: [
@@ -500,70 +702,153 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Row(
       children: [
-        // Pin Oranye
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: AppTheme.orange.withValues(alpha: 0.2),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.location_on,
-            color: AppTheme.orange,
-            size: 20,
+        // Pin Lokasi - Klik untuk Beralih ke "Lokasi Terdekat Saya" (Feedback Client)
+        GestureDetector(
+          onTap: () async {
+            setState(() {
+              _isNearMeActive = !_isNearMeActive;
+            });
+            if (_isNearMeActive) {
+              await _initBackgroundGps();
+              if (_userLocation == null) {
+                await _fetchUserGpsLocation();
+              }
+              await _loadNearbyGooglePlaces();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('📍 Menampilkan rekomendasi lokasi cafe/resto terdekat'),
+                    duration: Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
+          },
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: _isNearMeActive
+                  ? AppTheme.gold.withValues(alpha: 0.3)
+                  : AppTheme.orange.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+              border: _isNearMeActive
+                  ? Border.all(color: AppTheme.gold, width: 1.5)
+                  : null,
+            ),
+            child: Icon(
+              _isNearMeActive ? Icons.my_location : Icons.location_on,
+              color: _isNearMeActive ? AppTheme.gold : AppTheme.orange,
+              size: 20,
+            ),
           ),
         ),
         const SizedBox(width: 8),
 
-        // Dropdown Wilayah
+        // Dropdown Wilayah ATAU Label "Lokasi Terdekat Saya"
         Expanded(
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: activeRegion,
-              isDense: true,
-              isExpanded: true,
-              dropdownColor: colors.surfaceNavy,
-              icon: Icon(
-                Icons.keyboard_arrow_down,
-                color: colors.textPrimary,
-                size: 20,
-              ),
-              selectedItemBuilder: (BuildContext ctx) {
-                return _purwokertoRegions.map((region) {
-                  return Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      region,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
+          child: _isNearMeActive
+              ? GestureDetector(
+                  onTap: () {
+                    setState(() => _isNearMeActive = false);
+                  },
+                  child: Row(
+                    children: [
+                      const Flexible(
+                        child: Text(
+                          'Lokasi Terdekat Saya',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: AppTheme.gold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                }).toList();
-              },
-              items: _purwokertoRegions.map((region) {
-                return DropdownMenuItem<String>(
-                  value: region,
-                  child: Text(
-                    region,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: AppTheme.gold,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: colors.surfaceNavy,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: colors.borderNavy),
+                        ),
+                        child: Text(
+                          'Ganti',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              }).toList(),
-              onChanged: _onRegionChanged,
-            ),
-          ),
+                )
+              : DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: activeRegion,
+                    isDense: true,
+                    isExpanded: true,
+                    iconSize: 0,
+                    icon: const SizedBox.shrink(),
+                    dropdownColor: colors.surfaceNavy,
+                    selectedItemBuilder: (BuildContext ctx) {
+                      return _purwokertoRegions.map((region) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                region,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: colors.textPrimary,
+                              size: 20,
+                            ),
+                          ],
+                        );
+                      }).toList();
+                    },
+                    items: _purwokertoRegions.map((region) {
+                      return DropdownMenuItem<String>(
+                        value: region,
+                        child: Text(
+                          region,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (newRegion) {
+                      setState(() => _isNearMeActive = false);
+                      _onRegionChanged(newRegion);
+                    },
+                  ),
+                ),
         ),
 
         // Lonceng Notifikasi
@@ -682,16 +967,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Container(width: 1, height: 24, color: colors.borderNavy),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.near_me_rounded,
-              color: AppTheme.orange,
+              color: _isNearMeActive ? AppTheme.gold : AppTheme.orange,
               size: 22,
             ),
-            onPressed: () async {
+            onPressed: () {
               if (_userLocation == null) {
-                await _fetchUserGpsLocation();
+                _initBackgroundGps();
               }
-              if (mounted) await _openNearbyFilter();
+              _openNearbyFilter();
             },
             tooltip: 'Tempat terdekat dan radius',
           ),
@@ -702,7 +987,7 @@ class _HomeScreenState extends State<HomeScreen> {
               size: 22,
             ),
             onPressed: _openFilterModal,
-            tooltip: 'Filter Budget & Preferensi',
+            tooltip: 'Filter Budget & Kategori',
           ),
           const SizedBox(width: 4),
         ],
@@ -746,6 +1031,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     _selectedCategory = name;
                   }
                 });
+                if (_isNearMeActive) {
+                  _loadNearbyGooglePlaces();
+                }
               },
               child: Column(
                 children: [
@@ -755,12 +1043,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       gradient: isSelected
                           ? AppTheme.warmGradient
-                          : AppTheme.primaryGradient,
+                          : LinearGradient(
+                              colors: [colors.surfaceNavy, colors.cardNavy],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected ? AppTheme.gold : colors.borderNavy,
+                        width: isSelected ? 2.5 : 1.2,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.orange.withValues(alpha: 0.35),
-                          blurRadius: 8,
+                          color: isSelected
+                              ? AppTheme.orange.withValues(alpha: 0.5)
+                              : Colors.black.withValues(
+                                  alpha: colors.isDark ? 0.3 : 0.08,
+                                ),
+                          blurRadius: isSelected ? 12 : 6,
                           offset: const Offset(0, 3),
                         ),
                       ],
@@ -768,7 +1068,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Icon(
                       cat['icon'] as IconData,
                       size: 26,
-                      color: const Color(0xFF1A1A1A),
+                      color: isSelected ? const Color(0xFF1A1A1A) : AppTheme.gold,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -778,7 +1078,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: isSelected ? AppTheme.gold : colors.textPrimary,
                       fontSize: 13,
                       fontWeight: isSelected
-                          ? FontWeight.w800
+                          ? FontWeight.w900
                           : FontWeight.w600,
                     ),
                   ),
@@ -805,7 +1105,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: Text(
-                'Rekomendasi untuk kamu',
+                _isNearMeActive
+                    ? 'Rekomendasi Cafe/Resto Terdekat'
+                    : 'Rekomendasi untuk kamu',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -857,10 +1159,18 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 14),
 
         if (featured == null)
-          const Center(
-            child: Text(
-              'Belum ada rekomendasi tempat',
-              style: TextStyle(color: AppTheme.textSecondary),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'Belum ada rekomendasi tempat yang cocok dengan budget & filter kamu',
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           )
         else
@@ -1101,14 +1411,36 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 14),
 
-        GridView.builder(
+        if (list.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            decoration: BoxDecoration(
+              color: colors.cardNavy,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.borderNavy),
+            ),
+            child: Center(
+              child: Text(
+                'Tidak ada tempat dengan budget & filter yang dipilih',
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          )
+        else
+          GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 14,
-            childAspectRatio: 0.68,
+            mainAxisExtent: 186,
           ),
           itemCount: list.length,
           itemBuilder: (context, index) {
@@ -1157,11 +1489,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Image.network(
                         place.imageUrl,
-                        height: 100,
+                        height: 92,
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorBuilder: (ctx, err, st) => Container(
-                          height: 100,
+                          height: 92,
                           color: colors.searchNavy,
                           child: const Icon(
                             Icons.store,
@@ -1173,7 +1505,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Info
                     Padding(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1181,10 +1513,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             place.name,
                             style: TextStyle(
                               color: colors.textPrimary,
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w800,
+                              height: 1.25,
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 3),
@@ -1571,7 +1904,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ===========================================================================
   // TAB 4: PETA (OPENSTREETMAP VIA FLUTTER_MAP)
+  // ---------------------------------------------------------------------------
+  // Tidak dipakai lagi di bottom navigation: tab "Dekat" sekarang membuka
+  // NearbyScreen (Google Maps). Kode ini disimpan sebagai referensi/fallback.
   // ===========================================================================
+  // ignore: unused_element
   Widget _buildMapTab() {
     final colors = AppTheme.colors(context);
     return Stack(

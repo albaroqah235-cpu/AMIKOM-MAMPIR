@@ -140,11 +140,12 @@ const I18nService = {
       share_text_prefix: 'Yuk cek {name} di MAMPIR Purwokerto:',
 
       // Budget Modal & Smart Recommendations
-      budget_modal_title: '💰 Filter Anggaran & Fasilitas',
+      budget_modal_title: '💰 Filter Anggaran & Jenis Tempat',
       budget_max_label: 'Batas Maksimal Anggaran / Orang:',
       budget_cheap: 'Hemat',
       budget_luxury: 'Sultan',
-      fac_priority_label: 'Prioritas Fasilitas:',
+      place_types_label: 'Jenis Tempat (Kategori Google Maps):',
+      fac_priority_label: 'Jenis Tempat (Kategori Google Maps):',
       btn_cancel: 'Batal',
       btn_apply_filter: 'Terapkan Filter',
       toast_budget_applied: 'Filter diterapkan: Budget {budget}',
@@ -460,11 +461,12 @@ const I18nService = {
       share_text_prefix: 'Check out {name} on MAMPIR Purwokerto:',
 
       // Budget Modal & Smart Recommendations
-      budget_modal_title: '💰 Budget & Facilities Filter',
+      budget_modal_title: '💰 Budget & Place Types Filter',
       budget_max_label: 'Maximum Budget Limit / Person:',
       budget_cheap: 'Budget',
       budget_luxury: 'Luxury',
-      fac_priority_label: 'Facility Priorities:',
+      place_types_label: 'Place Types (Google Maps Categories):',
+      fac_priority_label: 'Place Types (Google Maps Categories):',
       btn_cancel: 'Cancel',
       btn_apply_filter: 'Apply Filter',
       toast_budget_applied: 'Filter applied: Budget {budget}',

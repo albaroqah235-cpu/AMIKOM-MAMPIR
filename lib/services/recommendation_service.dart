@@ -46,20 +46,16 @@ class RecommendationService {
     if (selectedRegion != null &&
         selectedRegion.isNotEmpty &&
         !selectedRegion.toLowerCase().contains('semua')) {
-      final regionKeywords = _getRegionKeywords(selectedRegion);
+      final regionKeywords = getRegionKeywords(selectedRegion);
       candidatePlaces = candidatePlaces.where((place) {
         final pCity = place.city.toLowerCase();
         final pAddr = place.address.toLowerCase();
+        final pName = place.name.toLowerCase();
+        final combined = '$pCity $pAddr $pName';
         return regionKeywords.any(
-          (kw) => pCity.contains(kw) || pAddr.contains(kw),
+          (kw) => combined.contains(kw),
         );
       }).toList();
-
-      // Jika candidatePlaces kosong karena filter regional terlalu ketat,
-      // fallback ke allPlaces agar user tetap mendapatkan rekomendasi
-      if (candidatePlaces.isEmpty) {
-        candidatePlaces = allPlaces;
-      }
     }
 
     // Filter kategori opsional jika dipilih di UI
@@ -67,16 +63,77 @@ class RecommendationService {
         selectedCategory.isNotEmpty &&
         selectedCategory != 'Semua' &&
         selectedCategory != 'Lainnya') {
-      final filteredByCategory = candidatePlaces
-          .where(
-            (p) => p.category.toLowerCase().contains(
-              selectedCategory.toLowerCase(),
-            ),
-          )
-          .toList();
-      if (filteredByCategory.isNotEmpty) {
-        candidatePlaces = filteredByCategory;
+      final sel = selectedCategory.toLowerCase();
+      bool matchesCategory(PlaceModel p) {
+        final cat = p.category.toLowerCase();
+        final name = p.name.toLowerCase();
+        final desc = p.description.toLowerCase();
+        if (cat.contains(sel) || sel.contains(cat)) return true;
+        if (name.contains(sel)) return true;
+        if (sel == 'resto' || sel == 'restoran') {
+          return cat.contains('resto') ||
+              cat.contains('restoran') ||
+              name.contains('resto') ||
+              name.contains('rumah makan') ||
+              name.contains('restoran') ||
+              name.contains('kitchen') ||
+              desc.contains('restoran');
+        }
+        if (sel == 'warung makan' ||
+            sel == 'warkop' ||
+            sel.contains('warung') ||
+            sel.contains('warkop')) {
+          return cat.contains('warung') ||
+              cat.contains('warkop') ||
+              name.contains('warung') ||
+              name.contains('warkop') ||
+              name.contains('angkringan') ||
+              name.contains('warmindo') ||
+              name.contains('soto') ||
+              name.contains('bakso') ||
+              name.contains('makan');
+        }
+        if (sel == 'cafe' || sel == 'coffee shop') {
+          return cat.contains('cafe') ||
+              cat.contains('coffee') ||
+              cat.contains('kopi') ||
+              name.contains('cafe') ||
+              name.contains('kafe') ||
+              name.contains('coffee') ||
+              name.contains('kopi') ||
+              desc.contains('cafe');
+        }
+        if (sel == 'bakery') {
+          return cat.contains('bakery') ||
+              cat.contains('roti') ||
+              cat.contains('kue') ||
+              name.contains('roti') ||
+              name.contains('bakery') ||
+              name.contains('kue') ||
+              name.contains('getuk') ||
+              name.contains('serabi') ||
+              name.contains('nopia') ||
+              desc.contains('roti');
+        }
+        if (sel == 'fast food') {
+          return cat.contains('fast food') ||
+              name.contains('burger') ||
+              name.contains('pizza') ||
+              name.contains('fried chicken') ||
+              name.contains('cepat saji');
+        }
+        return p.facilities.any((f) => f.toLowerCase().contains(sel));
       }
+
+      candidatePlaces = candidatePlaces.where(matchesCategory).toList();
+    }
+
+    // Filter budget maksimal ketat:
+    // Sesuai permintaan pengguna: Jika budget maksimal ditentukan (misal 10k, < 150.000),
+    // maka HANYA tempat yang harga minimalnya <= userBudget yang boleh muncul.
+    // Tempat dengan harga di atas budget pengguna DILARANG muncul.
+    if (userBudget > 0 && userBudget < 150000) {
+      candidatePlaces = candidatePlaces.where((place) => place.minPrice <= userBudget).toList();
     }
 
     // Deteksi apakah user memasukkan nama tempat acuan spesifik
@@ -256,7 +313,7 @@ class RecommendationService {
   }
 
   /// Helper untuk memetakan nama wilayah ke kata kunci pencarian
-  static List<String> _getRegionKeywords(String region) {
+  static List<String> getRegionKeywords(String region) {
     final r = region.toLowerCase();
     if (r.contains('baturraden')) {
       return [
@@ -279,7 +336,7 @@ class RecommendationService {
       ];
     } else if (r.contains('sokaraja')) {
       return ['sokaraja', 'soto sokaraja', 'getuk'];
-    } else if (r.contains('timur')) {
+    } else if (r.contains('timur') || r.contains('sumbang')) {
       return [
         'sumbang',
         'kembaran',
@@ -289,10 +346,22 @@ class RecommendationService {
         'ledug',
         'purwokerto timur',
       ];
+    } else if (r.contains('barat') && r.contains('selatan')) {
+      return [
+        'purwokerto barat',
+        'stasiun',
+        'kober',
+        'purwokerto selatan',
+        'tanjung',
+        'terminal',
+        'karangpucung',
+        'gerilya',
+        'andhang',
+      ];
     } else if (r.contains('barat')) {
-      return ['purwokerto barat', 'stasiun', 'kober', 'gerilya', 'andhang'];
+      return ['purwokerto barat', 'stasiun', 'kober', 'andhang'];
     } else if (r.contains('selatan')) {
-      return ['purwokerto selatan', 'tanjung', 'terminal', 'karangpucung'];
+      return ['purwokerto selatan', 'tanjung', 'terminal', 'karangpucung', 'gerilya'];
     } else if (r.contains('purwokerto kota') ||
         r.contains('kota') ||
         r.contains('pusat')) {
@@ -305,6 +374,8 @@ class RecommendationService {
         'isdiman',
         'sukun',
         'pramuka',
+        'suharso',
+        'gatot subroto',
       ];
     }
     return [r];

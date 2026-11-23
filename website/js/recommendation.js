@@ -109,6 +109,32 @@ const RecommendationService = {
   },
 
   /**
+   * Helper untuk memetakan nama wilayah ke daftar kata kunci pencarian
+   */
+  getRegionKeywords(region) {
+    if (!region) return [];
+    const r = region.toLowerCase();
+    if (r.includes('baturraden')) {
+      return ['baturraden', 'karanggintung', 'rempoah', 'ketenger', 'palawi', 'curug', 'limpakuwus'];
+    } else if (r.includes('utara')) {
+      return ['unsoed', 'bunyamin', 'grendeng', 'purwokerto utara', 'pabuaran', 'karangwangkal'];
+    } else if (r.includes('sokaraja')) {
+      return ['sokaraja', 'soto sokaraja', 'getuk'];
+    } else if (r.includes('timur') || r.includes('sumbang')) {
+      return ['sumbang', 'kembaran', 'arcawinangun', 'dukuhwaluh', 'ump', 'ledug', 'purwokerto timur'];
+    } else if (r.includes('barat') && r.includes('selatan')) {
+      return ['purwokerto barat', 'stasiun', 'kober', 'purwokerto selatan', 'tanjung', 'terminal', 'karangpucung', 'gerilya', 'andhang'];
+    } else if (r.includes('barat')) {
+      return ['purwokerto barat', 'stasiun', 'kober', 'andhang'];
+    } else if (r.includes('selatan')) {
+      return ['purwokerto selatan', 'tanjung', 'terminal', 'karangpucung', 'gerilya'];
+    } else if (r.includes('purwokerto kota') || r.includes('kota') || r.includes('pusat')) {
+      return ['purwokerto kota', 'alun-alun', 'gor', 'sudirman', 'dr. angka', 'isdiman', 'sukun', 'pramuka', 'suharso', 'gatot subroto'];
+    }
+    return [r];
+  },
+
+  /**
    * Mengambil rekomendasi tempat berdasarkan budget, preferensi fasilitas,
    * wilayah terpilih, dan query opsional dengan Algoritma Smart Auto-Recommendation.
    */
@@ -125,22 +151,60 @@ const RecommendationService = {
 
     let candidates = [...allPlaces];
 
-    // 1. Filter Regional
+    // 1. Filter Regional secara presisi sesuai wilayah yang dipilih (Feedback Client 22.07)
     if (selectedRegion && !selectedRegion.toLowerCase().includes('semua')) {
-      const regionClean = selectedRegion.split('(')[0].trim().toLowerCase();
-      const filtered = candidates.filter(p => {
+      const keywords = this.getRegionKeywords(selectedRegion);
+      candidates = candidates.filter(p => {
         const c = (p.city || '').toLowerCase();
         const a = (p.address || '').toLowerCase();
-        return c.includes(regionClean) || a.includes(regionClean);
+        const n = (p.name || '').toLowerCase();
+        const combined = `${c} ${a} ${n}`;
+        return keywords.some(kw => combined.includes(kw));
       });
-      if (filtered.length > 0) candidates = filtered;
     }
 
-    // 2. Filter Kategori
+    // 2. Filter Kategori (Kategori resmi Google Maps)
     if (selectedCategory && selectedCategory !== 'Semua') {
-      const catLower = selectedCategory.toLowerCase();
-      const filtered = candidates.filter(p => (p.category || '').toLowerCase().includes(catLower));
-      if (filtered.length > 0) candidates = filtered;
+      const sel = selectedCategory.toLowerCase();
+      const filtered = candidates.filter(p => {
+        const cat = (p.category || '').toLowerCase();
+        const name = (p.name || '').toLowerCase();
+        if (cat.includes(sel) || sel.includes(cat)) return true;
+        if (name.includes(sel)) return true;
+        if (sel === 'warung makan' && (cat.includes('warung') || cat.includes('restoran') || name.includes('warung') || name.includes('soto') || name.includes('bakso') || name.includes('makan'))) return true;
+        if (sel === 'coffee shop' && (cat.includes('cafe') || cat.includes('kopi') || name.includes('kopi') || name.includes('coffee'))) return true;
+        if (sel === 'warkop' && (cat.includes('warkop') || name.includes('warkop') || name.includes('kopi'))) return true;
+        if (sel === 'fast food' && (cat.includes('fast food') || name.includes('burger') || name.includes('pizza') || name.includes('fried chicken') || name.includes('cepat saji'))) return true;
+        if (sel === 'bakery' && (cat.includes('bakery') || cat.includes('roti') || name.includes('roti') || name.includes('kue') || name.includes('getuk') || name.includes('serabi'))) return true;
+        if (sel === 'bar' && (cat.includes('bar') || name.includes('bar') || name.includes('lounge'))) return true;
+        const facs = Array.isArray(p.facilities) ? p.facilities.map(f => f.toLowerCase()) : [];
+        return facs.some(f => f.includes(sel));
+      });
+      candidates = filtered;
+    }
+
+    // 3. Saring Pencarian Kata Kunci secara ketat (Feedback Client 1)
+    if (searchQuery && searchQuery.trim().length > 0) {
+      const q = searchQuery.trim().toLowerCase();
+      const tokens = q.split(/\s+/).filter(Boolean);
+      candidates = candidates.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        const addr = (p.address || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        const tags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : '';
+        const menus = Array.isArray(p.menu_highlights) ? p.menu_highlights.map(m => (m.name || '')).join(' ').toLowerCase() : '';
+        const combined = `${name} ${cat} ${addr} ${desc} ${tags} ${menus}`;
+        return combined.includes(q) || tokens.every(t => combined.includes(t));
+      });
+    }
+
+    // 4. Saring Budget secara ketat jika filter budget aktif (Sesuai instruksi: tempat di atas budget DILARANG muncul)
+    if (isBudgetActive && userBudget > 0) {
+      candidates = candidates.filter(p => {
+        const minP = p.min_price || 0;
+        return minP > 0 && minP <= userBudget;
+      });
     }
 
     const queryTokens = (searchQuery || '').trim().toLowerCase().split(/\s+/).filter(Boolean);

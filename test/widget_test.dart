@@ -105,6 +105,33 @@ void main() {
   );
 
   test(
+    'RecommendationService strictly enforces maximum budget filter (<= 10k only)',
+    () async {
+      final apiService = ApiService();
+      final places = await apiService.fetchPlaces();
+
+      // Test maximum budget 10.000: HANYA tempat dengan minPrice <= 10.000 yang boleh muncul
+      final recs10k = RecommendationService.getRecommendations(
+        allPlaces: places,
+        userBudget: 10000,
+      );
+      expect(recs10k.isNotEmpty, isTrue);
+      for (final r in recs10k) {
+        expect(
+          r.place.minPrice <= 10000,
+          isTrue,
+          reason: '${r.place.name} has minPrice ${r.place.minPrice} which exceeds budget 10000',
+        );
+      }
+
+      // Pastikan tempat dengan harga di atas 10k (seperti Kopi Kenangan 15k, Limpakuwus 20k) TIDAK PERNAH muncul
+      expect(recs10k.any((r) => r.place.name.contains('Kopi Kenangan')), isFalse);
+      expect(recs10k.any((r) => r.place.name.contains('Limpakuwus')), isFalse);
+      expect(recs10k.any((r) => r.place.name.contains('Table Nine')), isFalse);
+    },
+  );
+
+  test(
     'PreferenceService getSearchHistory returns empty list when raw is null',
     () async {
       SharedPreferences.setMockInitialValues({});
@@ -121,10 +148,9 @@ void main() {
   );
 
   testWidgets(
-    'SettingsScreen has direct notification toggle and no rating/share',
+    'SettingsScreen renders user profile without Notifikasi and Izin Lokasi',
     (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({
-        'setting_notification_enabled': true,
         'user_name': 'Penjelajah Test',
       });
 
@@ -133,13 +159,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify Direct Switch toggle for Notifikasi exists
-      expect(find.text('Notifikasi'), findsOneWidget);
-      expect(find.byType(Switch), findsOneWidget);
-
       // Verify title is 'Profil Pengguna' and not 'Pengaturan & Akun'
       expect(find.text('Profil Pengguna'), findsOneWidget);
       expect(find.text('Pengaturan & Akun'), findsNothing);
+
+      // Verify Notifikasi and Izin Lokasi are removed
+      expect(find.text('Notifikasi'), findsNothing);
+      expect(find.text('Izin Lokasi'), findsNothing);
+      expect(find.byType(Switch), findsNothing);
+
+      // Verify Tema and Tentang MAMPIR are present
+      expect(find.text('Tema'), findsOneWidget);
+      expect(find.text('Tentang MAMPIR'), findsOneWidget);
 
       // Verify 'Beri Rating MAMPIR', 'Bagikan Aplikasi', 'Bahasa', and 'Bantuan & Hubungi Kami' are NOT present
       expect(find.text('Beri Rating MAMPIR'), findsNothing);
@@ -264,13 +295,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify all 25 places are counted in the header
-      expect(
-        find.text(
-          'Menampilkan 25 tempat sesuai dengan budget dan preferensimu',
-        ),
-        findsOneWidget,
-      );
+      // Verify sort pills are directly present
+      expect(find.text('Terdekat'), findsOneWidget);
+      expect(find.text('Rating Tertinggi'), findsOneWidget);
 
       final listScrollable = find.descendant(
         of: find.byType(ListView),
@@ -292,13 +319,7 @@ void main() {
       await tester.tap(ratingSortFinder);
       await tester.pumpAndSettle();
 
-      // Still 25 places
-      expect(
-        find.text(
-          'Menampilkan 25 tempat sesuai dengan budget dan preferensimu',
-        ),
-        findsOneWidget,
-      );
+      // Still shows sort options
       expect(find.text('Rating Tertinggi'), findsOneWidget);
     },
   );
@@ -635,7 +656,7 @@ void main() {
     expect(find.text('Beranda'), findsOneWidget);
     expect(find.text('Cari'), findsOneWidget);
     expect(find.text('Favorit'), findsOneWidget);
-    expect(find.text('Peta'), findsOneWidget);
+    expect(find.text('Dekat'), findsOneWidget);
 
     // Verify 5th tab 'Akun' is completely removed from bottom navigation
     expect(find.text('Akun'), findsNothing);
@@ -695,5 +716,28 @@ void main() {
       redirectUrl: 'https://mampir.id',
     );
     expect(webUrl, contains('redirect_to=https%3A%2F%2Fmampir.id'));
+  });
+
+  testWidgets('HomeScreen nearby filter modal can be opened and selects radius', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpAndSettle();
+
+    // Tap near_me icon in search bar
+    final nearMeFinder = find.byTooltip('Tempat terdekat dan radius');
+    expect(nearMeFinder, findsOneWidget);
+    await tester.tap(nearMeFinder);
+    await tester.pumpAndSettle();
+
+    // Verify modal appears
+    expect(find.text('Jarak tempat terdekat'), findsOneWidget);
+    expect(find.text('<= 5 km'), findsOneWidget);
+
+    // Select <= 3 km
+    await tester.tap(find.text('<= 3 km'));
+    await tester.pumpAndSettle();
+
+    // Modal dismissed
+    expect(find.text('Jarak tempat terdekat'), findsNothing);
   });
 }

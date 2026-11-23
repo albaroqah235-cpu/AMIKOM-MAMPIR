@@ -17,7 +17,35 @@ window.App = {
   sortBy: 'rekomendasi', // 'rekomendasi', 'rating', 'jarak', 'harga_murah'
   isApiOnline: false,
   isBudgetFilterActive: false,
+  isNearMeActive: false,
   lastUpsell: null,
+
+  toggleNearMe() {
+    this.isNearMeActive = !this.isNearMeActive;
+    const label = document.getElementById('top-near-me-label');
+    const select = document.getElementById('global-region-select');
+    const btnNear = document.getElementById('btn-top-nearby');
+
+    if (this.isNearMeActive) {
+      if (label) label.style.display = 'inline-block';
+      if (select) select.style.display = 'none';
+      if (btnNear) {
+        btnNear.style.background = 'linear-gradient(135deg, var(--accent-orange), var(--accent-gold))';
+        btnNear.style.color = '#fff';
+      }
+      this.sortBy = 'jarak';
+      this.showToast('📍 Menampilkan rekomendasi untuk lokasi cafe/resto terdekat');
+    } else {
+      if (label) label.style.display = 'none';
+      if (select) select.style.display = 'inline-block';
+      if (btnNear) {
+        btnNear.style.background = '';
+        btnNear.style.color = '';
+      }
+      this.sortBy = 'rekomendasi';
+    }
+    this.render();
+  },
 
   async init() {
     console.log('Inisialisasi MAMPIR Web...');
@@ -72,8 +100,67 @@ window.App = {
     }
   },
 
+  liveGooglePlaces: [],
+  googleSearchDebounce: null,
+
+  async searchGooglePlacesLive(query) {
+    const q = (query || '').trim();
+    if (!q || q.length < 2 || !AppConfig.googlePlacesApiKey) {
+      this.liveGooglePlaces = [];
+      this.render();
+      return;
+    }
+
+    try {
+      const uCoords = window.NearbyController?.userCoords || { latitude: -7.4243, longitude: 109.2303 };
+      const body = {
+        textQuery: `${q} Purwokerto`,
+        locationBias: {
+          circle: {
+            center: { latitude: uCoords.latitude, longitude: uCoords.longitude },
+            radius: 15000.0
+          }
+        },
+        languageCode: 'id',
+        maxResultCount: 15
+      };
+
+      const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': AppConfig.googlePlacesApiKey,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.types,places.regularOpeningHours.openNow,places.photos'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data.places)) {
+          this.liveGooglePlaces = data.places.map(p => {
+            const transformed = window.NearbyController ? window.NearbyController.transformGooglePlace(p, uCoords.latitude, uCoords.longitude) : null;
+            if (transformed) {
+              return {
+                ...transformed,
+                city: 'Purwokerto',
+                description: `Tempat nyata terverifikasi Google Maps dengan rating ${p.rating || 4.5} (${p.userRatingCount || 50}+ ulasan).`,
+                is_google_live: true
+              };
+            }
+            return null;
+          }).filter(Boolean);
+        }
+      }
+    } catch (e) {
+      console.warn('Google Places live search error:', e);
+    }
+
+    this.render();
+  },
+
   getPlaceById(id) {
-    const raw = this.places.find(p => p.id === id);
+    const raw = this.getMergedPlacesList().find(p => p.id === id);
     if (!raw) return null;
     const overrides = StorageService.getCafeOverrides(id) || {};
     return { ...raw, ...overrides };
@@ -81,10 +168,18 @@ window.App = {
 
   getMergedPlacesList() {
     const allOverrides = StorageService.getAllCafeOverrides();
-    return this.places.map(p => {
+    const base = this.places.map(p => {
       const o = allOverrides[p.id];
       return o ? { ...p, ...o } : p;
     });
+
+    if (this.searchQuery && this.liveGooglePlaces && this.liveGooglePlaces.length > 0) {
+      const baseNames = new Set(base.map(p => (p.name || '').toLowerCase().trim()));
+      const uniqueGoogle = this.liveGooglePlaces.filter(g => !baseNames.has((g.name || '').toLowerCase().trim()));
+      return [...uniqueGoogle, ...base];
+    }
+
+    return base;
   },
 
   /**
@@ -148,6 +243,42 @@ window.App = {
       list = list.filter(p => favIds.includes(p.id));
     }
 
+    // 1. Saring pencarian kata kunci secara ketat (Feedback Client 1)
+    if (this.searchQuery && this.searchQuery.trim().length > 0) {
+      const q = this.searchQuery.trim().toLowerCase();
+      const tokens = q.split(/\s+/).filter(Boolean);
+      list = list.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        const addr = (p.address || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        const tags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : '';
+        const menus = Array.isArray(p.menu_highlights) ? p.menu_highlights.map(m => (m.name || '')).join(' ').toLowerCase() : '';
+        const combined = `${name} ${cat} ${addr} ${desc} ${tags} ${menus}`;
+        return combined.includes(q) || tokens.every(t => combined.includes(t));
+      });
+    }
+
+    // 2. Saring budget secara ketat jika filter budget aktif (Sesuai instruksi: tempat di atas budget DILARANG muncul)
+    if (this.isBudgetFilterActive && this.userBudget > 0) {
+      list = list.filter(p => {
+        const minP = p.min_price || 0;
+        return minP > 0 && minP <= this.userBudget;
+      });
+    }
+
+    // 3. Saring Wilayah secara ketat sesuai pilihan pengguna (Feedback Client 22.07)
+    if (!this.isNearMeActive && this.selectedRegion && !this.selectedRegion.toLowerCase().includes('semua')) {
+      const keywords = RecommendationService.getRegionKeywords(this.selectedRegion);
+      list = list.filter(p => {
+        const c = (p.city || '').toLowerCase();
+        const a = (p.address || '').toLowerCase();
+        const n = (p.name || '').toLowerCase();
+        const combined = `${c} ${a} ${n}`;
+        return keywords.some(kw => combined.includes(kw));
+      });
+    }
+
     // Rekomendasi scoring
     const recommendations = RecommendationService.getRecommendations({
       allPlaces: list,
@@ -168,6 +299,11 @@ window.App = {
       affordableCombo: r.affordableCombo,
       isBestBudgetMatch: r.place.isBestBudgetMatch
     }));
+
+    // Saring akhir: jika filter budget aktif, pastikan secara ketat tidak ada tempat di atas budget yang lolos
+    if (this.isBudgetFilterActive && this.userBudget > 0) {
+      result = result.filter(p => (p.min_price || 0) <= this.userBudget);
+    }
 
     // Sorting
     if (this.sortBy === 'rating') {
@@ -230,11 +366,34 @@ window.App = {
 
       // Rekomendasi Berbasis Aktivitas Pengguna (Req 4)
       if (!hasSearch) {
+        let recCandidatePlaces = this.getMergedPlacesList();
+        if (this.isBudgetFilterActive && this.userBudget > 0) {
+          recCandidatePlaces = recCandidatePlaces.filter(p => (p.min_price || 0) <= this.userBudget);
+        }
         const activityRecs = RecommendationService.getActivityBasedRecommendations({
-          allPlaces: this.getMergedPlacesList(),
+          allPlaces: recCandidatePlaces,
           maxItems: 6
         });
         html += this.renderActivityRecommendationCarousel(activityRecs);
+      }
+
+      // Banner Ajakan Fitur Nearby Gojek-Style
+      if (!hasSearch) {
+        html += `
+          <div class="nearby-cta-banner" onclick="window.NearbyController.activate()">
+            <div class="nearby-cta-left">
+              <span class="nearby-cta-icon">📍</span>
+              <div>
+                <h4 class="nearby-cta-title">Cari Tempat Makan & Nongkrong Terdekat (Live GPS)</h4>
+                <p class="nearby-cta-desc">Deteksi lokasi Anda, filter radius 0–1 km s/d >10 km via Google Places API & peta interaktif!</p>
+              </div>
+            </div>
+            <button class="btn-nearby-cta-action">
+              <span>Buka Near Me</span>
+              <span>🛵 ➔</span>
+            </button>
+          </div>
+        `;
       }
 
       html += this.renderCategoryFilterBar();
@@ -307,7 +466,10 @@ window.App = {
     if (this.currentView === 'favorit') {
       return window.t('nav_favorites', 'Daftar Tempat Favorit Anda');
     }
-    return window.t('all_recommendations_title', 'Rekomendasi Tempat Kuliner & Nongkrong');
+    if (this.isNearMeActive || (window.NearbyController && window.NearbyController.isActive)) {
+      return 'Rekomendasi Cafe/Resto Terdekat';
+    }
+    return window.t('all_recommendations_title', 'Rekomendasi untuk lokasi cafe/resto terdekat');
   },
 
   renderFeaturedCard(place) {
@@ -385,9 +547,13 @@ window.App = {
   renderCategoryFilterBar() {
     const cats = [
       { key: 'Semua', label: window.t('cat_all', '✨ Semua Tempat') },
+      { key: 'Restoran', label: window.t('cat_resto', '🍽️ Restoran') },
+      { key: 'Warung Makan', label: window.t('cat_warung', '🍲 Warung Makan') },
       { key: 'Cafe', label: window.t('cat_cafe', '☕ Cafe') },
+      { key: 'Coffee Shop', label: window.t('cat_coffee_shop', '🧋 Coffee Shop') },
       { key: 'Warkop', label: window.t('cat_warkop', '🍵 Warkop') },
-      { key: 'Restoran', label: window.t('cat_resto', '🍽️ Restoran') }
+      { key: 'Fast Food', label: window.t('cat_fastfood', '🍔 Fast Food') },
+      { key: 'Bakery', label: window.t('cat_bakery', '🥐 Bakery') }
     ];
     return `
       <div class="category-pills">
@@ -434,7 +600,10 @@ window.App = {
         </div>
         <div class="place-card-body">
           <div class="place-card-header">
-            <h4 class="place-card-title">${place.name}</h4>
+            <h4 class="place-card-title">
+              <span>${place.name}</span>
+              ${place.is_google_live ? `<span class="badge-source-google-live" style="margin-left: 6px;">🌐 Google Maps Live</span>` : ''}
+            </h4>
             <div class="place-card-rating">⭐ ${place.rating || 4.5}</div>
           </div>
           <div class="place-card-location">📍 ${place.city} • ${place.distance || 0} km</div>
@@ -578,6 +747,15 @@ window.App = {
         this.searchQuery = e.target.value;
         if (searchClear) searchClear.style.display = this.searchQuery ? 'block' : 'none';
         this.render();
+
+        clearTimeout(this.googleSearchDebounce);
+        if (this.searchQuery.trim().length >= 2) {
+          this.googleSearchDebounce = setTimeout(() => {
+            this.searchGooglePlacesLive(this.searchQuery);
+          }, 350);
+        } else {
+          this.liveGooglePlaces = [];
+        }
       });
       searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -591,6 +769,7 @@ window.App = {
       searchClear.addEventListener('click', () => {
         if (searchInput) searchInput.value = '';
         this.searchQuery = '';
+        this.liveGooglePlaces = [];
         searchClear.style.display = 'none';
         this.render();
       });
@@ -626,6 +805,14 @@ window.App = {
   },
 
   switchView(viewName) {
+    if (viewName === 'nearby') {
+      window.NearbyController.activate();
+      return;
+    }
+    if (window.NearbyController && window.NearbyController.isActive) {
+      window.NearbyController.isActive = false;
+      window.NearbyController.clearMapDecorations();
+    }
     this.currentView = viewName;
     document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => {
       el.classList.toggle('active', el.getAttribute('data-view') === viewName);
@@ -830,7 +1017,7 @@ window.App = {
         <div class="menu-highlight-list">
           ${menuHighlights.map(m => `
             <div class="menu-item-row">
-              <span>☕ ${m.name}</span>
+              <span class="menu-item-name">☕ ${m.name}</span>
               <strong>${RecommendationService.formatRupiah(m.price)}</strong>
             </div>
           `).join('')}

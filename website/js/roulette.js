@@ -10,6 +10,8 @@ const RouletteController = {
   mode: 'weighted', // 'weighted' (Smart Worth It) atau 'luck' (Murni Acak)
   soundEnabled: true,
   isSpinning: false,
+  isLoadingRealtime: false,
+  filterOnly4Stars: true,
   currentAngle: 0,
   targetWinner: null,
   activeSlotSearchIndex: null,
@@ -269,16 +271,17 @@ const RouletteController = {
     const modal = document.getElementById('modal-roulette');
     if (!modal) return;
 
-    // Jika belum ada kandidat atau baru 1, coba isi otomatis jika kosong
-    if (this.candidates.length === 0) {
-      this.autoFillNearbyCandidates(2);
-    }
-
     modal.classList.add('active');
     this.switchToView('setup');
     this.renderSlotCards();
     this.updateModeToggleUI();
-    setTimeout(() => this.drawWheel(), 150);
+
+    // Jika belum ada kandidat, ambil otomatis data realtime Google Places dengan rating 4.0+
+    if (this.candidates.length === 0) {
+      this.fetchRealtimeTopRated(4.0, 3);
+    } else {
+      setTimeout(() => this.drawWheel(), 150);
+    }
   },
 
   closeModal() {
@@ -332,18 +335,165 @@ const RouletteController = {
     }
   },
 
+  // ==================== REALTIME GOOGLE PLACES & RATING 4★+ ====================
+  /**
+   * Mengambil data toko/restoran/kafe secara real-time dari Google Places API (New)
+   * atau Supabase Live Database, dengan filter ketat ulasan bintang 4 ke atas (rating >= 4.0).
+   */
+  async fetchRealtimeTopRated(minRating = 4.0, count = 3) {
+    if (this.isLoadingRealtime) return;
+    this.isLoadingRealtime = true;
+
+    const btn = document.getElementById('btn-realtime-top-rated');
+    if (btn) {
+      btn.innerHTML = `<span>⏳</span> <span>Memuat...</span>`;
+      btn.disabled = true;
+    }
+
+    if (window.App?.showToast) {
+      window.App.showToast(`🔍 Mengambil data tempat kuliner realtime rating ${minRating}★+...`);
+    }
+
+    try {
+      // 1. Koordinat pencarian: utamakan GPS pengguna atau default Purwokerto Kota
+      let uLat = -7.4243;
+      let uLng = 109.2303;
+      if (window.NearbyController && window.NearbyController.userCoords) {
+        uLat = window.NearbyController.userCoords.latitude;
+        uLng = window.NearbyController.userCoords.longitude;
+      }
+
+      let liveResults = [];
+
+      // 2. Ambil data realtime dari Google Places API (New) jika API Key tersedia
+      const apiKey = window.AppConfig?.googlePlacesApiKey;
+      if (apiKey && apiKey.length > 5) {
+        try {
+          const body = {
+            includedTypes: ['restaurant', 'cafe', 'coffee_shop', 'fast_food_restaurant', 'bakery', 'meal_takeaway'],
+            maxResultCount: 20,
+            locationRestriction: {
+              circle: {
+                center: { latitude: uLat, longitude: uLng },
+                radius: 5000 // radius 5 km
+              }
+            },
+            rankPreference: 'POPULARITY'
+          };
+
+          const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': apiKey,
+              'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.types,places.regularOpeningHours.openNow,places.photos'
+            },
+            body: JSON.stringify(body)
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data && Array.isArray(data.places) && data.places.length > 0) {
+              liveResults = data.places.map(p => {
+                if (window.NearbyController && window.NearbyController.transformGooglePlace) {
+                  return window.NearbyController.transformGooglePlace(p, uLat, uLng);
+                }
+                const lat = p.location?.latitude || uLat;
+                const lng = p.location?.longitude || uLng;
+                let img = 'assets/images/beranda_mockup.jpeg';
+                if (p.photos && p.photos.length > 0 && apiKey) {
+                  img = `https://places.googleapis.com/v1/${p.photos[0].name}/media?maxHeightPx=600&maxWidthPx=800&key=${apiKey}`;
+                }
+                return {
+                  id: p.id || 'gplace_' + Math.random().toString(36).substring(2, 9),
+                  name: p.displayName?.text || 'Tempat Kuliner',
+                  city: 'Purwokerto',
+                  category: 'Cafe',
+                  address: p.formattedAddress || 'Purwokerto, Jawa Tengah',
+                  latitude: lat,
+                  longitude: lng,
+                  rating: p.rating || 4.5,
+                  review_count: p.userRatingCount || 100,
+                  min_price: 20000,
+                  max_price: 45000,
+                  image_url: img,
+                  open_now: p.regularOpeningHours?.openNow ?? true,
+                  data_source: 'google_places_api_realtime'
+                };
+              });
+            }
+          }
+        } catch (apiErr) {
+          console.warn('Google Places API realtime fetch error in roulette:', apiErr);
+        }
+      }
+
+      // 3. Fallback: gunakan database Supabase atau katalog utama jika Google belum tersedia
+      if (liveResults.length === 0) {
+        const pool = (window.App && window.App.getMergedPlacesList)
+          ? window.App.getMergedPlacesList()
+          : (window.App?.places || FALLBACK_PLACES || []);
+        liveResults = [...pool];
+      }
+
+      // 4. FILTER KETAT: Ulasan bintang 4 ke atas (rating >= minRating)
+      const topRated = liveResults.filter(p => (p.rating || 0) >= minRating);
+
+      if (topRated.length === 0) {
+        if (window.App?.showToast) {
+          window.App.showToast(`Tidak ditemukan toko dengan rating di atas ${minRating}★.`);
+        }
+        return;
+      }
+
+      // 5. Prioritaskan rating tertinggi dan review terbanyak
+      const sortedByRating = [...topRated].sort((a, b) => {
+        const diff = (b.rating || 0) - (a.rating || 0);
+        return diff !== 0 ? diff : (b.review_count || 0) - (a.review_count || 0);
+      });
+
+      // Ambil acak dari kelompok teratas (top 10 toko bintang 4+)
+      const topSlice = sortedByRating.slice(0, Math.max(8, count * 2));
+      const shuffled = [...topSlice].sort(() => 0.5 - Math.random());
+      this.candidates = shuffled.slice(0, count);
+
+      this.updateCardButtons();
+      this.updateFloatingDrawer();
+      this.renderSlotCards();
+      this.drawWheel();
+
+      if (window.App?.showToast) {
+        window.App.showToast(`⭐ Memuat ${this.candidates.length} tempat realtime ulasan rating 4★+!`);
+      }
+    } finally {
+      this.isLoadingRealtime = false;
+      if (btn) {
+        btn.innerHTML = `<span>⭐</span> <span>Realtime 4★+</span>`;
+        btn.disabled = false;
+      }
+    }
+  },
+
+  toggleRatingFilter() {
+    this.filterOnly4Stars = !this.filterOnly4Stars;
+    const btn = document.getElementById('btn-toggle-filter-4star');
+    if (btn) {
+      btn.classList.toggle('active-gold', this.filterOnly4Stars);
+      btn.textContent = this.filterOnly4Stars ? '⭐ 4.0+' : '⭐ Semua';
+    }
+    const input = document.getElementById('roulette-search-input');
+    this.renderDropdownPlaces(input ? input.value : '');
+  },
+
   autoFillNearbyCandidates(count = 3) {
-    const all = window.App?.places || FALLBACK_PLACES || [];
+    const all = (window.App && window.App.getMergedPlacesList)
+      ? window.App.getMergedPlacesList()
+      : (window.App?.places || FALLBACK_PLACES || []);
     if (!all || all.length === 0) return;
 
-    // Filter kafe berdasarkan wilayah aktif atau urutkan terdekat
-    const region = window.App?.selectedRegion || 'Purwokerto Kota';
-    let pool = all;
-    if (region && !region.toLowerCase().includes('semua')) {
-      const regClean = region.split('(')[0].trim().toLowerCase();
-      const filtered = all.filter(p => (p.city || '').toLowerCase().includes(regClean));
-      if (filtered.length >= count) pool = filtered;
-    }
+    // Filter tempat berdasarkan ulasan bintang 4 ke atas
+    const topRated = all.filter(p => (p.rating || 0) >= 4.0);
+    const pool = topRated.length >= count ? topRated : all;
 
     // Acak pilihan
     const shuffled = [...pool].sort(() => 0.5 - Math.random());
@@ -354,7 +504,7 @@ const RouletteController = {
     this.renderSlotCards();
     this.drawWheel();
     if (window.App?.showToast) {
-      window.App.showToast(window.t('toast_candidate_added', `Terpilih ${this.candidates.length} kafe untuk adu tongkrongan!`));
+      window.App.showToast(window.t('toast_candidate_added', `Terpilih ${this.candidates.length} tempat rating 4★+ untuk adu tongkrongan!`));
     }
   },
 
@@ -389,16 +539,20 @@ const RouletteController = {
       const slotNum = i + 1;
 
       if (cafe) {
+        const ratingStar = cafe.rating || 4.5;
+        const reviewCount = cafe.review_count || 100;
+        const isTop = ratingStar >= 4.0;
         html += `
-          <div class="roulette-slot-card filled">
+          <div class="roulette-slot-card filled ${isTop ? 'top-rated' : ''}">
             <span class="slot-badge">#${slotNum}</span>
+            ${isTop ? `<span class="slot-rating-badge">★ ${ratingStar}</span>` : ''}
             <img src="${cafe.image_url || 'assets/images/beranda_mockup.jpeg'}" alt="${cafe.name}" class="slot-thumb" />
             <div class="slot-info">
               <h5 class="slot-title">${cafe.name}</h5>
               <div class="slot-meta">
-                <span>⭐ ${cafe.rating || 4.5}</span>
+                <span class="${isTop ? 'rating-highlight' : ''}">⭐ ${ratingStar} (${reviewCount}+)</span>
                 <span>•</span>
-                <span>📍 ${cafe.city}</span>
+                <span>📍 ${cafe.city || 'Purwokerto'}</span>
               </div>
               <div class="slot-price">${RecommendationService.formatPrice(cafe)}</div>
             </div>
@@ -455,31 +609,44 @@ const RouletteController = {
     const listEl = document.getElementById('roulette-search-list');
     if (!listEl) return;
 
-    const all = window.App?.places || FALLBACK_PLACES || [];
+    const all = (window.App && window.App.getMergedPlacesList)
+      ? window.App.getMergedPlacesList()
+      : (window.App?.places || FALLBACK_PLACES || []);
     const q = (query || '').toLowerCase().trim();
     const existingIds = this.candidates.map(c => c.id);
 
-    // Filter kafe yang belum dipilih
+    // Filter kafe yang belum dipilih dan prioritaskan bintang 4 ke atas
     const filtered = all.filter(p => {
       if (existingIds.includes(p.id)) return false;
+      if (this.filterOnly4Stars && (p.rating || 0) < 4.0) return false;
       if (!q) return true;
-      return (p.name || '').toLowerCase().includes(q) || (p.city || '').toLowerCase().includes(q);
+      return (p.name || '').toLowerCase().includes(q) ||
+             (p.city || '').toLowerCase().includes(q) ||
+             (p.category || '').toLowerCase().includes(q);
     });
 
+    // Urutkan berdasarkan rating tertinggi
+    filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
     if (filtered.length === 0) {
-      listEl.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px;">Tidak ada kafe yang cocok</div>`;
+      listEl.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px;">Tidak ada tempat ${this.filterOnly4Stars ? 'rating 4★+' : ''} yang cocok</div>`;
       return;
     }
 
-    listEl.innerHTML = filtered.slice(0, 8).map(p => `
-      <div class="roulette-dropdown-item" onclick="window.Roulette.pickPlaceForSlot('${p.id}')">
-        <img src="${p.image_url || 'assets/images/beranda_mockup.jpeg'}" alt="${p.name}" class="dropdown-item-thumb" />
-        <div style="flex: 1; overflow: hidden;">
-          <div style="font-weight: 700; font-size: 13px; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">${p.name}</div>
-          <div style="font-size: 11px; color: var(--text-secondary);">⭐ ${p.rating || 4.5} • 📍 ${p.city} • ${RecommendationService.formatPrice(p)}</div>
+    listEl.innerHTML = filtered.slice(0, 10).map(p => {
+      const isTop = (p.rating || 0) >= 4.0;
+      return `
+        <div class="roulette-dropdown-item" onclick="window.Roulette.pickPlaceForSlot('${p.id}')">
+          <img src="${p.image_url || 'assets/images/beranda_mockup.jpeg'}" alt="${p.name}" class="dropdown-item-thumb" />
+          <div style="flex: 1; overflow: hidden;">
+            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+              ${p.name} ${isTop ? '<span style="color: #F59E0B; font-size: 11px;">★ 4+</span>' : ''}
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary);">⭐ ${p.rating || 4.5} (${p.review_count || 100}+ ulasan) • 📍 ${p.city || 'Purwokerto'}</div>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   },
 
   pickPlaceForSlot(placeId) {

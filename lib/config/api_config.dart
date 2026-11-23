@@ -2,18 +2,18 @@
 class ApiConfig {
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://vdqdithxujxvzyybjtpn.supabase.co',
+    defaultValue: 'https://oztqhofaadjldjrowrgy.supabase.co',
   );
 
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
     defaultValue:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWRpdGh4dWp4dnp5eWJqdHBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMzA2NTIsImV4cCI6MjEwODgwNjY1Mn0.7zE0gLxh0a2DNzdVcRfTj3EZDaqXWZ09kL5gcXTETXY',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96dHFob2ZhYWRqbGRqcm93cmd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NzM4MzEsImV4cCI6MjExMDU0OTgzMX0.Do3ET862Lik6anMGmazYswh_8hBCX6Iz_80jqWuI4-U',
   );
 
   static const String supabasePublishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: 'sb_publishable_9-reGMqpk71zyWtbiBvOQA_kjQ9sbmS',
+    defaultValue: 'sb_publishable_pjWlPUm49bsg3G1L7J3SBg_D8TkYag1',
   );
 
   /// Service role key & backend secrets must NEVER be hardcoded into the client app.
@@ -37,10 +37,18 @@ class ApiConfig {
     defaultValue: 'mampir://auth-callback',
   );
 
-  // Google Maps API Keys
+  // Google Maps API Keys.
+  //
+  // Jangan hardcode key di source code. Suntikkan saat build/run:
+  //   flutter run \
+  //     --dart-define=GOOGLE_PLACES_API_KEY=... \
+  //     --dart-define=GOOGLE_ROUTES_API_KEY=...
+  //
+  // GOOGLE_MAPS_API_KEY untuk Android Maps SDK diatur lewat
+  // android/gradle.properties (manifestPlaceholder), bukan lewat Dart.
   static const String googleMapsApiKey = String.fromEnvironment(
     'GOOGLE_MAPS_API_KEY',
-    defaultValue: 'AIzaSyDRpM6qUNluR7y-yP-k0UEhSrNQQ84A9nI',
+    defaultValue: 'AIzaSyDMJEEWy4XuVJSIzvzEVKS6zfwtVjGSYGk',
   );
 
   static const String googlePlacesApiKey = String.fromEnvironment(

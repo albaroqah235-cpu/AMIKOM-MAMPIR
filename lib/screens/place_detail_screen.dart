@@ -634,36 +634,41 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
           Divider(color: colors.borderNavy, height: 16),
       itemBuilder: (context, index) {
         final item = place.menuHighlights[index];
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.restaurant_menu,
-                  color: AppTheme.gold,
-                  size: 18,
-                ),
-                const SizedBox(width: 10),
-                Text(
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.restaurant_menu,
+                color: AppTheme.gold,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
                   item.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: colors.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
+                    height: 1.35,
                   ),
                 ),
-              ],
-            ),
-            Text(
-              'Rp ${item.price > 0 ? _formatRupiah(item.price) : '15.000'}',
-              style: const TextStyle(
-                color: AppTheme.gold,
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Text(
+                'Rp ${item.price > 0 ? _formatRupiah(item.price) : '15.000'}',
+                style: const TextStyle(
+                  color: AppTheme.gold,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
