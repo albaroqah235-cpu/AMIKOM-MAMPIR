@@ -223,10 +223,65 @@ const MapController = {
     }
   },
 
-  recenterUser() {
-    if (window.NearbyController && window.NearbyController.userCoords) {
-      const u = window.NearbyController.userCoords;
-      this.panTo(u.latitude, u.longitude, 16);
+  userMarker: null,
+
+  updateUserMarker(lat, lng, label = 'Lokasi Anda') {
+    if (!this.map || !lat || !lng) return;
+    if (this.userMarker) {
+      this.map.removeLayer(this.userMarker);
+      this.userMarker = null;
+    }
+    const userIcon = L.divIcon({
+      className: 'mampir-user-gps-pin',
+      html: `
+        <div class="user-gps-pulse-ring"></div>
+        <div class="user-gps-core-dot">
+          <span>📍</span>
+        </div>
+      `,
+      iconSize: [50, 50],
+      iconAnchor: [25, 25]
+    });
+
+    this.userMarker = L.marker([lat, lng], {
+      icon: userIcon,
+      zIndexOffset: 10000
+    }).addTo(this.map);
+
+    this.userMarker.bindTooltip('📍 ' + (label.length > 22 ? label.substring(0, 22) + '...' : label), {
+      permanent: true,
+      direction: 'top',
+      className: 'user-gps-permanent-badge',
+      offset: [0, -18]
+    });
+
+    this.userMarker.bindPopup(`
+      <div style="font-family: var(--font-family); padding: 4px; font-size: 13px;">
+        <strong style="color: #2563EB;">📍 ${label}</strong><br>
+        <small style="color: var(--text-muted); font-size: 10px;">${lat.toFixed(5)}, ${lng.toFixed(5)}</small>
+      </div>
+    `);
+  },
+
+  clearUserMarker() {
+    if (this.map && this.userMarker) {
+      this.map.removeLayer(this.userMarker);
+      this.userMarker = null;
+    }
+  },
+
+  async recenterUser() {
+    if (window.NearbyController) {
+      if (!window.NearbyController.isActive) {
+        await window.NearbyController.activate();
+      } else {
+        await window.NearbyController.requestLocation(true);
+      }
+      if (window.NearbyController.userCoords) {
+        const u = window.NearbyController.userCoords;
+        this.updateUserMarker(u.latitude, u.longitude, u.label || 'Lokasi Anda');
+        this.panTo(u.latitude, u.longitude, 16);
+      }
     } else {
       this.panTo(AppConfig.centerCoordinates.lat, AppConfig.centerCoordinates.lng, 15);
     }

@@ -21,30 +21,13 @@ window.App = {
   lastUpsell: null,
 
   toggleNearMe() {
-    this.isNearMeActive = !this.isNearMeActive;
-    const label = document.getElementById('top-near-me-label');
-    const select = document.getElementById('global-region-select');
-    const btnNear = document.getElementById('btn-top-nearby');
-
-    if (this.isNearMeActive) {
-      if (label) label.style.display = 'inline-block';
-      if (select) select.style.display = 'none';
-      if (btnNear) {
-        btnNear.style.background = 'linear-gradient(135deg, var(--accent-orange), var(--accent-gold))';
-        btnNear.style.color = '#fff';
+    if (window.NearbyController) {
+      if (window.NearbyController.isActive) {
+        window.NearbyController.deactivate();
+      } else {
+        window.NearbyController.activate();
       }
-      this.sortBy = 'jarak';
-      this.showToast('📍 Menampilkan rekomendasi untuk lokasi cafe/resto terdekat');
-    } else {
-      if (label) label.style.display = 'none';
-      if (select) select.style.display = 'inline-block';
-      if (btnNear) {
-        btnNear.style.background = '';
-        btnNear.style.color = '';
-      }
-      this.sortBy = 'rekomendasi';
     }
-    this.render();
   },
 
   async init() {
@@ -98,6 +81,18 @@ window.App = {
     const placeParam = urlParams.get('place');
     if (placeParam) {
       setTimeout(() => this.openPlaceDetail(placeParam), 500);
+    }
+
+    // Deteksi otomatis lokasi pengguna jika izin lokasi sudah pernah diberikan
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then(status => {
+        if (status.state === 'granted') {
+          console.log('Izin lokasi browser aktif, mendeteksi posisi awal...');
+          if (window.NearbyController) {
+            window.NearbyController.requestLocation(false);
+          }
+        }
+      }).catch(() => {});
     }
   },
 

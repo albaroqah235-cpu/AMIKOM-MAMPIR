@@ -60,7 +60,22 @@ window.NearbyController = {
       el.classList.toggle('active', el.getAttribute('data-view') === 'nearby');
     });
 
-    if (!this.userCoords) {
+    // Sinkronkan tombol header "Lokasi Terdekat" jika ada
+    const topBtn = document.getElementById('btn-top-nearby');
+    if (topBtn) {
+      topBtn.classList.add('active');
+      topBtn.style.background = 'linear-gradient(135deg, var(--accent-orange), var(--accent-gold))';
+      topBtn.style.color = '#fff';
+    }
+
+    // Scroll kolom katalog ke atas agar pengguna langsung melihat tampilan Nearby
+    const catalogCol = document.getElementById('catalog-content-area') || document.getElementById('catalog-content-col');
+    if (catalogCol) {
+      catalogCol.scrollTop = 0;
+    }
+
+    // SELALU minta lokasi GPS jika belum pernah terdeteksi koordinat nyata
+    if (!this.userCoords || this.userCoords.isSimulated) {
       await this.requestLocation(false);
     } else {
       await this.fetchPlaces();
@@ -73,6 +88,12 @@ window.NearbyController = {
   deactivate() {
     this.isActive = false;
     this.clearMapDecorations();
+    const topBtn = document.getElementById('btn-top-nearby');
+    if (topBtn) {
+      topBtn.classList.remove('active');
+      topBtn.style.background = '';
+      topBtn.style.color = '';
+    }
     if (window.App) {
       window.App.switchView('beranda');
     }
@@ -80,10 +101,11 @@ window.NearbyController = {
 
   /**
    * Meminta lokasi GPS pengguna secara real-time via Geolocation API browser
+   * Menggunakan fallback cerdas: GPS Akurasi Tinggi -> Jaringan/WiFi Triangulation
    */
   async requestLocation(forceRefresh = false) {
     if (!navigator.geolocation) {
-      this.errorMessage = 'Peramban Anda tidak mendukung Geolocation API. Silakan gunakan simulasi titik lokasi di bawah.';
+      this.errorMessage = 'Peramban Anda tidak mendukung Geolocation API. Silakan gunakan titik lokasi acuan di bawah.';
       this.render();
       return;
     }
@@ -92,39 +114,102 @@ window.NearbyController = {
     this.errorMessage = null;
     this.render();
 
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          this.userCoords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            isSimulated: false,
-            timestamp: new Date()
-          };
-          this.isLoading = false;
-          await this.fetchPlaces();
-          resolve();
-        },
-        async (error) => {
-          console.warn('Geolocation error:', error);
-          // Hardcode PWT aktif: gunakan titik Alun-Alun Purwokerto
-          this.userCoords = {
-            latitude: -7.4243,
-            longitude: 109.2303,
-            accuracy: 15,
-            isSimulated: true,
-            label: 'Alun-Alun Purwokerto',
-            timestamp: new Date()
-          };
-          this.errorMessage = null;
-          this.isLoading = false;
-          await this.fetchPlaces();
-          resolve();
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: forceRefresh ? 0 : 60000 }
-      );
-    });
+    const getPositionPromise = (options) => {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+      });
+    };
+
+    let pos = null;
+    try {
+      // Step 1: Coba GPS akurasi tinggi (hardware GPS) dengan timeout 6 detik
+      pos = await getPositionPromise({
+        enableHighAccuracy: true,
+        timeout: 6000,
+        maximumAge: forceRefresh ? 0 : 30000
+      });
+    } catch (errHigh) {
+      console.warn('GPS akurasi tinggi gagal atau timeout, mencoba mode jaringan WiFi/seluler...', errHigh);
+      try {
+        // Step 2: Coba mode standar (WiFi / Cell tower triangulation) yang sangat cepat dan kompatibel di Android/laptop/tablet
+        pos = await getPositionPromise({
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: forceRefresh ? 0 : 60000
+        });
+      } catch (errLow) {
+        console.warn('Geolocation browser gagal:', errLow);
+        if (errLow.code === 1) { // PERMISSION_DENIED
+          this.errorMessage = 'Izin lokasi belum diberikan di peramban. Silakan klik ikon gembok/setelan di sebelah URL address bar untuk mengizinkan lokasi, lalu klik "Perbarui Lokasi".';
+        } else if (errLow.code === 2) { // POSITION_UNAVAILABLE
+          this.errorMessage = 'Sinyal lokasi / GPS perangkat tidak tersedia. Pastikan fitur Lokasi di perangkat Anda telah diaktifkan.';
+        } else if (errLow.code === 3) { // TIMEOUT
+          this.errorMessage = 'Waktu pencarian lokasi habis. Silakan klik "Perbarui Lokasi" untuk mencoba kembali.';
+        } else {
+          this.errorMessage = 'Gagal mendeteksi lokasi: ' + (errLow.message || 'Kesalahan koneksi.');
+        }
+      }
+    }
+
+    if (pos && pos.coords) {
+      this.userCoords = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy || 15,
+        isSimulated: false,
+        label: 'Lokasi Anda (GPS Aktif)',
+        timestamp: new Date()
+      };
+      this.errorMessage = null;
+
+      // Ambil nama wilayah/daerah pengguna secara real-time via reverse geocode
+      this.reverseGeocodeUserCoords(pos.coords.latitude, pos.coords.longitude);
+    } else {
+      // Jika belum punya koordinat sama sekali, beri titik acuan tapi tandai sebagai simulasi
+      if (!this.userCoords) {
+        this.userCoords = {
+          latitude: -7.4243,
+          longitude: 109.2303,
+          accuracy: 50,
+          isSimulated: true,
+          label: 'Alun-Alun Purwokerto (Titik Acuan)',
+          timestamp: new Date()
+        };
+      }
+    }
+
+    this.isLoading = false;
+    await this.fetchPlaces();
+  },
+
+  /**
+   * Reverse geocoding real-time untuk mendapatkan nama tempat pengguna
+   */
+  async reverseGeocodeUserCoords(lat, lng) {
+    try {
+      const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`, {
+        headers: { 'Accept-Language': 'id' }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.address) {
+          const addr = data.address;
+          const name = addr.suburb || addr.neighbourhood || addr.village || addr.city_district || addr.city || addr.town || addr.county || 'Lokasi Anda';
+          const city = addr.city || addr.town || addr.county || '';
+          this.userCoords.label = city ? `${name}, ${city}` : name;
+          // Perbarui teks status di UI tanpa perlu refetch places
+          const coordsLabelEl = document.querySelector('.gps-coords');
+          if (coordsLabelEl) {
+            coordsLabelEl.textContent = this.userCoords.label;
+          }
+          if (MapController) {
+            MapController.updateUserMarker(lat, lng, this.userCoords.label);
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Reverse geocoding info:', e);
+    }
   },
 
   /**
@@ -229,7 +314,7 @@ window.NearbyController = {
         if (this.searchKeyword) {
           // PANGGIL PLACES API: TEXT SEARCH LIVE (HARDCODE PWT AKTIF)
           const body = {
-            textQuery: `${this.searchKeyword} Purwokerto`,
+            textQuery: this.searchKeyword,
             locationBias: {
               circle: {
                 center: { latitude: uLat, longitude: uLng },
@@ -637,27 +722,35 @@ window.NearbyController = {
 
     const uLat = this.userCoords.latitude;
     const uLng = this.userCoords.longitude;
+    const locLabel = this.userCoords.label || (this.userCoords.isSimulated ? 'Simulasi Lokasi' : 'Lokasi Anda');
 
-    // 1. Tambah Marker Pengguna (Denyut Biru Berkedip Khas GPS)
+    // 1. Tambah Marker Pengguna (Denyut Biru Berkedip Khas GPS dengan Badge Permanen & zIndex Tertinggi)
     const userIcon = L.divIcon({
       className: 'mampir-user-gps-pin',
       html: `
         <div class="user-gps-pulse-ring"></div>
         <div class="user-gps-core-dot">
-          <span>🚶</span>
+          <span>📍</span>
         </div>
       `,
-      iconSize: [40, 40],
-      iconAnchor: [20, 20]
+      iconSize: [50, 50],
+      iconAnchor: [25, 25]
     });
 
-    this.userMarker = L.marker([uLat, uLng], { icon: userIcon, zIndexOffset: 2000 }).addTo(map);
-    const locLabel = this.userCoords.isSimulated ? `(Simulasi: ${this.userCoords.label})` : '(GPS Akurat)';
+    this.userMarker = L.marker([uLat, uLng], { icon: userIcon, zIndexOffset: 10000 }).addTo(map);
+
+    this.userMarker.bindTooltip('📍 ' + (locLabel.length > 20 ? locLabel.substring(0, 20) + '...' : locLabel), {
+      permanent: true,
+      direction: 'top',
+      className: 'user-gps-permanent-badge',
+      offset: [0, -18]
+    });
+
     this.userMarker.bindPopup(`
       <div style="font-family: var(--font-family); padding: 4px; font-size: 13px;">
-        <strong style="color: #3B82F6;">📍 Lokasi Anda Saat Ini</strong><br>
-        <span style="font-size: 11px; color: var(--text-secondary);">${locLabel}</span><br>
-        <small style="color: var(--text-muted); font-size: 10px;">${uLat.toFixed(4)}, ${uLng.toFixed(4)}</small>
+        <strong style="color: #2563EB;">📍 ${locLabel}</strong><br>
+        <span style="font-size: 11px; color: var(--text-secondary);">${this.userCoords.isSimulated ? '(Titik Acuan)' : '(GPS Akurat)'}</span><br>
+        <small style="color: var(--text-muted); font-size: 10px;">${uLat.toFixed(5)}, ${uLng.toFixed(5)}</small>
       </div>
     `);
 
@@ -665,11 +758,11 @@ window.NearbyController = {
     const currentRadiusObj = this.radiusOptions.find(r => r.label === this.selectedRadius) || this.radiusOptions[2];
     const circleRadiusMeters = Math.min(currentRadiusObj.queryMeters, 15000);
     this.radiusCircle = L.circle([uLat, uLng], {
-      color: '#3B82F6',
+      color: '#2563EB',
       fillColor: '#3B82F6',
-      fillOpacity: 0.08,
-      weight: 1.5,
-      dashArray: '4, 6'
+      fillOpacity: 0.10,
+      weight: 2,
+      dashArray: '5, 6'
     }).addTo(map);
 
     // 3. Render Marker Tempat-Tempat Terdekat
@@ -677,9 +770,8 @@ window.NearbyController = {
       this.highlightCard(selected.id);
     });
 
-    // 4. Langsung fokus ke titik lokasi pengguna (tidak zoom out jauh)
-    // Pengguna dapat memperbesar/memperkecil atau menggeser peta secara mandiri
-    map.setView([uLat, uLng], 15.5);
+    // 4. Langsung fokus ke titik lokasi pengguna dengan animasi flyTo
+    map.flyTo([uLat, uLng], 15.5, { duration: 1.0 });
   },
 
   clearMapDecorations() {
@@ -749,11 +841,11 @@ window.NearbyController = {
           <div class="nearby-gps-status-box">
             ${this.userCoords ? `
               <div class="gps-status-info">
-                <span class="gps-icon">📍</span>
+                <span class="gps-icon">${this.userCoords.isSimulated ? '📍' : '🟢'}</span>
                 <div>
-                  <div class="gps-label">Titik Pencarian Anda:</div>
+                  <div class="gps-label">${this.userCoords.isSimulated ? 'Titik Lokasi Acuan:' : 'Lokasi Anda (GPS Aktif):'}</div>
                   <strong class="gps-coords">
-                    ${this.userCoords.isSimulated ? this.userCoords.label : `${this.userCoords.latitude.toFixed(4)}, ${this.userCoords.longitude.toFixed(4)}`}
+                    ${this.userCoords.label || `${this.userCoords.latitude.toFixed(4)}, ${this.userCoords.longitude.toFixed(4)}`}
                   </strong>
                 </div>
               </div>
@@ -762,11 +854,23 @@ window.NearbyController = {
               </button>
             ` : `
               <button class="btn-enable-gps" onclick="window.NearbyController.requestLocation(true)">
-                📍 Izinkan Akses GPS Browser
+                🎯 Deteksi Lokasi Saya (GPS)
               </button>
             `}
           </div>
         </div>
+
+        ${this.errorMessage ? `
+          <div class="nearby-error-banner" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 10px 14px; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; color: #EF4444;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>⚠️</span>
+              <span>${this.errorMessage}</span>
+            </div>
+            <button class="btn-refresh-gps" style="background: #EF4444; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap;" onclick="window.NearbyController.requestLocation(true)">
+              🔄 Coba Deteksi Lagi
+            </button>
+          </div>
+        ` : ''}
 
         <!-- PENCARIAN NAMA TOKO SPESIFIK LANGSUNG DI GOOGLE MAPS -->
         <div class="nearby-search-keyword-row">

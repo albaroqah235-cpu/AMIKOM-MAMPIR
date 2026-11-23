@@ -2691,33 +2691,59 @@ body {
 /* USER GPS MARKER ON LEAFLET */
 .mampir-user-gps-pin {
   position: relative;
+  width: 50px !important;
+  height: 50px !important;
 }
 
 .user-gps-pulse-ring {
   position: absolute;
   top: 0;
   left: 0;
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: rgba(59, 130, 246, 0.35);
+  background: rgba(37, 99, 235, 0.4);
   animation: gpsPulse 2s infinite ease-out;
+  pointer-events: none;
 }
 
 .user-gps-core-dot {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 24px;
-  height: 24px;
+  top: 9px;
+  left: 9px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #2563EB;
-  border: 2.5px solid #FFFFFF;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 14px;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.user-gps-core-dot:hover {
+  transform: scale(1.15);
+}
+
+.user-gps-permanent-badge {
+  background: #1E40AF !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  padding: 3px 8px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #FFFFFF !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35) !important;
+  letter-spacing: 0.2px !important;
+  white-space: nowrap !important;
+}
+.user-gps-permanent-badge::before {
+  border-top-color: #1E40AF !important;
 }
 
 @keyframes gpsPulse {
