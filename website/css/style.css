@@ -1474,31 +1474,6 @@ body {
   color: var(--accent-orange);
 }
 
-/* ==================== WHATSAPP CONTACT CTA ==================== */
-.btn-cta-whatsapp {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #25D366;
-  color: #FFFFFF !important;
-  font-weight: 700;
-  font-size: 13px;
-  padding: 10px 16px;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
-  border: none;
-}
-
-.btn-cta-whatsapp:hover {
-  background: #1EBE5D;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.45);
-}
-
 .btn-detail-action {
   width: 36px;
   height: 36px;
