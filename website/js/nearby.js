@@ -299,11 +299,8 @@ window.NearbyController = {
 
     const uLat = this.userCoords.latitude;
     const uLng = this.userCoords.longitude;
-    const currentRadiusObj = this.radiusOptions.find(r => r.label === this.selectedRadius) || this.radiusOptions[2];
+    const currentRadiusObj = this.radiusOptions.find(r => r.label === this.selectedRadius) || this.radiusOptions[1];
     const radiusMeters = currentRadiusObj.queryMeters;
-
-    const currentCatObj = this.categoryOptions.find(c => c.label === this.selectedCategory) || this.categoryOptions[0];
-    const includedTypes = currentCatObj.types;
 
     let placesResults = [];
     let dataSource = 'google';
@@ -311,73 +308,62 @@ window.NearbyController = {
     try {
       const apiKey = AppConfig.googlePlacesApiKey;
       if (apiKey && apiKey.length > 5) {
-        if (this.searchKeyword) {
-          // PANGGIL PLACES API: TEXT SEARCH LIVE (HARDCODE PWT AKTIF)
-          const body = {
-            textQuery: this.searchKeyword,
-            locationBias: {
-              circle: {
-                center: { latitude: uLat, longitude: uLng },
-                radius: radiusMeters
-              }
-            },
-            languageCode: 'id',
-            maxResultCount: 20
+        // Tentukan query pencarian Google Places secara cerdas
+        let queryText = (this.searchKeyword || '').trim();
+        if (!queryText) {
+          const catQueries = {
+            'Semua': 'tempat makan kuliner restoran cafe warung',
+            'Resto': 'restoran rumah makan kuliner',
+            'Warung Makan/Warkop': 'warung makan warkop warteg soto bakso mie ayam',
+            'Cafe': 'cafe coffee shop kedai kopi',
+            'Bakery': 'bakery toko roti kue'
           };
+          const baseCat = catQueries[this.selectedCategory] || 'tempat makan kuliner';
+          let locContext = '';
+          if (this.userCoords.label) {
+            const parts = this.userCoords.label.split(',');
+            locContext = parts[parts.length - 1].trim(); // contoh: "Sukabumi" atau "Purwokerto"
+          }
+          queryText = locContext ? `${baseCat} ${locContext}` : baseCat;
+        }
 
-          const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Goog-Api-Key': apiKey,
-              'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.types,places.regularOpeningHours.openNow,places.photos'
-            },
-            body: JSON.stringify(body)
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data && Array.isArray(data.places) && data.places.length > 0) {
-              placesResults = data.places.map(p => this.transformGooglePlace(p, uLat, uLng));
+        // Gunakan places:searchText (sangat stabil dan tidak terbatasi kuota harian ketat searchNearby)
+        const body = {
+          textQuery: queryText,
+          locationBias: {
+            circle: {
+              center: { latitude: uLat, longitude: uLng },
+              radius: radiusMeters
             }
+          },
+          languageCode: 'id',
+          maxResultCount: 20
+        };
+
+        const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': apiKey,
+            'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.types,places.regularOpeningHours.openNow,places.photos'
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data && Array.isArray(data.places) && data.places.length > 0) {
+            placesResults = data.places.map(p => this.transformGooglePlace(p, uLat, uLng));
           }
         } else {
-          // PANGGIL PLACES API: SEARCH NEARBY LIVE SESUAI RADIUS & KATEGORI
-          const body = {
-            includedTypes: includedTypes,
-            maxResultCount: 20,
-            locationRestriction: {
-              circle: {
-                center: { latitude: uLat, longitude: uLng },
-                radius: radiusMeters
-              }
-            },
-            rankPreference: this.selectedRadius === '0–1 km' ? 'DISTANCE' : 'POPULARITY'
-          };
-
-          const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Goog-Api-Key': apiKey,
-              'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.primaryType,places.types,places.regularOpeningHours.openNow,places.photos'
-            },
-            body: JSON.stringify(body)
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data && Array.isArray(data.places) && data.places.length > 0) {
-              placesResults = data.places.map(p => this.transformGooglePlace(p, uLat, uLng));
-            }
-          }
+          console.warn('Google Places API response not ok:', response.status);
         }
       }
     } catch (e) {
       console.warn('Google Places API fetch error:', e);
     }
 
-    // 2. Fallback hanya jika Google API benar-benar offline / kuota habis
+    // 2. Fallback jika Google API offline
     if (!placesResults || placesResults.length === 0) {
       dataSource = 'supabase_fallback';
       const allMaster = (window.App && window.App.getMergedPlacesList) ? window.App.getMergedPlacesList() : [];
@@ -391,30 +377,18 @@ window.NearbyController = {
       });
     }
 
-    // 3. Saring KETAT: Tempat WAJIB sesuai rentang jarak DAN kategori yang dipilih
-    // JANGAN PERNAH menampilkan tempat di luar jarak atau di luar kategori!
+    // 3. Saring: Tempat sesuai rentang jarak & kategori
     let filtered = placesResults.filter(p => {
       if (!this.searchKeyword && !this.matchesDistance(p.distance)) return false;
       if (!this.matchesCategory(p, this.selectedCategory)) return false;
       return true;
     });
 
-    // 4. Jika Google Places kosong di rentang/kategori ini, cek database Supabase dan saring KETAT juga
-    if (filtered.length === 0 && dataSource === 'google') {
-      const allMaster = (window.App && window.App.getMergedPlacesList) ? window.App.getMergedPlacesList() : [];
-      const fallbackMatches = allMaster.map(p => ({
-        ...p,
-        distance: this.calculateDistanceKm(uLat, uLng, p.latitude, p.longitude),
-        data_source: 'database'
-      })).filter(p => {
-        if (!this.searchKeyword && !this.matchesDistance(p.distance)) return false;
-        if (!this.matchesCategory(p, this.selectedCategory)) return false;
-        return true;
-      });
-
-      if (fallbackMatches.length > 0) {
-        filtered = fallbackMatches;
-        dataSource = 'supabase_fallback';
+    // 4. Jika filter kategori terlalu ketat menghasilkan 0 tetapi ada hasil dalam radius, gunakan semua hasil radius
+    if (filtered.length === 0 && placesResults.length > 0) {
+      const radiusOnly = placesResults.filter(p => !this.searchKeyword ? this.matchesDistance(p.distance) : true);
+      if (radiusOnly.length > 0) {
+        filtered = radiusOnly;
       }
     }
 
@@ -431,10 +405,10 @@ window.NearbyController = {
   matchesDistance(distance) {
     if (typeof distance !== 'number' || !isFinite(distance)) return false;
     if (this.selectedRadius === '0–1 km') return distance <= 1.0;
-    if (this.selectedRadius === '1–3 km') return distance > 1.0 && distance <= 3.0;
-    if (this.selectedRadius === '3–5 km') return distance > 3.0 && distance <= 5.0;
-    if (this.selectedRadius === '5–10 km') return distance > 5.0 && distance <= 10.0;
-    if (this.selectedRadius === '>10 km') return distance > 10.0;
+    if (this.selectedRadius === '1–3 km') return distance <= 3.0;
+    if (this.selectedRadius === '3–5 km') return distance <= 5.0;
+    if (this.selectedRadius === '5–10 km') return distance <= 10.0;
+    if (this.selectedRadius === '>10 km') return distance <= 50.0;
     return true;
   },
 
@@ -443,21 +417,20 @@ window.NearbyController = {
     const sel = selectedCategory.trim().toLowerCase();
     const cat = (place.category || '').trim().toLowerCase();
     const name = (place.name || '').trim().toLowerCase();
-    const desc = (place.description || '').trim().toLowerCase();
 
-    if (sel === 'resto' || sel === 'restoran') {
-      return cat.includes('restoran') || cat.includes('resto') || name.includes('resto') || name.includes('rumah makan') || name.includes('restoran') || name.includes('kitchen');
+    if (sel.includes('resto')) {
+      return cat.includes('resto') || name.includes('resto') || name.includes('rumah makan') || name.includes('kitchen') || name.includes('dapur') || name.includes('rm ') || cat.includes('indonesian');
     }
     if (sel.includes('warung') || sel.includes('warkop')) {
-      return cat.includes('warung') || cat.includes('warkop') || name.includes('warung') || name.includes('warkop') || name.includes('angkringan') || name.includes('warmindo') || name.includes('warteg') || name.includes('soto') || name.includes('bakso');
+      return cat.includes('warung') || cat.includes('warkop') || name.includes('warung') || name.includes('warkop') || name.includes('warkost') || name.includes('angkringan') || name.includes('warmindo') || name.includes('warteg') || name.includes('soto') || name.includes('bakso') || name.includes('mie') || name.includes('nasi') || name.includes('bubur') || name.includes('dapoer') || name.includes('ayam') || name.includes('sari rasa') || name.includes('sate') || name.includes('bebek') || name.includes('pecel') || cat.includes('meal_takeaway') || cat.includes('food');
     }
-    if (sel === 'cafe' || sel === 'coffee shop') {
-      return cat === 'cafe' || cat.includes('coffee') || cat.includes('kopi') || name.includes('cafe') || name.includes('kafe') || name.includes('coffee') || name.includes('kopi') || desc.includes('cafe');
+    if (sel.includes('cafe')) {
+      return cat.includes('cafe') || cat.includes('coffee') || name.includes('cafe') || name.includes('kafe') || name.includes('coffee') || name.includes('kopi') || name.includes('kedai');
     }
-    if (sel === 'bakery') {
-      return cat.includes('bakery') || cat.includes('roti') || cat.includes('kue') || name.includes('roti') || name.includes('bakery') || name.includes('kue') || name.includes('getuk') || name.includes('nopia') || name.includes('serabi') || desc.includes('roti');
+    if (sel.includes('bakery')) {
+      return cat.includes('bakery') || cat.includes('roti') || name.includes('roti') || name.includes('bakery') || name.includes('kue') || name.includes('cake') || name.includes('pastry');
     }
-    return cat.includes(sel) || name.includes(sel);
+    return true;
   },
 
   /**
@@ -653,14 +626,17 @@ window.NearbyController = {
 
     // Kategori mapping
     const typesStr = (place.types || []).join(' ').toLowerCase();
+    const nameLower = (place.displayName?.text || '').toLowerCase();
     let cat = 'Restoran';
-    if (typesStr.includes('cafe') || typesStr.includes('coffee')) {
+    if (typesStr.includes('cafe') || typesStr.includes('coffee') || nameLower.includes('cafe') || nameLower.includes('kopi')) {
       cat = typesStr.includes('coffee_shop') ? 'Coffee Shop' : 'Cafe';
+    } else if (typesStr.includes('bakery') || nameLower.includes('bakery') || nameLower.includes('roti') || nameLower.includes('kue')) {
+      cat = 'Bakery';
     } else if (typesStr.includes('fast_food')) {
       cat = 'Fast Food';
     } else if (typesStr.includes('bar')) {
       cat = 'Tempat Nongkrong';
-    } else if (typesStr.includes('meal_takeaway')) {
+    } else if (typesStr.includes('meal_takeaway') || nameLower.includes('warkop') || nameLower.includes('warung') || nameLower.includes('warteg') || nameLower.includes('soto') || nameLower.includes('bakso') || nameLower.includes('mie') || nameLower.includes('nasi') || nameLower.includes('ayam') || nameLower.includes('bebek') || nameLower.includes('dapur')) {
       cat = 'Warung Makan';
     }
 
@@ -677,12 +653,19 @@ window.NearbyController = {
     else if (place.priceLevel === 'PRICE_LEVEL_MODERATE') { minPrice = 25000; maxPrice = 60000; }
     else if (place.priceLevel === 'PRICE_LEVEL_EXPENSIVE') { minPrice = 60000; maxPrice = 120000; }
 
+    let city = 'Purwokerto';
+    if (place.formattedAddress) {
+      if (place.formattedAddress.includes('Sukabumi')) city = 'Sukabumi';
+      else if (place.formattedAddress.includes('Banyumas')) city = 'Banyumas';
+      else if (place.formattedAddress.includes('Purwokerto')) city = 'Purwokerto';
+    }
+
     return {
       id: place.id || 'gplace_' + Math.random().toString(36).substring(2, 9),
       name: place.displayName?.text || 'Tempat Kuliner',
-      city: 'Purwokerto',
+      city: city,
       category: cat,
-      address: place.formattedAddress || 'Purwokerto, Jawa Tengah',
+      address: place.formattedAddress || `${city}, Jawa Barat`,
       latitude: lat,
       longitude: lng,
       rating: place.rating || 4.5,
