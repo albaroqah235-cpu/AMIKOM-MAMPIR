@@ -167,7 +167,7 @@ const StorageService = {
   },
 
   getTheme() {
-    return localStorage.getItem(this.KEYS.THEME) || 'Gelap';
+    return localStorage.getItem(this.KEYS.THEME) || 'Otomatis';
   },
 
   setTheme(theme) {

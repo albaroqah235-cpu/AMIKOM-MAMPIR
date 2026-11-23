@@ -57,6 +57,7 @@ window.App = {
     this.isBudgetFilterActive = StorageService.isBudgetFilterActive();
 
     // Setup Theme & Localization
+    this.initThemeListener();
     this.applyTheme(StorageService.getTheme());
     if (typeof I18nService !== 'undefined') {
       I18nService.init();
@@ -684,8 +685,12 @@ window.App = {
         </div>
 
         <div class="history-section">
-          <h4 style="font-size: 14px; margin-bottom: 8px;">${window.t('theme_section_title', 'Tema Tampilan')}</h4>
-          <div style="display: flex; gap: 12px;">
+          <h4 style="font-size: 14px; margin-bottom: 6px;">${window.t('theme_section_title', 'Tema Tampilan')}</h4>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+            Pilih preferensi tema. Pilihan <strong>Otomatis</strong> akan otomatis mengikuti tema laptop atau perangkat Anda (mode gelap / terang).
+          </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="category-pill ${currentTheme === 'Otomatis' ? 'active' : ''}" onclick="window.App.setTheme('Otomatis')">💻 Otomatis (Ikuti Sistem)</button>
             <button class="category-pill ${currentTheme === 'Gelap' ? 'active' : ''}" onclick="window.App.setTheme('Gelap')">${window.t('theme_dark', '🌙 Mode Gelap')}</button>
             <button class="category-pill ${currentTheme === 'Terang' ? 'active' : ''}" onclick="window.App.setTheme('Terang')">${window.t('theme_light', '☀️ Mode Terang')}</button>
           </div>
@@ -752,7 +757,16 @@ window.App = {
     const themeBtn = document.getElementById('btn-toggle-theme');
     if (themeBtn) {
       themeBtn.addEventListener('click', () => {
-        const nextTheme = StorageService.getTheme() === 'Gelap' ? 'Terang' : 'Gelap';
+        const currentTheme = StorageService.getTheme();
+        let nextTheme = 'Gelap';
+        if (currentTheme === 'Otomatis') {
+          const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          nextTheme = isSystemDark ? 'Terang' : 'Gelap';
+        } else if (currentTheme === 'Gelap') {
+          nextTheme = 'Terang';
+        } else {
+          nextTheme = 'Gelap';
+        }
         this.setTheme(nextTheme);
       });
     }
@@ -1414,14 +1428,36 @@ window.App = {
   },
 
   // ==================== THEME ====================
+  initThemeListener() {
+    if (window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleSystemThemeChange = () => {
+        if (StorageService.getTheme() === 'Otomatis') {
+          this.applyTheme('Otomatis');
+        }
+      };
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', handleSystemThemeChange);
+      } else if (mediaQuery.addListener) {
+        mediaQuery.addListener(handleSystemThemeChange);
+      }
+    }
+  },
+
   setTheme(theme) {
     StorageService.setTheme(theme);
     this.applyTheme(theme);
     this.render();
   },
 
-  applyTheme(theme) {
-    const isLight = theme === 'Terang';
+  applyTheme(theme = StorageService.getTheme()) {
+    let isLight = false;
+    if (theme === 'Otomatis') {
+      const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      isLight = !isSystemDark;
+    } else {
+      isLight = theme === 'Terang';
+    }
     document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
     const iconEl = document.getElementById('theme-icon');
     if (iconEl) iconEl.textContent = isLight ? '☀️' : '🌙';

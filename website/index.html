@@ -19,6 +19,23 @@
 
   <!-- MAMPIR Web Custom Stylesheet -->
   <link rel="stylesheet" href="css/style.css?v=2.0" />
+
+  <!-- Immediate Theme Initializer (Prevents FOUC & Follows System/Preference) -->
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('setting_theme') || 'Otomatis';
+        let isLight = false;
+        if (savedTheme === 'Otomatis') {
+          const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          isLight = !isSystemDark;
+        } else {
+          isLight = savedTheme === 'Terang';
+        }
+        document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
 
