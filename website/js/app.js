@@ -156,7 +156,15 @@ window.App = {
   },
 
   getPlaceById(id) {
-    const raw = this.getMergedPlacesList().find(p => p.id === id);
+    let raw = this.getMergedPlacesList().find(p => p.id === id);
+    if (!raw && this.liveGooglePlaces && this.liveGooglePlaces.length > 0) {
+      raw = this.liveGooglePlaces.find(p => p.id === id);
+    }
+    if (!raw && window.NearbyController) {
+      const nPlaces = window.NearbyController.places || [];
+      const nAll = window.NearbyController.allLivePlaces || [];
+      raw = nPlaces.find(p => p.id === id) || nAll.find(p => p.id === id);
+    }
     if (!raw) return null;
     const overrides = StorageService.getCafeOverrides(id) || {};
     return { ...raw, ...overrides };

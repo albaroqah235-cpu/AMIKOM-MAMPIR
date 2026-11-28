@@ -1057,11 +1057,11 @@ window.NearbyController = {
   },
 
   focusPlace(placeId, lat, lng) {
-    if (MapController && MapController.map) {
+    if (window.App && typeof window.App.openPlaceDetail === 'function') {
+      window.App.openPlaceDetail(placeId);
+    } else if (MapController && MapController.map) {
       MapController.highlightMarker(placeId);
       MapController.panTo(lat, lng, 16);
-    } else if (window.App && typeof window.App.openPlaceDetail === 'function') {
-      window.App.openPlaceDetail(placeId);
     }
   }
 };
