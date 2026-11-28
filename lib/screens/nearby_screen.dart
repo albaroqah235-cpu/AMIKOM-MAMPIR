@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -39,14 +38,6 @@ class _NearbyScreenState extends State<NearbyScreen> {
     '3–5 km',
     '5–10 km',
     '>10 km',
-  ];
-
-  static const List<String> _categoryOptions = [
-    'Semua',
-    'Resto',
-    'Warung Makan/Warkop',
-    'Cafe',
-    'Bakery',
   ];
 
   static const Map<String, latlng.LatLng> _simulationPresets = {
@@ -177,9 +168,8 @@ class _NearbyScreenState extends State<NearbyScreen> {
     final requestId = ++_requestSerial;
 
     try {
-      final types = _selectedCategory == null
-          ? GooglePlacesService.nearbyAllTypes
-          : GooglePlacesService.nearbyCategoryTypes[_selectedCategory!];
+      // Khusus Cafe & Coffee Shop
+      final types = const ['cafe', 'coffee_shop'];
       final queryRadiusKm = _radiusToQueryKm(_radiusFilter);
       // Untuk radius 0–1 km gunakan DISTANCE agar urutan terdekat presisi.
       // Untuk radius 1–3 km ke atas gunakan POPULARITY agar Google Places
@@ -224,8 +214,14 @@ class _NearbyScreenState extends State<NearbyScreen> {
           return false;
         }
 
-        // 2. Saring Kategori secara KETAT (contoh: filter Cafe hanya menampilkan Cafe)
-        if (!_matchesCategory(place, _selectedCategory)) {
+        // 2. Saring Khusus Cafe & Coffee Shop
+        final cat = place.category.toLowerCase();
+        final name = place.name.toLowerCase();
+        if (!cat.contains('cafe') &&
+            !cat.contains('coffee') &&
+            !name.contains('kopi') &&
+            !name.contains('cafe') &&
+            !name.contains('coffee')) {
           return false;
         }
 
@@ -543,14 +539,6 @@ class _NearbyScreenState extends State<NearbyScreen> {
 
   Future<void> _refreshLocation() async {
     await _loadCurrentLocation(forceRefresh: true);
-  }
-
-  void _onCategoryChanged(String? category) {
-    if (_selectedCategory == category) return;
-    setState(() => _selectedCategory = category);
-    if (_userLocation != null) {
-      _fetchNearbyPlaces();
-    }
   }
 
   void _onRadiusChanged(String radius) {
@@ -1078,7 +1066,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Tempat Terdekat',
+                                  'Cafe Terdekat',
                                   style: TextStyle(
                                     color: colors.textPrimary,
                                     fontSize: 14,
@@ -1090,7 +1078,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
                                       ? 'Mendeteksi lokasi kamu...'
                                       : _userLocation == null
                                       ? 'Lokasi belum tersedia'
-                                      : '${_places.length} tempat • $_radiusFilter',
+                                      : '${_places.length} cafe • $_radiusFilter',
                                   style: TextStyle(
                                     color: colors.textSecondary,
                                     fontSize: 11,
@@ -1150,10 +1138,6 @@ class _NearbyScreenState extends State<NearbyScreen> {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
               child: _buildSearchField(colors),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _buildCategoryFilters(colors),
-            ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1177,7 +1161,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
         controller: _keywordController,
         style: TextStyle(color: colors.textPrimary, fontSize: 13),
         decoration: InputDecoration(
-          hintText: 'Cari toko di Google Maps (misal: Mixue, KFC, Gacoan...)',
+          hintText: 'Cari cafe di Google Maps (misal: Fore, Titik Temu, Kopi...)',
           hintStyle: TextStyle(color: colors.textMuted, fontSize: 12),
           prefixIcon: const Icon(Icons.search, size: 18, color: AppTheme.gold),
           suffixIcon: _searchKeyword.isNotEmpty
@@ -1227,23 +1211,6 @@ class _NearbyScreenState extends State<NearbyScreen> {
                 )
               : Icon(icon, color: AppTheme.gold, size: 20),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryFilters(AppColors colors) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _categoryOptions.map((label) {
-          final value = label == 'Semua' ? null : label;
-          return _buildFilterChip(
-            label: label,
-            selected: _selectedCategory == value,
-            colors: colors,
-            onSelected: () => _onCategoryChanged(value),
-          );
-        }).toList(),
       ),
     );
   }
@@ -1671,7 +1638,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Coba ubah filter jarak/kategori atau perbarui lokasi kamu.',
+              'Coba pilih radius jarak yang lebih luas atau perbarui lokasi kamu.',
               style: TextStyle(color: colors.textSecondary, fontSize: 12),
               textAlign: TextAlign.center,
             ),

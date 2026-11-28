@@ -110,7 +110,7 @@ window.App = {
     try {
       const uCoords = window.NearbyController?.userCoords || { latitude: -7.4243, longitude: 109.2303 };
       const body = {
-        textQuery: `${q} Purwokerto`,
+        textQuery: `${q} cafe coffee shop Purwokerto`,
         locationBias: {
           circle: {
             center: { latitude: uCoords.latitude, longitude: uCoords.longitude },
@@ -164,10 +164,16 @@ window.App = {
 
   getMergedPlacesList() {
     const allOverrides = StorageService.getAllCafeOverrides();
-    const base = this.places.map(p => {
-      const o = allOverrides[p.id];
-      return o ? { ...p, ...o } : p;
-    });
+    const base = this.places
+      .filter(p => {
+        const cat = (p.category || '').toLowerCase();
+        const name = (p.name || '').toLowerCase();
+        return cat.includes('cafe') || cat.includes('coffee') || name.includes('cafe') || name.includes('coffee') || name.includes('kopi');
+      })
+      .map(p => {
+        const o = allOverrides[p.id];
+        return o ? { ...p, ...o } : p;
+      });
 
     if (this.searchQuery && this.liveGooglePlaces && this.liveGooglePlaces.length > 0) {
       const baseNames = new Set(base.map(p => (p.name || '').toLowerCase().trim()));
@@ -202,7 +208,7 @@ window.App = {
           this.places = data;
           this.isApiOnline = true;
           if (statusTextEl) {
-            statusTextEl.textContent = window.t('api_places_count', `Supabase REST API (${this.places.length} Tempat)`, { n: this.places.length });
+            statusTextEl.textContent = window.t('api_places_count', `Supabase REST API (${this.places.length} Cafe)`, { n: this.places.length });
           }
           if (statusDotEl) {
             statusDotEl.classList.remove('offline');
@@ -370,8 +376,8 @@ window.App = {
             <div class="nearby-cta-left">
               <span class="nearby-cta-icon">📍</span>
               <div>
-                <h4 class="nearby-cta-title">Cari Tempat Makan & Nongkrong Terdekat (Live GPS)</h4>
-                <p class="nearby-cta-desc">Deteksi lokasi Anda, filter radius 0–1 km s/d >10 km via Google Places API & peta interaktif!</p>
+                <h4 class="nearby-cta-title">Cari Cafe & Tempat Nongkrong Terdekat (Live GPS)</h4>
+                <p class="nearby-cta-desc">Deteksi lokasi Anda, temukan cafe & coffee shop terdekat via Google Places API & peta interaktif!</p>
               </div>
             </div>
             <button class="btn-nearby-cta-action">
@@ -447,9 +453,9 @@ window.App = {
       return window.t('nav_favorites', 'Daftar Tempat Favorit Anda');
     }
     if (this.isNearMeActive || (window.NearbyController && window.NearbyController.isActive)) {
-      return 'Rekomendasi Cafe/Resto Terdekat';
+      return 'Rekomendasi Cafe Terdekat';
     }
-    return window.t('all_recommendations_title', 'Rekomendasi untuk lokasi cafe/resto terdekat');
+    return window.t('all_recommendations_title', 'Rekomendasi Cafe Terbaik di Purwokerto');
   },
 
   renderFeaturedCard(place) {
@@ -491,10 +497,10 @@ window.App = {
   renderActivityRecommendationCarousel(items) {
     if (!items || items.length === 0) return '';
     const hasActivity = StorageService.getActivityHistory().viewedPlaceIds.length > 0;
-    const title = typeof I18nService !== 'undefined' ? I18nService.t('activity_recommendation_title') : '✨ Rekomendasi untuk Anda';
+    const title = typeof I18nService !== 'undefined' ? I18nService.t('activity_recommendation_title', '✨ Rekomendasi untuk Anda') : '✨ Rekomendasi untuk Anda';
     const sub = hasActivity
-      ? (typeof I18nService !== 'undefined' ? I18nService.t('activity_recommendation_sub') : 'Berdasarkan kafe dan wilayah yang sering Anda jelajahi')
-      : (typeof I18nService !== 'undefined' ? I18nService.t('activity_fallback_sub') : 'Kafe paling populer dengan rating tertinggi di Purwokerto');
+      ? (typeof I18nService !== 'undefined' ? I18nService.t('activity_recommendation_sub', 'Berdasarkan kafe dan wilayah yang sering Anda jelajahi') : 'Berdasarkan kafe dan wilayah yang sering Anda jelajahi')
+      : (typeof I18nService !== 'undefined' ? I18nService.t('activity_fallback_sub', 'Kafe paling populer dengan rating tertinggi di Purwokerto') : 'Kafe paling populer dengan rating tertinggi di Purwokerto');
 
     return `
       <section class="activity-section">
@@ -525,26 +531,7 @@ window.App = {
   },
 
   renderCategoryFilterBar() {
-    const cats = [
-      { key: 'Semua', label: window.t('cat_all', '✨ Semua Tempat') },
-      { key: 'Restoran', label: window.t('cat_resto', '🍽️ Restoran') },
-      { key: 'Warung Makan', label: window.t('cat_warung', '🍲 Warung Makan') },
-      { key: 'Cafe', label: window.t('cat_cafe', '☕ Cafe') },
-      { key: 'Coffee Shop', label: window.t('cat_coffee_shop', '🧋 Coffee Shop') },
-      { key: 'Warkop', label: window.t('cat_warkop', '🍵 Warkop') },
-      { key: 'Fast Food', label: window.t('cat_fastfood', '🍔 Fast Food') },
-      { key: 'Bakery', label: window.t('cat_bakery', '🥐 Bakery') }
-    ];
-    return `
-      <div class="category-pills">
-        ${cats.map(c => `
-          <button class="category-pill ${this.selectedCategory === c.key ? 'active' : ''}"
-                  onclick="window.App.selectCategory('${c.key}')">
-            ${c.label}
-          </button>
-        `).join('')}
-      </div>
-    `;
+    return '';
   },
 
   renderPlaceCard(place) {
@@ -595,8 +582,8 @@ window.App = {
               ${RecommendationService.formatPrice(place)}
             </div>
             <div class="place-card-actions">
-              <button class="btn-card-locate" onclick="event.stopPropagation(); window.App.focusMap('${place.id}', ${place.latitude}, ${place.longitude})">
-                ${window.t('pin_map', '🗺️ Pin Peta')}
+              <button class="btn-card-locate" onclick="event.stopPropagation(); window.App.openPlaceDetail('${place.id}')">
+                📍 ${window.t('view_detail', 'Detail & Peta')}
               </button>
             </div>
           </div>
@@ -639,24 +626,10 @@ window.App = {
   },
 
   renderFavoritesHeader(count) {
-    const cats = [
-      { key: 'Semua', label: window.t('cat_all', '✨ Semua Tempat') },
-      { key: 'Cafe', label: window.t('cat_cafe', '☕ Cafe') },
-      { key: 'Warkop', label: window.t('cat_warkop', '🍵 Warkop') },
-      { key: 'Restoran', label: window.t('cat_resto', '🍽️ Restoran') }
-    ];
     return `
       <div style="margin-bottom: 20px;">
-        <div class="category-pills" style="margin-bottom: 12px;">
-          ${cats.map(c => `
-            <button class="category-pill ${this.selectedCategory === c.key ? 'active' : ''}"
-                    onclick="window.App.selectCategory('${c.key}')">
-              ${c.label}
-            </button>
-          `).join('')}
-        </div>
         <p style="font-size: 13px; color: var(--text-secondary);">
-          ${window.t('fav_header_desc', `Tersimpan ${count} tempat di penyimpanan browser lokal Anda (❤️).`, { count })}
+          ${window.t('fav_header_desc', `Tersimpan ${count} cafe di penyimpanan browser lokal Anda (❤️).`, { count })}
         </p>
       </div>
     `;
@@ -808,8 +781,12 @@ window.App = {
   },
 
   focusMap(placeId, lat, lng) {
-    MapController.highlightMarker(placeId);
-    MapController.panTo(lat, lng, 16);
+    if (MapController && MapController.map) {
+      MapController.highlightMarker(placeId);
+      MapController.panTo(lat, lng, 16);
+    } else {
+      this.openPlaceDetail(placeId);
+    }
   },
 
   applySearchQuery(query) {
@@ -851,7 +828,7 @@ window.App = {
   },
 
   // ==================== DETAIL MODAL ====================
-  openPlaceDetail(placeId) {
+  openPlaceDetail(placeId, options = {}) {
     const place = this.getPlaceById(placeId);
     if (!place) return;
 
@@ -873,6 +850,17 @@ window.App = {
 
     // Ulasan Pengunjung (Req 2)
     const reviews = StorageService.getPlaceReviews(place.id);
+
+    // Format WhatsApp Pemilik
+    const rawOwnerPhone = (place.owner_phone || '').toString().trim();
+    let waDigits = rawOwnerPhone.replace(/[^0-9]/g, '');
+    if (waDigits.startsWith('0')) {
+      waDigits = '62' + waDigits.slice(1);
+    } else if (waDigits.startsWith('8')) {
+      waDigits = '62' + waDigits;
+    }
+    const waText = encodeURIComponent(`Halo, saya ingin bertanya mengenai ${place.name} dari aplikasi MAMPIR.`);
+    const waUrl = waDigits ? `https://wa.me/${waDigits}?text=${waText}` : '';
 
     body.innerHTML = `
       <img src="${place.image_url || 'assets/images/beranda_mockup.jpeg'}" alt="${place.name}" class="detail-modal-img" />
@@ -905,57 +893,18 @@ window.App = {
         <div><small style="color: var(--text-muted);">${window.t('open_hours_label', 'Jam Operasional')}</small><div style="font-weight: bold;">${place.open_hours || '08.00 - 22.00'}</div></div>
       </div>
 
-      <!-- Tombol Aksi: Google Maps -->
-      <div style="margin-bottom: 20px;">
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}" target="_blank"
-           class="btn-primary" style="display: flex; width: 100%; text-align: center; text-decoration: none; justify-content: center; padding: 12px 18px; font-weight: 700; font-size: 14px; box-sizing: border-box;">
-          🗺️ ${window.t('route_btn', 'Buka Rute di Google Maps')}
-        </a>
-      </div>
-
-      <!-- Agenda & Pengumuman Kafe (Req 2 & Req 7: Kalender & Pasang Pengingat) -->
-      ${cafeEvents.length > 0 ? `
-        <div class="cafe-events-wrapper">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <h4 style="font-size: 14px; font-weight: 700; color: var(--accent-gold); display: flex; align-items: center; gap: 6px; margin: 0;">
-              ${window.t('events_upcoming_title', '📅 Agenda & Event Mendatang')}
-            </h4>
-            <span style="font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(255, 183, 77, 0.15); color: var(--accent-orange); font-weight: 700;">
-              ${window.t('events_count', `${cafeEvents.length} Acara`, { count: cafeEvents.length })}
-            </span>
-          </div>
-          ${cafeEvents.map(ev => {
-            const isReminderSet = StorageService.isEventReminderSet(ev.id);
-            return `
-            <div class="cafe-event-card">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                <span class="cafe-event-badge">${ev.badge || ev.category}</span>
-                <span style="font-size: 11px; color: var(--text-muted);">MAMPIR Event</span>
-              </div>
-              <h5 style="font-size: 14px; font-weight: bold; margin: 4px 0;">${ev.title}</h5>
-              <div style="font-size: 12px; color: var(--accent-orange); margin-bottom: 6px; font-weight: 600;">⏰ ${ev.date}</div>
-              <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px;">${ev.description}</p>
-
-              <!-- Tombol CTA Pasang Pengingat & Tambah ke Kalender (Req 7) -->
-              <div class="cafe-event-actions">
-                <button class="btn-reminder ${isReminderSet ? 'active' : ''}" id="btn-remind-${ev.id}" onclick="window.App.toggleEventReminder('${ev.id}', '${place.id}')">
-                  ${isReminderSet
-                    ? window.t('btn_reminder_active', '✅ Pengingat Terpasang')
-                    : window.t('btn_set_reminder', '⏰ Pasang Pengingat')
-                  }
-                </button>
-                <button class="btn-secondary" style="font-size: 11px; padding: 6px 12px;" onclick="window.App.openCalendarExportModal('${ev.id}', '${place.id}')">
-                  📅 ${window.t('btn_add_to_calendar', 'Tambah ke Kalender')}
-                </button>
-              </div>
-            </div>
-          `;}).join('')}
+      ${waUrl ? `
+        <div style="margin-bottom: 18px;">
+          <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
+             style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 18px; border-radius: 12px; background: linear-gradient(135deg, #25D366, #128C7E); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.28);">
+            💬 Hubungi Pemilik (WhatsApp)
+          </a>
         </div>
       ` : ''}
 
       <div class="detail-section">
         <h4>${window.t('desc_title', 'Deskripsi')}</h4>
-        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">${place.description || 'Tempat kuliner favorit yang nyaman di kawasan Purwokerto.'}</p>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">${place.description || 'Cafe favorit yang nyaman untuk nongkrong dan santai di kawasan Purwokerto.'}</p>
       </div>
 
       <div class="detail-section">
@@ -980,6 +929,61 @@ window.App = {
         </div>
       </div>
 
+      <!-- Lokasi & Peta Interaktif Tempat (Di Bawah Detail Resto) -->
+      <div class="detail-section detail-map-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h4 style="font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin: 0;">
+            📍 ${window.t('map_location_title', 'Lokasi & Peta Interaktif')}
+          </h4>
+          <span style="font-size: 12px; font-weight: 700; color: var(--accent-orange); background: rgba(245, 124, 0, 0.12); padding: 4px 10px; border-radius: 99px;">
+            ${distance} km ${window.t('from_your_pos', 'dari lokasi Anda')}
+          </span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
+          📍 ${place.address || place.city}
+        </p>
+
+        <!-- IN-APP NAVIGATION LIVE STATUS BANNER -->
+        <div id="detail-inapp-nav-box" class="nearby-inapp-nav-banner" style="margin-bottom: 12px; padding: 12px 16px; border-radius: 12px;">
+          <div class="nav-banner-left" style="gap: 12px;">
+            <span class="nav-banner-icon" style="font-size: 24px;">🧭</span>
+            <div>
+              <div class="nav-banner-title" style="font-size: 14px;">Navigasi In-App: ${place.name}</div>
+              <div class="nav-banner-sub" id="detail-nav-info-text" style="font-size: 12px; margin-top: 3px;">
+                ⏳ Menghitung rute navigasi jalan raya in-app...
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-close-route" style="font-size: 11px; padding: 6px 12px;" onclick="window.MapController && window.MapController.toggleDetailRouteBounds()">
+            🔍 Lihat Rute
+          </button>
+        </div>
+
+        <!-- Canvas Peta Leaflet Khusus Resto (In-App Map) -->
+        <div id="place-detail-map-canvas" class="detail-place-map-container" style="height: 290px; position: relative;"></div>
+
+        <!-- Tombol Aksi Navigasi In-App -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+          <button type="button" class="btn-primary" style="flex: 2; min-width: 175px; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 16px; font-weight: 700; font-size: 13px; border-radius: var(--radius-sm); cursor: pointer;"
+                  onclick="window.MapController && window.MapController.startInAppNavigation('${place.name}')">
+            🧭 Panduan Navigasi In-App
+          </button>
+          <button type="button" class="btn-secondary" style="flex: 1; min-width: 80px; padding: 12px 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;"
+                  onclick="window.MapController && window.MapController.recenterDetailMap(${place.latitude}, ${place.longitude})">
+            🏢 Resto
+          </button>
+          <button type="button" class="btn-secondary" style="flex: 1; min-width: 80px; padding: 12px 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;"
+                  onclick="window.MapController && window.MapController.recenterDetailUser()">
+            📍 Posisi Saya
+          </button>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}" target="_blank"
+             class="btn-secondary" style="padding: 12px 12px; font-size: 12px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);"
+             title="Opsi: Buka di Google Maps Eksternal">
+            🌐 Eksternal ↗
+          </a>
+        </div>
+      </div>
+
       <!-- Ulasan & Rating Pengunjung (Req 2) -->
       <div class="reviews-container">
         <h4 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">${window.t('reviews_title', '⭐ Ulasan & Penilaian Pengunjung')}</h4>
@@ -1000,7 +1004,7 @@ window.App = {
           </button>
         </div>
 
-        <div class="reviews-list">
+        <div class="reviews-list" id="detail-reviews-list">
           ${reviews.map(r => `
             <div class="review-item-card">
               <div class="review-item-header">
@@ -1016,6 +1020,24 @@ window.App = {
     `;
 
     modal.classList.add('active');
+
+    // Inisialisasi Peta Leaflet untuk Resto Ini di Dalam Modal
+    if (window.MapController) {
+      const uCoords = window.NearbyController?.userCoords || null;
+      window.MapController.renderPlaceDetailMap('place-detail-map-canvas', place, uCoords);
+    }
+
+    // Muat ulasan real-time dari Supabase
+    this.loadSupabaseReviews(place.id);
+
+    if (options && options.autoScrollToMap) {
+      setTimeout(() => {
+        const mapSection = document.querySelector('.detail-map-section');
+        if (mapSection) {
+          mapSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 350);
+    }
   },
 
   // ==================== SHARE MODAL DIALOG (Req 5) ====================
@@ -1109,12 +1131,53 @@ window.App = {
     });
   },
 
-  submitReview(placeId) {
-    const author = document.getElementById('review-input-name')?.value || 'Pengunjung MAMPIR';
-    const comment = document.getElementById('review-input-comment')?.value;
+  async loadSupabaseReviews(placeId) {
+    try {
+      if (typeof AppConfig === 'undefined' || !AppConfig.supabaseUrl) return;
+      const res = await fetch(
+        `${AppConfig.supabaseUrl}/rest/v1/place_reviews?place_id=eq.${encodeURIComponent(placeId)}&order=created_at.desc`,
+        { headers: AppConfig.headers }
+      );
+      if (!res.ok) return;
+      const dbRows = await res.json();
+      if (!Array.isArray(dbRows) || dbRows.length === 0) return;
+
+      const listEl = document.getElementById('detail-reviews-list');
+      if (!listEl) return;
+
+      const localReviews = StorageService.getPlaceReviews(placeId) || [];
+      const dbMapped = dbRows.map(r => ({
+        author: r.author_name || 'Pengunjung MAMPIR',
+        rating: Number(r.rating) || 5,
+        comment: r.body || '',
+        date: r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Baru saja'
+      }));
+
+      // Gabungkan ulasan DB dengan ulasan lokal (hindari duplikat komentar)
+      const seen = new Set(dbMapped.map(x => `${x.author}:${x.comment}`));
+      const combined = [...dbMapped, ...localReviews.filter(x => !seen.has(`${x.author}:${x.comment}`))];
+
+      listEl.innerHTML = combined.map(r => `
+        <div class="review-item-card">
+          <div class="review-item-header">
+            <strong>${r.author}</strong>
+            <span style="color: #FBBF24;">${'★'.repeat(Math.max(1, Math.min(5, Math.round(r.rating || 5))))}</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${r.comment}</p>
+          <small style="font-size: 10px; color: var(--text-muted);">${r.date}</small>
+        </div>
+      `).join('');
+    } catch (e) {
+      console.warn('Gagal memuat ulasan Supabase:', e);
+    }
+  },
+
+  async submitReview(placeId) {
+    const author = (document.getElementById('review-input-name')?.value || '').trim() || 'Pengunjung MAMPIR';
+    const comment = (document.getElementById('review-input-comment')?.value || '').trim();
     const rating = this.currentReviewRating || 5;
 
-    if (!comment || !comment.trim()) {
+    if (!comment) {
       alert(window.t('review_alert_empty', 'Silakan tuliskan pengalaman ulasan Anda.'));
       return;
     }
@@ -1125,6 +1188,23 @@ window.App = {
       comment
     });
 
+    try {
+      if (typeof AppConfig !== 'undefined' && AppConfig.supabaseUrl) {
+        await fetch(`${AppConfig.supabaseUrl}/rest/v1/place_reviews`, {
+          method: 'POST',
+          headers: AppConfig.headers,
+          body: JSON.stringify({
+            place_id: placeId,
+            rating: rating,
+            body: comment,
+            author_name: author
+          })
+        });
+      }
+    } catch (e) {
+      console.warn('Gagal kirim ulasan ke Supabase:', e);
+    }
+
     this.showToast(window.t('review_submitted', 'Ulasan berhasil diterbitkan!'));
     this.openPlaceDetail(placeId);
   },
@@ -1132,6 +1212,9 @@ window.App = {
   closeModal(modalId) {
     const el = document.getElementById(modalId);
     if (el) el.classList.remove('active');
+    if (modalId === 'modal-place-detail' && window.MapController) {
+      window.MapController.destroyDetailMap();
+    }
   },
 
   // ==================== BUDGET FILTER & SMART RECOMMENDATION ====================

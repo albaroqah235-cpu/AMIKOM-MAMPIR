@@ -58,6 +58,20 @@ class RecommendationService {
       }).toList();
     }
 
+    // Filter khusus Cafe & Coffee Shop (Aplikasi Khusus Cafe)
+    candidatePlaces = candidatePlaces.where((place) {
+      final cat = place.category.toLowerCase();
+      final name = place.name.toLowerCase();
+      return cat.contains('cafe') ||
+          cat.contains('coffee') ||
+          name.contains('cafe') ||
+          name.contains('coffee') ||
+          name.contains('kopi') ||
+          name.contains('kafe') ||
+          name.contains('bistro') ||
+          name.contains('roastery');
+    }).toList();
+
     // Filter kategori opsional jika dipilih di UI
     if (selectedCategory != null &&
         selectedCategory.isNotEmpty &&

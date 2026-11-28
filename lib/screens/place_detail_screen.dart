@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/place_model.dart';
+import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../services/preference_service.dart';
 import '../theme/app_theme.dart';
@@ -30,6 +32,7 @@ class PlaceDetailScreen extends StatefulWidget {
 class _PlaceDetailScreenState extends State<PlaceDetailScreen>
     with SingleTickerProviderStateMixin {
   final PreferenceService _preferenceService = PreferenceService();
+  final ApiService _apiService = ApiService();
   late TabController _tabController;
   final PageController _imagePageController = PageController();
 
@@ -37,6 +40,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
   bool _isFavorite = false;
   late List<String> _galleryImages;
   LatLng? _userLocation;
+  List<Map<String, dynamic>> _reviews = [];
 
   @override
   void initState() {
@@ -57,11 +61,222 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
     _galleryImages = rawImg.isNotEmpty ? [rawImg] : [];
 
     _checkFavorite();
+    _loadReviews();
+  }
+
+  Future<void> _loadReviews() async {
+    final dbReviews = await _apiService.fetchReviews(widget.place.id);
+    if (mounted) {
+      setState(() => _reviews = dbReviews);
+    }
+  }
+
+  void _showAddReviewModal(PlaceModel place) {
+    final colors = AppTheme.colors(context);
+    final nameCtrl = TextEditingController();
+    final commentCtrl = TextEditingController();
+    int selectedRating = 5;
+    bool submitting = false;
+
+    _preferenceService.getUserName().then((name) {
+      if (name.isNotEmpty && nameCtrl.text.isEmpty) {
+        nameCtrl.text = name;
+      }
+    });
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colors.surfaceNavy,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (modalCtx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            18,
+            20,
+            MediaQuery.of(modalCtx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.borderNavy,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tulis Ulasan untuk ${place.name}',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: List.generate(5, (idx) {
+                  final starVal = idx + 1;
+                  return IconButton(
+                    onPressed: () =>
+                        setModalState(() => selectedRating = starVal),
+                    icon: Icon(
+                      starVal <= selectedRating
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
+                      color: AppTheme.gold,
+                      size: 32,
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: nameCtrl,
+                style: TextStyle(color: colors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Nama Anda',
+                  labelStyle: TextStyle(color: colors.textSecondary),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colors.borderNavy),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.gold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: commentCtrl,
+                maxLines: 3,
+                style: TextStyle(color: colors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Ulasan / Pengalaman Anda',
+                  hintText: 'Bagaimana suasana, kopi, atau fasilitas di cafe ini?',
+                  hintStyle: TextStyle(color: colors.textSecondary, fontSize: 13),
+                  labelStyle: TextStyle(color: colors.textSecondary),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colors.borderNavy),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.gold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: submitting
+                      ? null
+                      : () async {
+                          final comment = commentCtrl.text.trim();
+                          if (comment.isEmpty) {
+                            ScaffoldMessenger.of(modalCtx).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tuliskan ulasan kamu dulu ya!'),
+                              ),
+                            );
+                            return;
+                          }
+                          final author = nameCtrl.text.trim().isNotEmpty
+                              ? nameCtrl.text.trim()
+                              : 'Pengunjung MAMPIR';
+                          setModalState(() => submitting = true);
+                          final ok = await _apiService.submitReview(
+                            placeId: place.id,
+                            authorName: author,
+                            rating: selectedRating.toDouble(),
+                            comment: comment,
+                          );
+                          if (mounted) {
+                            setState(() {
+                              _reviews.insert(0, {
+                                'user': author,
+                                'rating': selectedRating.toDouble(),
+                                'comment': comment,
+                              });
+                            });
+                          }
+                          if (modalCtx.mounted) Navigator.pop(modalCtx);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  ok
+                                      ? 'Ulasan berhasil diterbitkan! ⭐'
+                                      : 'Ulasan ditambahkan (mode lokal)',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.orange,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: submitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Kirim Ulasan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _checkFavorite() async {
     final fav = await _preferenceService.isFavorite(widget.place.id);
     if (mounted) setState(() => _isFavorite = fav);
+  }
+
+  Future<void> _openWhatsAppOwner(PlaceModel place) async {
+    final raw = place.ownerPhone.trim();
+    if (raw.isEmpty) return;
+    var digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('0')) {
+      digits = '62${digits.substring(1)}';
+    } else if (digits.startsWith('8')) {
+      digits = '62$digits';
+    }
+    if (digits.isEmpty) return;
+    final text = Uri.encodeComponent(
+      'Halo, saya ingin bertanya mengenai ${place.name} dari aplikasi MAMPIR.',
+    );
+    final url = Uri.parse('https://wa.me/$digits?text=$text');
+    await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _toggleFavorite() async {
@@ -457,6 +672,35 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (place.ownerPhone.trim().isNotEmpty) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _openWhatsAppOwner(place),
+                            icon: const Icon(
+                              Icons.chat_rounded,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              'Hubungi Pemilik (WhatsApp)',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              elevation: 2,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                       Container(
                         width: double.infinity,
                         height: 52,
@@ -676,7 +920,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
 
   Widget _buildReviewsTab(PlaceModel place) {
     final colors = AppTheme.colors(context);
-    final reviews = [
+    final defaultReviews = [
       {
         'user': 'Rian S.',
         'rating': 5.0,
@@ -688,76 +932,111 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen>
         'user': 'Dwi Lestari',
         'rating': 4.8,
         'comment':
-            'Makanannya otentik enak, porsinya nendang dan pelayanannya cepet. Pasti bakal balik lagi!',
+            'Kopinya otentik enak, camilannya mantap dan pelayanannya cepet. Pasti bakal balik lagi!',
         'time': '1 minggu lalu',
       },
       {
         'user': 'Bagus Prasetyo',
         'rating': 4.5,
         'comment':
-            'Suasananya syahdu, parkir luas, cocok buat kumpul keluarga atau nongkrong malam.',
+            'Suasananya syahdu, parkir luas, cocok buat nugas atau nongkrong malam.',
         'time': '2 minggu lalu',
       },
     ];
+    final reviews = [..._reviews, ...defaultReviews];
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      itemCount: reviews.length,
-      separatorBuilder: (context, index) =>
-          Divider(color: colors.borderNavy, height: 20),
-      itemBuilder: (context, index) {
-        final rev = reviews[index];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: AppTheme.orange.withValues(alpha: 0.25),
-                  child: Text(
-                    (rev['user'] as String)[0],
-                    style: const TextStyle(
-                      color: AppTheme.gold,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
-                  ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
+          child: SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: OutlinedButton.icon(
+              onPressed: () => _showAddReviewModal(place),
+              icon: const Icon(Icons.rate_review_rounded, color: AppTheme.gold, size: 18),
+              label: const Text(
+                'Tambah Ulasan',
+                style: TextStyle(
+                  color: AppTheme.gold,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  rev['user'] as String,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppTheme.gold),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const Spacer(),
-                const Icon(Icons.star_rounded, color: AppTheme.gold, size: 16),
-                const SizedBox(width: 2),
-                Text(
-                  (rev['rating'] as double).toStringAsFixed(1),
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              rev['comment'] as String,
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 13,
-                height: 1.4,
               ),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            itemCount: reviews.length,
+            separatorBuilder: (context, index) =>
+                Divider(color: colors.borderNavy, height: 20),
+            itemBuilder: (context, index) {
+              final rev = reviews[index];
+              final userName = (rev['user'] as String?)?.trim().isNotEmpty == true
+                  ? rev['user'] as String
+                  : 'Pengunjung MAMPIR';
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AppTheme.orange.withValues(alpha: 0.25),
+                        child: Text(
+                          userName[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: AppTheme.gold,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        userName,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.star_rounded, color: AppTheme.gold, size: 16),
+                      const SizedBox(width: 2),
+                      Text(
+                        (rev['rating'] as double).toStringAsFixed(1),
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    rev['comment'] as String,
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

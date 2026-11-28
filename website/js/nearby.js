@@ -308,23 +308,18 @@ window.NearbyController = {
     try {
       const apiKey = AppConfig.googlePlacesApiKey;
       if (apiKey && apiKey.length > 5) {
-        // Tentukan query pencarian Google Places secara cerdas
+        // Tentukan query pencarian Google Places secara cerdas (Khusus Cafe & Tempat Nongkrong)
         let queryText = (this.searchKeyword || '').trim();
+        const baseCat = 'cafe coffee shop kedai kopi tempat nongkrong';
+        let locContext = '';
+        if (this.userCoords.label) {
+          const parts = this.userCoords.label.split(',');
+          locContext = parts[parts.length - 1].trim(); // contoh: "Sukabumi" atau "Purwokerto"
+        }
         if (!queryText) {
-          const catQueries = {
-            'Semua': 'tempat makan kuliner restoran cafe warung',
-            'Resto': 'restoran rumah makan kuliner',
-            'Warung Makan/Warkop': 'warung makan warkop warteg soto bakso mie ayam',
-            'Cafe': 'cafe coffee shop kedai kopi',
-            'Bakery': 'bakery toko roti kue'
-          };
-          const baseCat = catQueries[this.selectedCategory] || 'tempat makan kuliner';
-          let locContext = '';
-          if (this.userCoords.label) {
-            const parts = this.userCoords.label.split(',');
-            locContext = parts[parts.length - 1].trim(); // contoh: "Sukabumi" atau "Purwokerto"
-          }
           queryText = locContext ? `${baseCat} ${locContext}` : baseCat;
+        } else {
+          queryText = locContext ? `${queryText} cafe ${locContext}` : `${queryText} cafe`;
         }
 
         // Gunakan places:searchText (sangat stabil dan tidak terbatasi kuota harian ketat searchNearby)
@@ -377,19 +372,15 @@ window.NearbyController = {
       });
     }
 
-    // 3. Saring: Tempat sesuai rentang jarak & kategori
+    // 3. Saring: Tempat sesuai rentang jarak
     let filtered = placesResults.filter(p => {
       if (!this.searchKeyword && !this.matchesDistance(p.distance)) return false;
-      if (!this.matchesCategory(p, this.selectedCategory)) return false;
       return true;
     });
 
-    // 4. Jika filter kategori terlalu ketat menghasilkan 0 tetapi ada hasil dalam radius, gunakan semua hasil radius
+    // 4. Jika rentang jarak terlalu sempit menghasilkan 0, tampilkan hasil yang ada
     if (filtered.length === 0 && placesResults.length > 0) {
-      const radiusOnly = placesResults.filter(p => !this.searchKeyword ? this.matchesDistance(p.distance) : true);
-      if (radiusOnly.length > 0) {
-        filtered = radiusOnly;
-      }
+      filtered = placesResults;
     }
 
     this.places = filtered;
@@ -600,6 +591,8 @@ window.NearbyController = {
       if (mapElem) {
         mapElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+    } else if (window.App && typeof window.App.openPlaceDetail === 'function') {
+      window.App.openPlaceDetail(place.id, { autoScrollToMap: true });
     }
 
     this.render();
@@ -624,24 +617,18 @@ window.NearbyController = {
     const lng = place.location?.longitude || userLng;
     const distance = this.calculateDistanceKm(userLat, userLng, lat, lng);
 
-    // Kategori mapping
+    // Kategori mapping (Khusus Cafe & Coffee Shop)
     const typesStr = (place.types || []).join(' ').toLowerCase();
     const nameLower = (place.displayName?.text || '').toLowerCase();
-    let cat = 'Restoran';
-    if (typesStr.includes('cafe') || typesStr.includes('coffee') || nameLower.includes('cafe') || nameLower.includes('kopi')) {
-      cat = typesStr.includes('coffee_shop') ? 'Coffee Shop' : 'Cafe';
-    } else if (typesStr.includes('bakery') || nameLower.includes('bakery') || nameLower.includes('roti') || nameLower.includes('kue')) {
-      cat = 'Bakery';
-    } else if (typesStr.includes('fast_food')) {
-      cat = 'Fast Food';
-    } else if (typesStr.includes('bar')) {
-      cat = 'Tempat Nongkrong';
-    } else if (typesStr.includes('meal_takeaway') || nameLower.includes('warkop') || nameLower.includes('warung') || nameLower.includes('warteg') || nameLower.includes('soto') || nameLower.includes('bakso') || nameLower.includes('mie') || nameLower.includes('nasi') || nameLower.includes('ayam') || nameLower.includes('bebek') || nameLower.includes('dapur')) {
-      cat = 'Warung Makan';
+    let cat = 'Cafe';
+    if (typesStr.includes('coffee') || nameLower.includes('kopi') || typesStr.includes('coffee_shop')) {
+      cat = 'Coffee Shop';
+    } else {
+      cat = 'Cafe';
     }
 
     // Foto
-    let img = this.categoryPlaceholders[cat] || this.categoryPlaceholders['Restoran'];
+    let img = this.categoryPlaceholders[cat] || this.categoryPlaceholders['Cafe'] || 'assets/images/beranda_mockup.jpeg';
     if (place.photos && place.photos.length > 0 && AppConfig.googlePlacesApiKey) {
       img = `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxHeightPx=600&maxWidthPx=800&key=${AppConfig.googlePlacesApiKey}`;
     }
@@ -662,7 +649,7 @@ window.NearbyController = {
 
     return {
       id: place.id || 'gplace_' + Math.random().toString(36).substring(2, 9),
-      name: place.displayName?.text || 'Tempat Kuliner',
+      name: place.displayName?.text || 'Cafe Purwokerto',
       city: city,
       category: cat,
       address: place.formattedAddress || `${city}, Jawa Barat`,
@@ -818,8 +805,8 @@ window.NearbyController = {
 
         <div class="nearby-hero-title-row">
           <div>
-            <h2 class="nearby-hero-title">Tempat Makan & Nongkrong Terdekat</h2>
-            <p class="nearby-hero-sub">Pencarian real-time radius koordinat dari lokasi Anda via Google Places API</p>
+            <h2 class="nearby-hero-title">Cafe & Tempat Nongkrong Terdekat</h2>
+            <p class="nearby-hero-sub">Pencarian real-time cafe terdekat dari lokasi Anda via Google Places API</p>
           </div>
           <div class="nearby-gps-status-box">
             ${this.userCoords ? `
@@ -862,7 +849,7 @@ window.NearbyController = {
             <input type="text"
                    id="nearby-keyword-input"
                    class="keyword-input"
-                   placeholder="Cari toko / restoran langsung di Google Maps (misal: Mixue, Mie Gacoan, KFC, Soto, Kopi...)"
+                   placeholder="Cari cafe & coffee shop langsung di Google Maps (misal: Fore, Titik Temu, Janji Jiwa, Kopi...)"
                    value="${this.searchKeyword || ''}"
                    onkeydown="if(event.key==='Enter') window.NearbyController.onKeywordSearch(this.value)" />
             ${this.searchKeyword ? `
@@ -900,28 +887,12 @@ window.NearbyController = {
             `).join('')}
           </div>
         </div>
-
-        <!-- FILTER KATEGORI (REQ 3 CLIENT) -->
-        <div class="nearby-filter-group" style="margin-top: 12px;">
-          <div class="filter-group-header">
-            <span class="filter-group-title">🏷️ Kategori Tempat:</span>
-          </div>
-          <div class="category-pills-row">
-            ${this.categoryOptions.map(c => `
-              <button class="category-pill-btn ${this.selectedCategory === c.label ? 'active' : ''}"
-                      onclick="window.NearbyController.onCategoryChange('${c.label}')">
-                <span>${c.icon}</span>
-                <span>${c.label}</span>
-              </button>
-            `).join('')}
-          </div>
-        </div>
       </div>
 
       <!-- STATUS BAR & SORTING (REQ 6 CLIENT) -->
       <div class="nearby-results-header">
         <div class="results-count-badge">
-          <span>Ditemukan <strong>${this.places.length}</strong> tempat kuliner ${this.searchKeyword ? `untuk kata kunci "<strong>${this.searchKeyword}</strong>"` : `dalam radius <strong>${this.selectedRadius}</strong>`}</span>
+          <span>Ditemukan <strong>${this.places.length}</strong> cafe & coffee shop ${this.searchKeyword ? `untuk kata kunci "<strong>${this.searchKeyword}</strong>"` : `dalam radius <strong>${this.selectedRadius}</strong>`}</span>
           <span class="badge-source-google">🌐 100% Google Maps API Live</span>
         </div>
 
@@ -986,23 +957,20 @@ window.NearbyController = {
       html += `
         <div class="nearby-loading-box">
           <div class="nearby-spinner"></div>
-          <h4>Mencari tempat makan terdekat...</h4>
-          <p>Menghitung jarak radius koordinat via Google Places API & Supabase</p>
+          <h4>Mencari cafe terdekat...</h4>
+          <p>Menghitung jarak radius koordinat via Google Places API</p>
         </div>
       `;
     } else if (this.places.length === 0) {
       // EMPTY STATE
       html += `
         <div class="nearby-empty-state">
-          <div class="empty-icon">📍</div>
-          <h3>Tidak Ada Tempat di Radius ${this.selectedRadius}</h3>
-          <p>Coba pilih radius pencarian yang lebih luas (misal: <strong>3–5 km</strong> atau <strong>5–10 km</strong>) atau ubah kategori tempat.</p>
+          <div class="empty-icon">☕</div>
+          <h3>Tidak Ada Cafe di Radius ${this.selectedRadius}</h3>
+          <p>Coba pilih radius pencarian yang lebih luas (misal: <strong>3–5 km</strong> atau <strong>5–10 km</strong>).</p>
           <div style="display: flex; gap: 10px; justify-content: center; margin-top: 14px;">
             <button class="btn-primary" onclick="window.NearbyController.onRadiusChange('5–10 km')">
               Perluas ke Radius 5–10 km
-            </button>
-            <button class="btn-secondary" onclick="window.NearbyController.onCategoryChange('Semua')">
-              Lihat Semua Kategori
             </button>
           </div>
         </div>
@@ -1089,9 +1057,11 @@ window.NearbyController = {
   },
 
   focusPlace(placeId, lat, lng) {
-    if (MapController) {
+    if (MapController && MapController.map) {
       MapController.highlightMarker(placeId);
       MapController.panTo(lat, lng, 16);
+    } else if (window.App && typeof window.App.openPlaceDetail === 'function') {
+      window.App.openPlaceDetail(placeId);
     }
   }
 };

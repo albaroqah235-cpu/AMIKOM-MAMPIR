@@ -1,16 +1,20 @@
+import 'dart:async';
 import 'dart:convert';
+// ignore: avoid_web_libraries_in_flutter, deprecated_member_use
+import 'dart:html' as html;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 const supabaseUrl = String.fromEnvironment(
   'SUPABASE_URL',
-  defaultValue: 'https://vdqdithxujxvzyybjtpn.supabase.co',
+  defaultValue: 'https://oztqhofaadjldjrowrgy.supabase.co',
 );
 const supabaseAnonKey = String.fromEnvironment(
   'SUPABASE_ANON_KEY',
   defaultValue:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWRpdGh4dWp4dnp5eWJqdHBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMzA2NTIsImV4cCI6MjEwODgwNjY1Mn0.7zE0gLxh0a2DNzdVcRfTj3EZDaqXWZ09kL5gcXTETXY',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96dHFob2ZhYWRqbGRqcm93cmd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NzM4MzEsImV4cCI6MjExMDU0OTgzMX0.Do3ET862Lik6anMGmazYswh_8hBCX6Iz_80jqWuI4-U',
 );
 
 void main() => runApp(const AdminApp());
@@ -279,6 +283,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'description': place['description'],
       'image_url': place['image_url'],
       'open_hours': place['open_hours'],
+      'owner_phone': place['owner_phone'],
       'min_price': place['min_price'],
       'max_price': place['max_price'],
       'avg_price': place['avg_price'],
@@ -286,6 +291,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       'facilities': place['facilities'],
       'latitude': place['latitude'],
       'longitude': place['longitude'],
+      'menu_highlights': place['menu_highlights'],
     };
     final response = await http.patch(
       Uri.parse('$supabaseUrl/rest/v1/places?id=eq.${place['id']}'),
@@ -684,6 +690,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       onPressed: () async {
                         final newPlace = await showAddPlaceDialog(
                           context,
+                          token: widget.token,
                           categories: categories,
                           preferences: preferences,
                         );
@@ -811,11 +818,53 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    OutlinedButton.icon(
+                                      onPressed: () async {
+                                        final updatedMenu =
+                                            await showMenuEditor(
+                                              context,
+                                              place,
+                                            );
+                                        if (updatedMenu == null) return;
+                                        try {
+                                          await savePlace({
+                                            ...place,
+                                            'menu_highlights': updatedMenu,
+                                          });
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Menu berhasil diperbarui & disinkronkan!',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(content: Text('$e')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                      icon: const Icon(
+                                        Icons.restaurant_menu_rounded,
+                                        size: 16,
+                                      ),
+                                      label: const Text('Menu'),
+                                    ),
+                                    const SizedBox(width: 8),
                                     FilledButton.tonal(
                                       onPressed: () async {
                                         final edited = await showPlaceEditor(
                                           context,
                                           place,
+                                          token: widget.token,
                                           categories: categories,
                                           preferences: preferences,
                                         );
@@ -851,9 +900,296 @@ class _AdminDashboardState extends State<AdminDashboard> {
   );
 }
 
+Future<String?> pickAndUploadPlaceImage(String token) async {
+  final input = html.FileUploadInputElement()..accept = 'image/*';
+  input.click();
+
+  await input.onChange.first;
+  if (input.files == null || input.files!.isEmpty) return null;
+
+  final file = input.files!.first;
+  final reader = html.FileReader();
+  final completer = Completer<Uint8List?>();
+  reader.onLoadEnd.listen((_) {
+    if (reader.result is ByteBuffer) {
+      completer.complete((reader.result as ByteBuffer).asUint8List());
+    } else if (reader.result is Uint8List) {
+      completer.complete(reader.result as Uint8List);
+    } else {
+      completer.complete(null);
+    }
+  });
+  reader.onError.listen((_) => completer.complete(null));
+  reader.readAsArrayBuffer(file);
+
+  final bytes = await completer.future;
+  if (bytes == null) throw Exception('Gagal membaca file gambar.');
+
+  final ext = file.name.contains('.')
+      ? file.name.split('.').last.toLowerCase()
+      : 'jpg';
+  final fileName = 'cafe_${DateTime.now().millisecondsSinceEpoch}.$ext';
+  final contentType = file.type.isNotEmpty ? file.type : 'image/jpeg';
+
+  final uploadUrl = Uri.parse(
+    '$supabaseUrl/storage/v1/object/place-images/$fileName',
+  );
+  final response = await http.post(
+    uploadUrl,
+    headers: {
+      'apikey': supabaseAnonKey,
+      'Authorization': 'Bearer $token',
+      'Content-Type': contentType,
+      'x-upsert': 'true',
+    },
+    body: bytes,
+  );
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception('Upload gagal (${response.statusCode}): ${response.body}');
+  }
+
+  return '$supabaseUrl/storage/v1/object/public/place-images/$fileName';
+}
+
+Widget buildPhotoUploadField({
+  required BuildContext context,
+  required TextEditingController imageController,
+  required String token,
+}) {
+  bool uploading = false;
+  return StatefulBuilder(
+    builder: (ctx, setPhotoState) {
+      final url = imageController.text.trim();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: url.isNotEmpty
+                    ? Image.network(
+                        url,
+                        width: 72,
+                        height: 54,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Container(
+                          width: 72,
+                          height: 54,
+                          color: Colors.black26,
+                          child: const Icon(Icons.broken_image_outlined),
+                        ),
+                      )
+                    : Container(
+                        width: 72,
+                        height: 54,
+                        color: Colors.black26,
+                        child: const Icon(Icons.image_outlined),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FilledButton.tonalIcon(
+                      onPressed: uploading
+                          ? null
+                          : () async {
+                              setPhotoState(() => uploading = true);
+                              try {
+                                final uploadedUrl =
+                                    await pickAndUploadPlaceImage(token);
+                                if (uploadedUrl != null) {
+                                  setPhotoState(() {
+                                    imageController.text = uploadedUrl;
+                                  });
+                                }
+                              } catch (e) {
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    SnackBar(
+                                      content: Text('$e'),
+                                      backgroundColor: Colors.redAccent,
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (ctx.mounted) {
+                                  setPhotoState(() => uploading = false);
+                                }
+                              }
+                            },
+                      icon: uploading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.upload_file_rounded),
+                      label: Text(
+                        uploading ? 'Mengupload...' : 'Upload Foto dari PC',
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      url.isNotEmpty ? 'Foto terpasang' : 'Belum ada foto',
+                      style: Theme.of(ctx).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          TextField(
+            controller: imageController,
+            decoration: const InputDecoration(
+              labelText: 'URL Foto (otomatis terisi saat upload)',
+            ),
+            onChanged: (_) => setPhotoState(() {}),
+          ),
+          const SizedBox(height: 6),
+        ],
+      );
+    },
+  );
+}
+
+Future<List<Map<String, dynamic>>?> showMenuEditor(
+  BuildContext context,
+  Map<String, dynamic> place,
+) {
+  final rawList = (place['menu_highlights'] as List<dynamic>?) ?? const [];
+  final items = rawList.map((e) {
+    final m = e is Map<String, dynamic>
+        ? e
+        : <String, dynamic>{'name': '$e', 'price': 0};
+    return {
+      'name': TextEditingController(text: '${m['name'] ?? ''}'),
+      'price': TextEditingController(text: '${m['price'] ?? 0}'),
+    };
+  }).toList();
+
+  return showDialog<List<Map<String, dynamic>>>(
+    context: context,
+    builder: (dialogCtx) => StatefulBuilder(
+      builder: (ctx, setModalState) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.restaurant_menu_rounded, color: Color(0xffd99b25)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Edit Menu — ${place['name'] ?? ''}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 560,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (items.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'Belum ada menu andalan. Klik "+ Tambah Menu" di bawah.',
+                    ),
+                  ),
+                ...List.generate(items.length, (i) {
+                  final row = items[i];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: row['name'],
+                            decoration: InputDecoration(
+                              labelText: 'Nama Menu ${i + 1}',
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: row['price'],
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Harga (Rp)',
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                          ),
+                          tooltip: 'Hapus Menu',
+                          onPressed: () =>
+                              setModalState(() => items.removeAt(i)),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setModalState(() {
+                      items.add({
+                        'name': TextEditingController(),
+                        'price': TextEditingController(text: '20000'),
+                      });
+                    });
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Tambah Menu'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final result = items
+                  .map(
+                    (row) => <String, dynamic>{
+                      'name': row['name']!.text.trim(),
+                      'price': int.tryParse(row['price']!.text.trim()) ?? 0,
+                    },
+                  )
+                  .where((m) => (m['name'] as String).isNotEmpty)
+                  .toList();
+              Navigator.pop(dialogCtx, result);
+            },
+            child: const Text('Simpan Menu'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 Future<Map<String, dynamic>?> showPlaceEditor(
   BuildContext context,
   Map<String, dynamic> source, {
+  required String token,
   required List<Map<String, dynamic>> categories,
   required List<Map<String, dynamic>> preferences,
 }) {
@@ -865,6 +1201,9 @@ Future<Map<String, dynamic>?> showPlaceEditor(
   final image = TextEditingController(text: '${source['image_url'] ?? ''}');
   final openHours = TextEditingController(
     text: '${source['open_hours'] ?? ''}',
+  );
+  final ownerPhone = TextEditingController(
+    text: '${source['owner_phone'] ?? ''}',
   );
   final minPrice = TextEditingController(text: '${source['min_price'] ?? 0}');
   final maxPrice = TextEditingController(text: '${source['max_price'] ?? 0}');
@@ -896,13 +1235,22 @@ Future<Map<String, dynamic>?> showPlaceEditor(
                 controller: description,
                 decoration: const InputDecoration(labelText: 'Deskripsi'),
               ),
-              TextField(
-                controller: image,
-                decoration: const InputDecoration(labelText: 'URL gambar'),
+              buildPhotoUploadField(
+                context: context,
+                imageController: image,
+                token: token,
               ),
               TextField(
                 controller: openHours,
                 decoration: const InputDecoration(labelText: 'Jam buka'),
+              ),
+              TextField(
+                controller: ownerPhone,
+                decoration: const InputDecoration(
+                  labelText: 'No. WhatsApp Pemilik',
+                  hintText: 'Contoh: 081234567890',
+                ),
+                keyboardType: TextInputType.phone,
               ),
               DropdownButtonFormField<String>(
                 initialValue:
@@ -983,6 +1331,7 @@ Future<Map<String, dynamic>?> showPlaceEditor(
             'description': description.text.trim(),
             'image_url': image.text.trim(),
             'open_hours': openHours.text.trim(),
+            'owner_phone': ownerPhone.text.trim(),
             'category': selectedCategory,
             'facilities': facilities.text
                 .split(',')
@@ -1005,6 +1354,7 @@ Future<Map<String, dynamic>?> showPlaceEditor(
 
 Future<Map<String, dynamic>?> showAddPlaceDialog(
   BuildContext context, {
+  required String token,
   required List<Map<String, dynamic>> categories,
   required List<Map<String, dynamic>> preferences,
 }) {
@@ -1013,6 +1363,7 @@ Future<Map<String, dynamic>?> showAddPlaceDialog(
   final description = TextEditingController();
   final image = TextEditingController(text: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80');
   final openHours = TextEditingController(text: '09.00 - 22.00 WIB');
+  final ownerPhone = TextEditingController();
   final minPrice = TextEditingController(text: '15000');
   final maxPrice = TextEditingController(text: '40000');
   final latitude = TextEditingController(text: '-7.4244');
@@ -1143,8 +1494,18 @@ Future<Map<String, dynamic>?> showAddPlaceDialog(
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: image,
-                  decoration: const InputDecoration(labelText: 'URL Gambar'),
+                  controller: ownerPhone,
+                  decoration: const InputDecoration(
+                    labelText: 'No. WhatsApp Pemilik',
+                    hintText: 'Contoh: 081234567890',
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 12),
+                buildPhotoUploadField(
+                  context: ctx,
+                  imageController: image,
+                  token: token,
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -1224,6 +1585,7 @@ Future<Map<String, dynamic>?> showAddPlaceDialog(
                 'address': addr,
                 'description': description.text.trim(),
                 'open_hours': openHours.text.trim(),
+            'owner_phone': ownerPhone.text.trim(),
                 'image_url': image.text.trim(),
                 'latitude': lat,
                 'longitude': lng,

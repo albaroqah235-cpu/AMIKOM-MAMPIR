@@ -291,6 +291,209 @@ const MapController = {
     if (this.map) {
       setTimeout(() => this.map.invalidateSize(), 200);
     }
+    if (this.detailMap) {
+      setTimeout(() => this.detailMap.invalidateSize(), 200);
+    }
+  },
+
+  detailMap: null,
+  detailMarker: null,
+  detailUserMarker: null,
+  detailRoutePolyline: null,
+  detailRouteGlow: null,
+  detailUserCoords: null,
+  detailPlaceCoords: null,
+  detailRouteBounds: null,
+
+  async renderPlaceDetailMap(containerId, place, userCoords = null) {
+    const el = document.getElementById(containerId);
+    if (!el || !place) return;
+
+    const lat = parseFloat(place.latitude);
+    const lng = parseFloat(place.longitude);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    this.detailPlaceCoords = { lat, lng, name: place.name };
+
+    if (this.detailMap) {
+      this.detailMap.remove();
+      this.detailMap = null;
+      this.detailMarker = null;
+      this.detailUserMarker = null;
+      this.detailRoutePolyline = null;
+      this.detailRouteGlow = null;
+    }
+
+    this.detailMap = L.map(containerId, {
+      center: [lat, lng],
+      zoom: 16,
+      zoomControl: true,
+      scrollWheelZoom: false
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors • MAMPIR',
+      maxZoom: 19
+    }).addTo(this.detailMap);
+
+    const restoIcon = this.createCustomMarkerIcon({ isActive: true });
+    this.detailMarker = L.marker([lat, lng], { icon: restoIcon }).addTo(this.detailMap);
+
+    const catLabel = typeof I18nService !== 'undefined'
+      ? I18nService.translateCategory(place.category || 'Cafe')
+      : (place.category || 'Cafe');
+
+    this.detailMarker.bindPopup(`
+      <div style="font-family: var(--font-family); padding: 4px; font-size: 13px; line-height: 1.4;">
+        <span style="font-size: 10px; font-weight: 700; color: var(--accent-orange); text-transform: uppercase;">${catLabel}</span>
+        <h4 style="margin: 2px 0 4px; font-size: 14px; font-weight: 800; color: var(--text-primary);">${place.name}</h4>
+        <p style="margin: 0; font-size: 11px; color: var(--text-secondary);">📍 ${place.address || place.city}</p>
+      </div>
+    `).openPopup();
+
+    // Pastikan koordinat user tersedia (live GPS atau default acuan)
+    const u = userCoords || window.NearbyController?.userCoords || { latitude: -7.4243, longitude: 109.2303, label: 'Alun-Alun Purwokerto' };
+    const uLat = parseFloat(u.latitude);
+    const uLng = parseFloat(u.longitude);
+
+    if (!isNaN(uLat) && !isNaN(uLng)) {
+      this.detailUserCoords = { lat: uLat, lng: uLng, label: u.label || 'Posisi Anda' };
+
+      const userIcon = L.divIcon({
+        className: 'mampir-user-gps-pin',
+        html: `
+          <div class="user-gps-pulse-ring"></div>
+          <div class="user-gps-core-dot"><span>📍</span></div>
+        `,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      this.detailUserMarker = L.marker([uLat, uLng], { icon: userIcon })
+        .addTo(this.detailMap)
+        .bindTooltip(u.label || 'Posisi Anda', { permanent: true, direction: 'top', offset: [0, -10] });
+
+      // Ambil Rute Jalan Raya In-App (OSRM / Google Routes)
+      const navInfoEl = document.getElementById('detail-nav-info-text');
+      if (navInfoEl) {
+        navInfoEl.innerHTML = '⏳ Menghitung rute navigasi jalan raya in-app...';
+      }
+
+      try {
+        let routeData = null;
+        if (window.NearbyController && typeof window.NearbyController.fetchRoadRoute === 'function') {
+          routeData = await window.NearbyController.fetchRoadRoute(uLat, uLng, lat, lng);
+        } else {
+          routeData = {
+            points: [[uLat, uLng], [lat, lng]],
+            distanceMeters: Math.round(Math.hypot((lat - uLat) * 111000, (lng - uLng) * 111000)),
+            durationSeconds: 300,
+            source: 'direct'
+          };
+        }
+
+        if (this.detailMap && routeData && routeData.points && routeData.points.length > 0) {
+          // Glow outline
+          this.detailRouteGlow = L.polyline(routeData.points, {
+            color: '#FFFFFF',
+            weight: 9,
+            opacity: 0.7,
+            lineJoin: 'round',
+            lineCap: 'round'
+          }).addTo(this.detailMap);
+
+          // Vivid orange navigation polyline
+          this.detailRoutePolyline = L.polyline(routeData.points, {
+            color: '#FF7A00',
+            weight: 5,
+            opacity: 0.95,
+            lineJoin: 'round',
+            lineCap: 'round'
+          }).addTo(this.detailMap);
+
+          this.detailRouteBounds = this.detailRoutePolyline.getBounds();
+          this.detailMap.fitBounds(this.detailRouteBounds, { padding: [40, 40], maxZoom: 16 });
+
+          const distM = routeData.distanceMeters || Math.round(Math.hypot((lat - uLat) * 111000, (lng - uLng) * 111000));
+          const distText = distM < 1000 ? `${distM} meter` : `${(distM / 1000).toFixed(1)} km`;
+          const durationSec = routeData.durationSeconds || Math.round((distM / 1000) * 180);
+          const motorMin = Math.max(1, Math.round(durationSec / 60));
+          const walkMin = Math.max(1, Math.round((distM / 1000) * 12));
+
+          if (navInfoEl) {
+            navInfoEl.innerHTML = `
+              Jarak: <strong>${distText}</strong> • Estimasi: <strong>🛵 ${motorMin} mnt</strong> / <strong>🚶 ${walkMin} mnt</strong> 🛣️ <em>(Turn-by-Turn Rute In-App)</em>
+            `;
+          }
+        }
+      } catch (routeErr) {
+        console.warn('In-app route error, falling back:', routeErr);
+        if (this.detailMap) {
+          this.detailRoutePolyline = L.polyline([[uLat, uLng], [lat, lng]], {
+            color: '#F57C00',
+            weight: 4,
+            dashArray: '6, 8',
+            opacity: 0.85
+          }).addTo(this.detailMap);
+          this.detailMap.fitBounds(this.detailRoutePolyline.getBounds(), { padding: [40, 40] });
+        }
+      }
+    }
+
+    setTimeout(() => {
+      if (this.detailMap) {
+        this.detailMap.invalidateSize();
+      }
+    }, 250);
+  },
+
+  recenterDetailMap(lat, lng) {
+    if (this.detailMap && lat && lng) {
+      this.detailMap.flyTo([lat, lng], 17, { duration: 0.8 });
+      if (this.detailMarker) {
+        this.detailMarker.openPopup();
+      }
+    }
+  },
+
+  recenterDetailUser() {
+    if (this.detailMap && this.detailUserCoords) {
+      this.detailMap.flyTo([this.detailUserCoords.lat, this.detailUserCoords.lng], 17, { duration: 0.8 });
+      if (this.detailUserMarker) {
+        this.detailUserMarker.openTooltip();
+      }
+    }
+  },
+
+  toggleDetailRouteBounds() {
+    if (this.detailMap && this.detailRouteBounds) {
+      this.detailMap.fitBounds(this.detailRouteBounds, { padding: [40, 40], maxZoom: 16 });
+    }
+  },
+
+  startInAppNavigation(placeName = 'tujuan') {
+    if (this.detailMap && this.detailUserCoords) {
+      this.detailMap.flyTo([this.detailUserCoords.lat, this.detailUserCoords.lng], 17, { duration: 0.9 });
+      if (window.App && typeof window.App.showToast === 'function') {
+        window.App.showToast(`🧭 Navigasi In-App aktif! Ikuti rute oranye menuju ${placeName}.`);
+      }
+    }
+  },
+
+  destroyDetailMap() {
+    if (this.detailMap) {
+      this.detailMap.remove();
+      this.detailMap = null;
+      this.detailMarker = null;
+      this.detailUserMarker = null;
+      this.detailRoutePolyline = null;
+      this.detailRouteGlow = null;
+      this.detailUserCoords = null;
+      this.detailPlaceCoords = null;
+      this.detailRouteBounds = null;
+    }
   }
 };
+
+window.MapController = MapController;
 

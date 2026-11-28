@@ -23,7 +23,7 @@ class BudgetFilterData {
 /// 1. Input Ketik Manual (TextFormField) format Rupiah
 /// 2. Interactive Slider Rp 10.000 - Rp 150.000+
 /// 3. Quick Chips: 10K, 15K, 25K, 50K, 75K, 100K, Bebas
-/// 4. Jenis Tempat: Restoran, Warung Makan, Cafe, Coffee Shop, Warkop, Fast Food, Bakery, Bar (Kategori Google Maps)
+/// 4. Khusus Cafe & Coffee Shop
 /// 5. Tombol "Terapkan Filter" & "Reset"
 /// ============================================================
 class BudgetFilterModal extends StatefulWidget {
@@ -84,18 +84,6 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
     {'label': '75K', 'value': 75000},
     {'label': '100K', 'value': 100000},
     {'label': 'Bebas', 'value': 150000},
-  ];
-
-  // Jenis tempat disesuaikan dengan kategori resmi Google Maps (Places API)
-  static const List<String> _allPlaceTypes = [
-    'Restoran',
-    'Warung Makan',
-    'Cafe',
-    'Coffee Shop',
-    'Warkop',
-    'Fast Food',
-    'Bakery',
-    'Bar',
   ];
 
   @override
@@ -204,7 +192,7 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Filter Pencarian',
+                        'Filter Anggaran Cafe',
                         style: TextStyle(
                           color: colors.textPrimary,
                           fontSize: 18,
@@ -327,67 +315,6 @@ class _BudgetFilterModalState extends State<BudgetFilterModal> {
                               fontWeight: isSelected
                                   ? FontWeight.w800
                                   : FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 22),
-
-                  // Section 2: Jenis Tempat
-                  Text(
-                    'Jenis Tempat',
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _allPlaceTypes.map((type) {
-                      final isSelected = _selectedPlaceTypes.contains(type);
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedPlaceTypes.remove(type);
-                            } else {
-                              _selectedPlaceTypes.add(type);
-                            }
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: isSelected
-                                ? AppTheme.primaryGradient
-                                : null,
-                            color: isSelected ? null : colors.surfaceNavy,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isSelected
-                                  ? Colors.transparent
-                                  : colors.borderNavy,
-                            ),
-                          ),
-                          child: Text(
-                            type,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : colors.textSecondary,
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
                               fontSize: 13,
                             ),
                           ),

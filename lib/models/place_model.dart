@@ -47,6 +47,7 @@ class PlaceModel {
   final String address;
   final String description;
   final String openHours;
+  final String ownerPhone;
   final double latitude;
   final double longitude;
   final String imageUrl;
@@ -67,6 +68,7 @@ class PlaceModel {
     required this.address,
     required this.description,
     required this.openHours,
+    this.ownerPhone = '',
     required this.latitude,
     required this.longitude,
     required this.imageUrl,
@@ -157,6 +159,10 @@ class PlaceModel {
           json['open_hours'] as String? ??
           json['openHours'] as String? ??
           '09:00 - 22:00',
+      ownerPhone:
+          json['owner_phone'] as String? ??
+          json['ownerPhone'] as String? ??
+          '',
       latitude: (json['latitude'] as num?)?.toDouble() ?? -7.424,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 109.230,
       imageUrl:
@@ -185,6 +191,7 @@ class PlaceModel {
     'address': address,
     'description': description,
     'open_hours': openHours,
+    'owner_phone': ownerPhone,
     'latitude': latitude,
     'longitude': longitude,
     'image_url': imageUrl,

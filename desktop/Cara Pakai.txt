@@ -1,0 +1,19 @@
+====================================================
+MAMPIR ADMIN - APLIKASI DESKTOP PORTABLE (WINDOWS)
+====================================================
+
+Cara Menjalankan:
+1. Ekstrak file ZIP ini.
+2. Klik dua kali (double-click) file "MAMPIR Admin.exe".
+   (Tidak perlu instalasi tambahan apa pun).
+
+Akun Login Admin Default:
+- Email    : admin@mampir.id
+- Password : AdminMampir2026!
+
+Fitur Utama:
+- Kelola daftar Cafe & Coffee Shop (Tambah, Edit, Hapus).
+- Edit Menu Andalan & Harga (sinkron otomatis ke Web & Mobile).
+- Upload Foto Cafe langsung dari PC.
+- Tambah No. WhatsApp Pemilik (tombol Hubungi Pemilik di Web & Mobile).
+====================================================

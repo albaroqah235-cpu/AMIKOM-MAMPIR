@@ -31,7 +31,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _userEmail = 'user@mampir.id';
   String _userBadge = '🌟 Penjelajah Purwokerto';
   bool _isGuest = false;
-  bool _isNotificationEnabled = true;
   bool _isLocationEnabled = true;
   String _selectedTheme = 'Gelap';
 
@@ -65,7 +64,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       email = await _prefService.getUserEmail();
     }
 
-    final notif = await _prefService.isNotificationEnabled();
     final loc = await _prefService.isLocationEnabled();
     final theme = await _prefService.getThemeMode();
 
@@ -75,7 +73,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _userName = name;
         _userEmail = email;
         _userBadge = badge;
-        _isNotificationEnabled = notif;
         _isLocationEnabled = loc;
         _selectedTheme = theme;
       });
@@ -298,7 +295,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       _buildDivider(),
 
-                      // 2. Tentang MAMPIR
+                      // 2. Izin Lokasi GPS
+                      _buildSettingItem(
+                        icon: Icons.location_on_outlined,
+                        title: 'Akses Lokasi GPS',
+                        subtitle: _isLocationEnabled ? 'Diizinkan' : 'Dinonaktifkan',
+                        trailingText: _isLocationEnabled ? 'Aktif' : 'Mati',
+                        onTap: _showLocationSettingsModal,
+                      ),
+                      _buildDivider(),
+
+                      // 3. Tentang MAMPIR
                       _buildSettingItem(
                         icon: Icons.info_outline_rounded,
                         title: 'Tentang MAMPIR',
@@ -856,50 +863,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
       onTap: onTap,
-    );
-  }
-
-  Widget _buildSwitchSettingItem({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    Color iconColor = AppTheme.orange,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    final colors = AppTheme.colors(context);
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: colors.surfaceNavy,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: colors.borderNavy),
-        ),
-        child: Icon(icon, color: iconColor, size: 22),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: colors.textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: TextStyle(color: colors.textSecondary, fontSize: 12),
-            )
-          : null,
-      trailing: Switch.adaptive(
-        value: value,
-        activeThumbColor: AppTheme.orange,
-        activeTrackColor: AppTheme.orange.withAlpha(120),
-        onChanged: onChanged,
-      ),
     );
   }
 

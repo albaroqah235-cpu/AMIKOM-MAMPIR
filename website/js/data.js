@@ -1,6 +1,6 @@
 /**
- * MAMPIR Web - Master Data 25 Tempat Kuliner Purwokerto & Sekitarnya
- * Diambil langsung dari Supabase live dan berfungsi sebagai fallback offline
+ * MAMPIR Web - Master Data 25 Cafe & Coffee Shop Purwokerto & Sekitarnya
+ * Khusus untuk Cafe & Coffee Shop (Updated)
  */
 const FALLBACK_PLACES = [
   {
@@ -49,39 +49,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "brt-2",
-    "name": "Restoran Pringsewu Purwokerto",
-    "city": "Purwokerto Selatan",
-    "category": "Restoran",
-    "min_price": 25000,
-    "max_price": 85000,
-    "avg_price": 45000,
-    "rating": 4.7,
-    "review_count": 2450,
+    "name": "Praketa Kopi Purwokerto",
+    "city": "Purwokerto Barat",
+    "category": "Cafe",
+    "min_price": 18000,
+    "max_price": 45000,
+    "avg_price": 28000,
+    "rating": 4.8,
+    "review_count": 1420,
     "facilities": [
-      "Parkir",
+      "WiFi",
+      "Colokan",
       "AC",
-      "Mushola",
-      "Outdoor",
       "Indoor",
-      "Lesehan"
+      "Outdoor"
     ],
-    "address": "Jl. Gerilya Barat No. 8, Tanjung, Purwokerto Selatan",
-    "description": "Restoran keluarga dengan taman asri, kolam ikan, dan saung lesehan. Spesialis gurame terbang bumbu cobek, ayam bakar taliwang, dan aneka tumisan lezat.",
-    "open_hours": "08.00 - 22.00 WIB",
-    "latitude": -7.4385,
-    "longitude": 109.227,
-    "image_url": "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. H.R. Boenyamin No. 129, Purwokerto Barat",
+    "description": "Kedai kopi legendaris favorit mahasiswa dan penikmat kopi di Purwokerto, menyajikan aneka specialty coffee Nusantara dan tempat yang cozy.",
+    "open_hours": "08.00 - 23.30 WIB",
+    "latitude": -7.412,
+    "longitude": 109.231,
+    "image_url": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Gurame Terbang Sambal Cobek",
-        "price": 68000
+        "name": "Praketa Cold Brew Signature",
+        "price": 24000
       },
       {
-        "name": "Ayam Bakar Bumbu Rujak",
-        "price": 32000
+        "name": "V60 Gayo Winey",
+        "price": 26000
       },
       {
-        "name": "Es Teler Pringsewu",
+        "name": "Croissant Cokelat",
         "price": 18000
       }
     ],
@@ -183,37 +182,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "btr-3",
-    "name": "Warung Pengkolan Sate Kelinci",
+    "name": "Waroeng Kopi Baturaden",
     "city": "Baturraden",
-    "category": "Warkop",
-    "min_price": 15000,
-    "max_price": 40000,
-    "avg_price": 26000,
-    "rating": 4.7,
-    "review_count": 1100,
+    "category": "Cafe",
+    "min_price": 12000,
+    "max_price": 35000,
+    "avg_price": 20000,
+    "rating": 4.6,
+    "review_count": 890,
     "facilities": [
       "Outdoor",
-      "Parkir",
-      "Lesehan"
+      "Pemandangan Alam",
+      "Mushola",
+      "Parkir"
     ],
-    "address": "Kawasan Wana Wisata Baturraden, Karangmangu",
-    "description": "Kuliner ikonik pegunungan Baturraden dengan sajian sate kelinci empuk berbumbu kacang manis pedas, mendoan hangat ukuran jumbo, dan wedang ronde.",
-    "open_hours": "08.30 - 21.00 WIB",
+    "address": "Jl. Raya Baturraden No. 18, Baturraden",
+    "description": "Cafe nuansa alam pegunungan sejuk di lereng Gunung Slamet Baturraden dengan view pemandangan kota Purwokerto.",
+    "open_hours": "09.00 - 22.00 WIB",
     "latitude": -7.315,
-    "longitude": 109.224,
-    "image_url": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+    "longitude": 109.225,
+    "image_url": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Sate Kelinci 10 Tusuk + Lontong",
-        "price": 28000
+        "name": "Kopi Tubruk Robusta Slamet",
+        "price": 14000
       },
       {
-        "name": "Tempe Mendoan Jumbo",
+        "name": "Mendoan Hangat Krispi",
         "price": 12000
       },
       {
-        "name": "Wedang Jahe Susu Ronde",
-        "price": 10000
+        "name": "Wedang Uwuh Rempah",
+        "price": 15000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -225,39 +225,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "btr-4",
-    "name": "Limpakuwus Resto & Coffee Baturraden",
+    "name": "Limpakuwus Pine Coffee Baturraden",
     "city": "Baturraden",
-    "category": "Restoran",
+    "category": "Cafe",
     "min_price": 20000,
-    "max_price": 65000,
-    "avg_price": 38000,
+    "max_price": 55000,
+    "avg_price": 32000,
     "rating": 4.7,
-    "review_count": 950,
+    "review_count": 1100,
     "facilities": [
-      "Outdoor",
-      "Parkir",
-      "Mushola",
-      "Romantis",
-      "WiFi"
+      "Outdoor Hutan Pinus",
+      "Spot Foto",
+      "WiFi",
+      "Mushola"
     ],
-    "address": "Kawasan Wisata Hutan Pinus Limpakuwus, Sumbang - Baturraden",
-    "description": "Sensasi bersantap di bawah rimbun pohon pinus raksasa dengan udara sejuk pegunungan, menu masakan hangat khas dataran tinggi, dan racikan kopi arabika.",
+    "address": "Hutan Pinus Limpakuwus, Baturraden, Banyumas",
+    "description": "Ngopi syahdu di tengah teduhnya hutan pinus Limpakuwus Baturraden dengan udara sejuk berkabut dan kopi susu pinus khas.",
     "open_hours": "08.00 - 18.00 WIB",
-    "latitude": -7.319,
-    "longitude": 109.252,
-    "image_url": "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80",
+    "latitude": -7.309,
+    "longitude": 109.236,
+    "image_url": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Sup Buntut Rempah Hangat",
-        "price": 48000
+        "name": "Pine Wood Latte",
+        "price": 26000
       },
       {
-        "name": "Kopi Pinus Arabika",
-        "price": 22000
+        "name": "Cinnamon Roll",
+        "price": 20000
       },
       {
-        "name": "Pisang Bakar Keju Aren",
-        "price": 18000
+        "name": "Choco Mountain",
+        "price": 24000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -313,39 +312,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "btr-6",
-    "name": "Agathis Resto Wana Wisata",
+    "name": "Kalibatur Coffee Baturraden",
     "city": "Baturraden",
-    "category": "Restoran",
-    "min_price": 22000,
-    "max_price": 70000,
-    "avg_price": 40000,
+    "category": "Cafe",
+    "min_price": 18000,
+    "max_price": 45000,
+    "avg_price": 26000,
     "rating": 4.6,
-    "review_count": 710,
+    "review_count": 670,
     "facilities": [
-      "Outdoor",
-      "Indoor",
-      "Parkir",
-      "Mushola",
-      "Lesehan"
+      "Tepi Sungai",
+      "Outdoor Alam",
+      "Spot Santai",
+      "Parkir"
     ],
-    "address": "Kawasan Hutan Agathis Palawi, Baturraden",
-    "description": "Resto keluarga di tengah teduhnya kanopi pohon damar (Agathis) dengan hidangan khas sunda-jawa, gurame asam manis, dan aneka minuman jahe hangat.",
-    "open_hours": "09.00 - 20.00 WIB",
-    "latitude": -7.321,
+    "address": "Kawasan Wisata Baturraden, Banyumas",
+    "description": "Cafe hits tepi sungai bebatuan alami di Baturraden dengan gemericik air dan kopi signature yang segar menenangkan.",
+    "open_hours": "09.00 - 21.00 WIB",
+    "latitude": -7.311,
     "longitude": 109.229,
-    "image_url": "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+    "image_url": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Gurame Bakar Cobek Agathis",
-        "price": 58000
+        "name": "Kopi Kalibatur Aren",
+        "price": 22000
       },
       {
-        "name": "Ayam Kampung Goreng Kremes",
-        "price": 30000
+        "name": "Kentang Goreng Truffle",
+        "price": 18000
       },
       {
-        "name": "Kopi Jahe Susu Palawi",
-        "price": 14000
+        "name": "Matcha Latte Ice",
+        "price": 24000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -446,39 +444,39 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "pwt-3",
-    "name": "Roti Bakar 88 GOR Satria",
-    "city": "Purwokerto Kota",
-    "category": "Warkop",
-    "min_price": 15000,
-    "max_price": 40000,
-    "avg_price": 22000,
-    "rating": 4.5,
-    "review_count": 410,
+    "name": "Society Coffee House Purwokerto",
+    "city": "Purwokerto Timur",
+    "category": "Cafe",
+    "min_price": 22000,
+    "max_price": 65000,
+    "avg_price": 35000,
+    "rating": 4.8,
+    "review_count": 2150,
     "facilities": [
-      "WiFi",
-      "Outdoor",
+      "WiFi Kencang",
       "Colokan",
-      "Musik",
-      "Parkir"
+      "AC",
+      "Area WFC",
+      "Indoor/Outdoor"
     ],
-    "address": "Jl. Prof. Dr. Suharso (Kompleks GOR Satria), Purwokerto",
-    "description": "Spot nongkrong malam favorit pemuda Purwokerto di kawasan GOR Satria dengan roti bakar tebal, pisang keju cokelat, dan aneka minuman segar.",
-    "open_hours": "16.00 - 01.00 WIB",
-    "latitude": -7.412,
-    "longitude": 109.251,
-    "image_url": "https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Prof. Dr. Suharso No. 9B, GOR Satria Purwokerto",
+    "description": "Salah satu coffee shop modern paling populer di Purwokerto, cocok untuk nongkrong dan work from cafe (WFC) dengan menu artisan coffee.",
+    "open_hours": "08.00 - 24.00 WIB",
+    "latitude": -7.416,
+    "longitude": 109.248,
+    "image_url": "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Roti Bakar Cokelat Keju",
-        "price": 18000
+        "name": "Society Aren Espresso",
+        "price": 26000
       },
       {
-        "name": "Indomie Kuah Kornet Telur",
-        "price": 16000
+        "name": "Manual Brew Geisha",
+        "price": 38000
       },
       {
-        "name": "Es Ovaltine Volcano",
-        "price": 14000
+        "name": "Beef & Cheese Panini",
+        "price": 32000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -490,37 +488,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "pwt-4",
-    "name": "Warmindo Sudirman Sentosa",
-    "city": "Purwokerto Kota",
-    "category": "Warkop",
-    "min_price": 6000,
-    "max_price": 18000,
-    "avg_price": 12000,
-    "rating": 4.6,
-    "review_count": 850,
+    "name": "Titik Temu Coffee Purwokerto",
+    "city": "Purwokerto Timur",
+    "category": "Cafe",
+    "min_price": 18000,
+    "max_price": 45000,
+    "avg_price": 27000,
+    "rating": 4.7,
+    "review_count": 820,
     "facilities": [
       "WiFi",
       "Colokan",
-      "Outdoor"
+      "AC",
+      "Estetik"
     ],
-    "address": "Jl. Jend. Sudirman No. 120, Purwokerto",
-    "description": "Warmindo andalan begadang anak muda dan mahasiswa di jantung kota. Buka 24 jam dengan racikan mie dok-dok kuah kental, magelangan gurih, dan es nutrisari dingin.",
-    "open_hours": "Buka 24 Jam",
-    "latitude": -7.423,
-    "longitude": 109.235,
-    "image_url": "https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Jend. Sudirman No. 412, Purwokerto Timur",
+    "description": "Coffee shop minimalis estetik di jantung kota Purwokerto dengan suasana tenang dan aneka pilihan cold brew.",
+    "open_hours": "09.00 - 23.00 WIB",
+    "latitude": -7.424,
+    "longitude": 109.239,
+    "image_url": "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Mie Dok-Dok Pedas Telur",
-        "price": 12000
+        "name": "Titik Temu Iced White",
+        "price": 24000
       },
       {
-        "name": "Nasi Magelangan",
-        "price": 14000
+        "name": "Caramel Macchiato",
+        "price": 26000
       },
       {
-        "name": "Es Kopi Goodday Dingin",
-        "price": 5000
+        "name": "Churros Saus Cokelat",
+        "price": 18000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -576,37 +575,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "pwt-6",
-    "name": "Bakso & Soto Sami Asih",
-    "city": "Purwokerto Kota",
-    "category": "Restoran",
-    "min_price": 15000,
-    "max_price": 35000,
-    "avg_price": 24000,
-    "rating": 4.8,
-    "review_count": 1950,
+    "name": "Loja De Cafe Purwokerto",
+    "city": "Purwokerto Selatan",
+    "category": "Cafe",
+    "min_price": 16000,
+    "max_price": 42000,
+    "avg_price": 25000,
+    "rating": 4.6,
+    "review_count": 940,
     "facilities": [
-      "Parkir",
+      "Vintage Decor",
+      "WiFi",
       "Indoor",
-      "Mushola"
+      "Outdoor"
     ],
-    "address": "Jl. Pramuka No. 23, Purwokerto",
-    "description": "Kuliner bakso dan soto daging legendaris di jantung kota Purwokerto dengan kuah kaldu sapi bening pekat gurih, tetelan empuk, dan tetelan gajih melimpah.",
-    "open_hours": "09.00 - 21.00 WIB",
+    "address": "Jl. Kolonel Sugiono No. 88, Purwokerto Selatan",
+    "description": "Cafe vintage unik bergaya klasik di pusat Purwokerto dengan pilihan kopi Nusantara dan makanan ringan kekinian.",
+    "open_hours": "10.00 - 23.00 WIB",
     "latitude": -7.429,
-    "longitude": 109.241,
-    "image_url": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80",
+    "longitude": 109.238,
+    "image_url": "https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Bakso Urat Tetelan Spesial",
-        "price": 25000
+        "name": "Es Kopi Loja Klasik",
+        "price": 20000
       },
       {
-        "name": "Soto Daging Sapi Sami Asih",
-        "price": 26000
+        "name": "Banana Fritters Madu",
+        "price": 16000
       },
       {
-        "name": "Es Dawet Campur",
-        "price": 8000
+        "name": "Americano Ice",
+        "price": 18000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -618,37 +618,39 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "pwt-7",
-    "name": "Orak Arik Pedas Sukun",
-    "city": "Purwokerto Kota",
-    "category": "Warkop",
-    "min_price": 10000,
-    "max_price": 22000,
-    "avg_price": 14000,
+    "name": "Koffiesoft Cafe & Space",
+    "city": "Purwokerto Utara",
+    "category": "Cafe",
+    "min_price": 20000,
+    "max_price": 50000,
+    "avg_price": 30000,
     "rating": 4.7,
-    "review_count": 1150,
+    "review_count": 1250,
     "facilities": [
-      "Outdoor",
-      "Parkir",
-      "Rumahan"
+      "Rooftop",
+      "WiFi Super Cepat",
+      "Colokan Tiap Meja",
+      "AC",
+      "Area Coworking"
     ],
-    "address": "Jl. Gatot Subroto No. 64, Purwokerto",
-    "description": "Kuliner malam legendaris dengan orak-arik telur sayur pedas nampol khas Purwokerto, dimasak dadakan di wajan panas dengan aroma gurih memikat.",
-    "open_hours": "17.00 - 02.00 WIB",
-    "latitude": -7.4265,
-    "longitude": 109.238,
-    "image_url": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Dr. Angka No. 55, Purwokerto Utara",
+    "description": "Cafe modern bertingkat dengan area outdoor rooftop, WiFi kencang, dan tempat nongkrong asyik serta produktif hingga larut malam.",
+    "open_hours": "09.00 - 01.00 WIB",
+    "latitude": -7.414,
+    "longitude": 109.235,
+    "image_url": "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Nasi Orak-Arik Sukun Pedas",
-        "price": 14000
+        "name": "Koffiesoft Cold Brew",
+        "price": 25000
       },
       {
-        "name": "Tambahan Ayam Suwir",
-        "price": 6000
+        "name": "Creamy Hazelnut Latte",
+        "price": 27000
       },
       {
-        "name": "Es Jeruk Manis",
-        "price": 4000
+        "name": "Spaghetti Aglio Olio",
+        "price": 32000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -660,37 +662,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "pwt-8",
-    "name": "Angkringan Pendopo Alun-Alun Purwokerto",
-    "city": "Purwokerto Kota",
-    "category": "Warkop",
-    "min_price": 5000,
-    "max_price": 20000,
-    "avg_price": 12000,
-    "rating": 4.6,
-    "review_count": 1300,
+    "name": "Point Coffee Sudirman Alun-Alun",
+    "city": "Purwokerto Barat",
+    "category": "Coffee Shop",
+    "min_price": 15000,
+    "max_price": 35000,
+    "avg_price": 22000,
+    "rating": 4.8,
+    "review_count": 1800,
     "facilities": [
-      "Outdoor",
-      "Lesehan",
-      "Musik"
+      "Takeaway",
+      "AC",
+      "Drive-thru Ramah",
+      "Area Duduk Cepat"
     ],
-    "address": "Sisi Timur Alun-Alun Purwokerto, Jl. Jend. Sudirman",
-    "description": "Pusat tongkrongan lesehan malam hari di Alun-Alun Purwokerto dengan view gemerlap lampu kota dan tugu air mancur, sate kulit, sate usus, dan wedang jahe rempah.",
-    "open_hours": "18.00 - 02.00 WIB",
-    "latitude": -7.4246,
-    "longitude": 109.2315,
-    "image_url": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Jend. Sudirman No. 102 (Samping Alun-Alun Purwokerto)",
+    "description": "Pilihan kopi cepat saji berkualitas tinggi dekat Alun-Alun Purwokerto dengan varian kopi frappe dan espresso yang nikmat terjangkau.",
+    "open_hours": "06.30 - 23.00 WIB",
+    "latitude": -7.4245,
+    "longitude": 109.231,
+    "image_url": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Nasi Kucing Sambal Bandeng",
-        "price": 4000
+        "name": "Cafe Dolce Frappe",
+        "price": 25000
       },
       {
-        "name": "Sate Kulit Puyuh Bakar",
-        "price": 3000
+        "name": "Kopi Saku Iced Aren",
+        "price": 18000
       },
       {
-        "name": "Wedang Ronde Jahe Geprek",
-        "price": 7000
+        "name": "Pandan Latte",
+        "price": 22000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -702,38 +705,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "skr-1",
-    "name": "Soto H. Loso Sokaraja",
+    "name": "Kopi Janji Jiwa Sokaraja",
     "city": "Sokaraja",
-    "category": "Restoran",
-    "min_price": 20000,
-    "max_price": 45000,
-    "avg_price": 30000,
-    "rating": 4.9,
-    "review_count": 2300,
+    "category": "Coffee Shop",
+    "min_price": 16000,
+    "max_price": 36000,
+    "avg_price": 22000,
+    "rating": 4.7,
+    "review_count": 730,
     "facilities": [
-      "Parkir",
-      "Mushola",
-      "Outdoor",
-      "Indoor"
+      "WiFi",
+      "AC",
+      "Area Duduk",
+      "Pesan Cepat"
     ],
-    "address": "Jl. Raya Bank Jateng No. 15, Sokaraja, Banyumas",
-    "description": "Soto khas Sokaraja paling legendaris dengan kuah kaldu sapi kental berpadu sambal kacang gurih serta ketupat dan kerupuk cantir merah khas.",
-    "open_hours": "08.00 - 20.30 WIB",
-    "latitude": -7.4612,
-    "longitude": 109.2789,
-    "image_url": "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Gatot Subroto No. 45, Sokaraja",
+    "description": "Kedai kopi kekinian dengan menu kopi susu gula aren favorit dan toast lezat di kawasan Sokaraja.",
+    "open_hours": "08.00 - 22.00 WIB",
+    "latitude": -7.461,
+    "longitude": 109.262,
+    "image_url": "https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Soto Daging Sapi Komplit",
+        "name": "Kopi Susu Senja",
+        "price": 18000
+      },
+      {
+        "name": "Jiwa Toast Ham & Cheese",
         "price": 28000
       },
       {
-        "name": "Soto Ayam Kampung",
-        "price": 23000
-      },
-      {
-        "name": "Tempe Mendoan Sokaraja",
-        "price": 10000
+        "name": "Soy Coffee Latte",
+        "price": 22000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -745,37 +748,37 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "skr-2",
-    "name": "Getuk Goreng Asli H. Tohirin",
+    "name": "Sokaraja Coffee Corner",
     "city": "Sokaraja",
-    "category": "Restoran",
+    "category": "Cafe",
     "min_price": 15000,
-    "max_price": 45000,
-    "avg_price": 25000,
-    "rating": 4.9,
-    "review_count": 3200,
+    "max_price": 38000,
+    "avg_price": 24000,
+    "rating": 4.6,
+    "review_count": 510,
     "facilities": [
-      "Parkir",
-      "AC",
-      "Indoor"
+      "WiFi",
+      "Outdoor",
+      "Parkir Luas"
     ],
-    "address": "Jl. Jend. Sudirman No. 151, Sokaraja Tengah",
-    "description": "Pusat oleh-oleh dan kuliner legendaris paling ternama di Banyumas sejak 1918. Getuk singkong manis legit dibalut gula kelapa murni yang renyah di luar dan lumer di dalam.",
-    "open_hours": "07.00 - 21.30 WIB",
+    "address": "Jl. Jenderal Soedirman No. 89, Sokaraja",
+    "description": "Cafe santai dengan paduan kopi tradisional dan camilan lokal khas Sokaraja yang renyah dan nikmat.",
+    "open_hours": "10.00 - 23.00 WIB",
     "latitude": -7.458,
-    "longitude": 109.274,
-    "image_url": "https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80",
+    "longitude": 109.26,
+    "image_url": "https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Getuk Goreng Original 1 Besek",
-        "price": 25000
-      },
-      {
-        "name": "Getuk Goreng Aneka Rasa",
-        "price": 28000
-      },
-      {
-        "name": "Nopia Khas Banyumas",
+        "name": "Kopi Tubruk Sokaraja",
         "price": 15000
+      },
+      {
+        "name": "Getuk Keju Bakar Latte",
+        "price": 20000
+      },
+      {
+        "name": "Ice Cappuccino",
+        "price": 22000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -787,38 +790,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "skr-3",
-    "name": "Soto Kecik Dua Rasa Sokaraja",
+    "name": "Kopi Kenangan Rest Area Sokaraja",
     "city": "Sokaraja",
-    "category": "Restoran",
+    "category": "Coffee Shop",
     "min_price": 18000,
     "max_price": 40000,
-    "avg_price": 27000,
-    "rating": 4.8,
-    "review_count": 1400,
+    "avg_price": 24000,
+    "rating": 4.7,
+    "review_count": 620,
     "facilities": [
+      "AC",
+      "Takeaway",
       "Parkir",
-      "Outdoor",
-      "Indoor",
-      "Mushola"
+      "Toilet Bersih"
     ],
-    "address": "Jl. Jend. Sudirman No. 42, Sokaraja Kidul",
-    "description": "Varian soto Sokaraja istimewa dengan bumbu kecik rahasia turun-temurun, pilihan daging sapi lembut atau babat iso, disiram sambal kacang kental beraroma rempah.",
-    "open_hours": "08.00 - 20.00 WIB",
-    "latitude": -7.4635,
-    "longitude": 109.2805,
-    "image_url": "https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Suparjo Rustam No. 15, Sokaraja",
+    "description": "Pemberhentian kopi favorit di jalur utama Sokaraja, tempat pas untuk rehat dan menikmati es kopi kenangan mantan.",
+    "open_hours": "07.00 - 22.00 WIB",
+    "latitude": -7.454,
+    "longitude": 109.255,
+    "image_url": "https://images.unsplash.com/photo-1497636577773-f1231844b336?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Soto Kecik Daging Sapi",
+        "name": "Kopi Kenangan Mantan",
+        "price": 20000
+      },
+      {
+        "name": "Roti Coklat Klasik",
+        "price": 12000
+      },
+      {
+        "name": "Avocado Coffee",
         "price": 26000
-      },
-      {
-        "name": "Soto Campur Babat Daging",
-        "price": 29000
-      },
-      {
-        "name": "Kerupuk Cantir Renyah",
-        "price": 5000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -830,39 +833,39 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "tim-1",
-    "name": "Warung Djoglo Arcawinangun",
+    "name": "Djoglo Coffee & Roastery",
     "city": "Purwokerto Timur",
-    "category": "Restoran",
+    "category": "Cafe",
     "min_price": 18000,
-    "max_price": 55000,
-    "avg_price": 32000,
-    "rating": 4.7,
-    "review_count": 890,
+    "max_price": 48000,
+    "avg_price": 28000,
+    "rating": 4.8,
+    "review_count": 870,
     "facilities": [
-      "Parkir",
-      "Outdoor",
-      "Indoor",
-      "Mushola",
-      "Romantis"
+      "Nuansa Joglo",
+      "Roastery Kopi",
+      "Taman Asri",
+      "WiFi",
+      "Mushola"
     ],
-    "address": "Jl. Sunan Bonang No. 8, Arcawinangun, Purwokerto Timur",
-    "description": "Resto berarsitektur rumah Joglo Jawa kuno dengan suasana teduh alami, menyajikan masakan tradisional jawa timuran & banyumasan serta aneka kopi tubruk.",
-    "open_hours": "09.30 - 21.30 WIB",
-    "latitude": -7.416,
-    "longitude": 109.262,
-    "image_url": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Sunan Bonang No. 7, Arcawinangun, Purwokerto Timur",
+    "description": "Kedai kopi berkonsep rumah joglo antik asri dengan roastery kopi sendiri dan taman hijau yang menyejukkan.",
+    "open_hours": "09.00 - 23.00 WIB",
+    "latitude": -7.426,
+    "longitude": 109.254,
+    "image_url": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Nasi Liwet Ayam Suwir Komplit",
-        "price": 28000
+        "name": "Single Origin Arcawinangun",
+        "price": 25000
       },
       {
-        "name": "Rawon Daging Djoeglo",
-        "price": 32000
+        "name": "Es Kopi Djoglo",
+        "price": 22000
       },
       {
-        "name": "Mendoan Krispi Cabai Rawit",
-        "price": 12000
+        "name": "Pisang Goreng Karamel",
+        "price": 16000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -876,7 +879,7 @@ const FALLBACK_PLACES = [
     "id": "tim-2",
     "name": "Kopi Sadarwana Kembaran",
     "city": "Purwokerto Timur",
-    "category": "Warkop",
+    "category": "Cafe",
     "min_price": 12000,
     "max_price": 35000,
     "avg_price": 20000,
@@ -917,38 +920,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "tim-3",
-    "name": "Lesehan Ikan Bakar Sekar Surya",
+    "name": "Bunto's Cafe & Resto Purwokerto",
     "city": "Purwokerto Timur",
-    "category": "Restoran",
+    "category": "Cafe",
     "min_price": 20000,
     "max_price": 60000,
-    "avg_price": 35000,
+    "avg_price": 32000,
     "rating": 4.7,
-    "review_count": 730,
+    "review_count": 1410,
     "facilities": [
-      "Parkir",
-      "Outdoor",
-      "Mushola",
-      "Lesehan"
+      "AC",
+      "WiFi",
+      "Indoor Nyaman",
+      "Area Keluarga"
     ],
-    "address": "Jl. Raya Sumbang No. 17, Sumbang, Banyumas",
-    "description": "Warung lesehan keluarga di kawasan Sumbang dengan kolam ikan asri, sajian gurame bakar kecap pedas, nila goreng renyah, dan lalapan segar daun kemangi.",
-    "open_hours": "10.00 - 21.00 WIB",
-    "latitude": -7.382,
-    "longitude": 109.268,
-    "image_url": "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Jend. Sudirman No. 581, Purwokerto Timur",
+    "description": "Cafe legendaris dan estetik di Purwokerto Timur yang ramah keluarga dengan kopi nikmat dan menu modern.",
+    "open_hours": "09.00 - 22.30 WIB",
+    "latitude": -7.428,
+    "longitude": 109.245,
+    "image_url": "https://images.unsplash.com/photo-1525610553991-2bede1a236e2?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Gurame Bakar Madu Pedas",
-        "price": 52000
+        "name": "Bunto Classic Latte",
+        "price": 24000
       },
       {
-        "name": "Nila Goreng Terbang",
+        "name": "Waffle Ice Cream",
+        "price": 26000
+      },
+      {
+        "name": "Vanilla Frappuccino",
         "price": 28000
-      },
-      {
-        "name": "Cah Kangkung Terasi",
-        "price": 12000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -960,38 +963,38 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "uns-1",
-    "name": "Warung Makan Bu Sari",
+    "name": "Fore Coffee Unsoed",
     "city": "Purwokerto Utara",
-    "category": "Restoran",
-    "min_price": 10000,
-    "max_price": 25000,
-    "avg_price": 15000,
-    "rating": 4.7,
-    "review_count": 980,
+    "category": "Coffee Shop",
+    "min_price": 20000,
+    "max_price": 45000,
+    "avg_price": 28000,
+    "rating": 4.8,
+    "review_count": 1650,
     "facilities": [
-      "Outdoor",
-      "Parkir",
-      "Mushola",
-      "Rumahan"
+      "AC",
+      "WiFi Super Cepat",
+      "App Ordering",
+      "Colokan"
     ],
-    "address": "Jl. HR Bunyamin No. 88 (Dekat Kampus Unsoed Grendeng), Purwokerto",
-    "description": "Warung makan prasmanan khas Banyumasan dengan aneka sayur lodeh, ayam goreng lengkuas, mendoan hangat, dan sambal terasi segar harga mahasiswa.",
-    "open_hours": "07.00 - 21.00 WIB",
-    "latitude": -7.4085,
-    "longitude": 109.245,
-    "image_url": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. H.R. Boenyamin No. 78 (Dekat Gerbang Unsoed)",
+    "description": "Coffee shop modern ramah lingkungan di dekat kampus Unsoed dengan pesanan praktis dan rasa kopi premium.",
+    "open_hours": "07.00 - 23.00 WIB",
+    "latitude": -7.408,
+    "longitude": 109.247,
+    "image_url": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Paket Nasi Sayur + Ayam",
-        "price": 18000
+        "name": "Aren Latte Signature",
+        "price": 26000
       },
       {
-        "name": "Mendoan Purwokerto (3 pcs)",
-        "price": 9000
+        "name": "Butterscotch Sea Salt Latte",
+        "price": 29000
       },
       {
-        "name": "Es Jeruk Peras Segar",
-        "price": 5000
+        "name": "Pandan Oatmilk Latte",
+        "price": 32000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -1003,40 +1006,39 @@ const FALLBACK_PLACES = [
   },
   {
     "id": "uns-2",
-    "name": "Table Nine Kitchen & Resto",
+    "name": "Table Nine Cafe & Patisserie",
     "city": "Purwokerto Utara",
-    "category": "Restoran",
-    "min_price": 30000,
-    "max_price": 120000,
-    "avg_price": 60000,
-    "rating": 4.8,
-    "review_count": 2100,
+    "category": "Cafe",
+    "min_price": 25000,
+    "max_price": 75000,
+    "avg_price": 40000,
+    "rating": 4.7,
+    "review_count": 2200,
     "facilities": [
-      "AC",
+      "Glasshouse",
+      "AC Dingin",
       "WiFi",
-      "Parkir",
-      "Indoor",
-      "Outdoor",
-      "Mushola"
+      "Pastry Bar",
+      "Indoor/Outdoor"
     ],
-    "address": "Jl. Prof. Dr. HR Bunyamin No. 9, Pabuaran, Purwokerto Utara",
-    "description": "Restoran keluarga & casual dining modern paling representatif di Purwokerto dengan aneka menu nusantara, chinese food, dan western dalam suasana elegan.",
-    "open_hours": "10.00 - 22.00 WIB",
-    "latitude": -7.404,
-    "longitude": 109.243,
-    "image_url": "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+    "address": "Jl. Prof. Dr. HR Boenyamin No. 109, Grendeng, Purwokerto Utara",
+    "description": "Cafe elegan dengan konsep glasshouse modern, cocok untuk kumpul santai, WFC, dan mencicipi pastry premium serta artisan coffee.",
+    "open_hours": "08.00 - 23.00 WIB",
+    "latitude": -7.405,
+    "longitude": 109.244,
+    "image_url": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
       {
-        "name": "Gurame Bakar Madu Pedas",
-        "price": 65000
+        "name": "Table Nine Caramel Macchiato",
+        "price": 30000
       },
       {
-        "name": "Nasi Goreng Table Nine",
-        "price": 38000
+        "name": "Almond Croissant",
+        "price": 25000
       },
       {
-        "name": "Rib Eye Steak Australian",
-        "price": 98000
+        "name": "Signature Cold Drip",
+        "price": 32000
       }
     ],
     "created_at": "2026-10-29T03:03:00.649935+00:00",
@@ -1050,7 +1052,7 @@ const FALLBACK_PLACES = [
     "id": "uns-3",
     "name": "Serabine.co Unsoed",
     "city": "Purwokerto Utara",
-    "category": "Warkop",
+    "category": "Cafe",
     "min_price": 8000,
     "max_price": 25000,
     "avg_price": 15000,
@@ -1092,23 +1094,37 @@ const FALLBACK_PLACES = [
   {
     "id": "skb-1",
     "name": "Warkost Bahagia Sukabumi",
-    "category": "Warkop",
+    "category": "Cafe",
     "min_price": 8000,
     "max_price": 25000,
     "avg_price": 14000,
     "rating": 4.7,
     "review_count": 420,
-    "facilities": ["WiFi", "Colokan", "Outdoor", "Area Parkir"],
+    "facilities": [
+      "WiFi",
+      "Colokan",
+      "Outdoor",
+      "Area Parkir"
+    ],
     "address": "Jl. Zaenal Zakse No. 25, Gunungparang, Kec. Cikole, Kota Sukabumi",
     "description": "Warkop dan tempat santai mahasiswa dan warga di kawasan Gunungparang dengan aneka mie instan racik, kopi tubruk, roti bakar, dan gorengan hangat.",
     "open_hours": "09.00 - 02.00 WIB",
     "latitude": -6.9213,
-    "longitude": 106.9310,
+    "longitude": 106.931,
     "image_url": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
-      { "name": "Mie Dok-Dok Spesial", "price": 14000 },
-      { "name": "Kopi Susu Panas", "price": 8000 },
-      { "name": "Roti Bakar Keju Cokelat", "price": 12000 }
+      {
+        "name": "Mie Dok-Dok Spesial",
+        "price": 14000
+      },
+      {
+        "name": "Kopi Susu Panas",
+        "price": 8000
+      },
+      {
+        "name": "Roti Bakar Keju Cokelat",
+        "price": 12000
+      }
     ],
     "created_at": "2026-11-24T00:00:00.000Z",
     "data_source": "database"
@@ -1116,13 +1132,17 @@ const FALLBACK_PLACES = [
   {
     "id": "skb-2",
     "name": "Warkop Sari Rasa M.Dahlan",
-    "category": "Warkop",
+    "category": "Cafe",
     "min_price": 7000,
     "max_price": 22000,
     "avg_price": 13000,
     "rating": 4.6,
     "review_count": 380,
-    "facilities": ["WiFi", "Outdoor", "Colokan"],
+    "facilities": [
+      "WiFi",
+      "Outdoor",
+      "Colokan"
+    ],
     "address": "Jalan Nyomplong, Kec. Warudoyong, Kota Sukabumi",
     "description": "Warkop legendaris Nyomplong dengan seduhan kopi mantap, aneka mie rebus hangat, dan tempat ngobrol santai 24 jam.",
     "open_hours": "24 Jam",
@@ -1130,9 +1150,18 @@ const FALLBACK_PLACES = [
     "longitude": 106.9216,
     "image_url": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
-      { "name": "Mie Nyemek Nyomplong", "price": 13000 },
-      { "name": "Kopi Hitam Gula Aren", "price": 7000 },
-      { "name": "Pisang Bakar Keju", "price": 10000 }
+      {
+        "name": "Mie Nyemek Nyomplong",
+        "price": 13000
+      },
+      {
+        "name": "Kopi Hitam Gula Aren",
+        "price": 7000
+      },
+      {
+        "name": "Pisang Bakar Keju",
+        "price": 10000
+      }
     ],
     "created_at": "2026-11-24T00:00:00.000Z",
     "data_source": "database"
@@ -1146,7 +1175,13 @@ const FALLBACK_PLACES = [
     "avg_price": 22000,
     "rating": 4.8,
     "review_count": 890,
-    "facilities": ["WiFi Cepat", "AC", "Colokan", "Mushola", "Outdoor"],
+    "facilities": [
+      "WiFi Cepat",
+      "AC",
+      "Colokan",
+      "Mushola",
+      "Outdoor"
+    ],
     "address": "Jl. A. Yani No. 39, Gunungparang, Kec. Cikole, Kota Sukabumi",
     "description": "Coffee shop estetik di pusat kota Sukabumi dengan signature es kopi susu, pastry segar, dan suasana nyaman untuk WFC.",
     "open_hours": "08.00 - 23.00 WIB",
@@ -1154,82 +1189,137 @@ const FALLBACK_PLACES = [
     "longitude": 106.9249,
     "image_url": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
-      { "name": "Es Kopi Gaud Signature", "price": 20000 },
-      { "name": "Croissant Butter", "price": 18000 },
-      { "name": "Matcha Latte", "price": 24000 }
+      {
+        "name": "Es Kopi Gaud Signature",
+        "price": 20000
+      },
+      {
+        "name": "Croissant Butter",
+        "price": 18000
+      },
+      {
+        "name": "Matcha Latte",
+        "price": 24000
+      }
     ],
     "created_at": "2026-11-24T00:00:00.000Z",
     "data_source": "database"
   },
   {
     "id": "skb-4",
-    "name": "Bubur Ayam Bunut Siliwangi",
-    "category": "Restoran",
-    "min_price": 15000,
-    "max_price": 35000,
-    "avg_price": 22000,
-    "rating": 4.8,
-    "review_count": 1500,
-    "facilities": ["Area Parkir", "Toilet", "Duduk Lesehan & Meja"],
-    "address": "Jl. Siliwangi No. 93, Cikole, Kota Sukabumi",
-    "description": "Kuliner legendaris paling terkenal di Sukabumi sejak 1975, menyajikan bubur ayam gurih hangat dengan topping cakwe, suwiran ayam melimpah, dan emping.",
-    "open_hours": "06.00 - 22.00 WIB",
-    "latitude": -6.9185,
-    "longitude": 106.9325,
-    "image_url": "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+    "name": "Like Earth Coffee Sukabumi",
+    "category": "Cafe",
+    "min_price": 20000,
+    "max_price": 50000,
+    "avg_price": 30000,
+    "rating": 4.7,
+    "review_count": 1320,
+    "facilities": [
+      "Industrial Tropical",
+      "WiFi Kencang",
+      "Colokan",
+      "Live Music"
+    ],
+    "address": "Jl. Syamsudin. SH No. 20, Gunungparang, Cikole, Sukabumi",
+    "description": "Cafe estetik hits di Sukabumi dengan konsep industrial tropical, suasana sejuk dan aneka kopi pilihan.",
+    "open_hours": "09.00 - 23.00 WIB",
+    "latitude": -6.917,
+    "longitude": 106.931,
+    "image_url": "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
-      { "name": "Bubur Ayam Bunut Komplit", "price": 22000 },
-      { "name": "Sate Usus & Telur Puyuh", "price": 5000 },
-      { "name": "Teh Manis Hangat", "price": 4000 }
+      {
+        "name": "Like Earth Signature Kopi",
+        "price": 25000
+      },
+      {
+        "name": "Spanish Latte",
+        "price": 27000
+      },
+      {
+        "name": "Choco Lava Cake",
+        "price": 24000
+      }
     ],
     "created_at": "2026-11-24T00:00:00.000Z",
-    "data_source": "database"
+    "data_source": "database",
+    "city": "Sukabumi"
   },
   {
     "id": "skb-5",
-    "name": "Mie Ayam & Warkop Veteran27 Sukabumi",
-    "category": "Warkop",
-    "min_price": 10000,
-    "max_price": 25000,
-    "avg_price": 16000,
-    "rating": 4.7,
-    "review_count": 520,
-    "facilities": ["WiFi", "Outdoor", "Colokan"],
-    "address": "Jl. Veteran No. 27, Sriwidari, Kec. Gunungpuyuh, Kota Sukabumi",
-    "description": "Tempat makan mie ayam lezat porsi kenyang dan aneka kopi warkop dengan view jalanan kota Sukabumi.",
-    "open_hours": "10.00 - 23.00 WIB",
-    "latitude": -6.9194,
-    "longitude": 106.9231,
-    "image_url": "https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=800&q=80",
+    "name": "Veteran27 Coffee & Eatery Sukabumi",
+    "category": "Cafe",
+    "min_price": 18000,
+    "max_price": 45000,
+    "avg_price": 26000,
+    "rating": 4.6,
+    "review_count": 880,
+    "facilities": [
+      "WiFi",
+      "Outdoor",
+      "Colokan",
+      "Parkir"
+    ],
+    "address": "Jl. Veteran No. 27, Gunungparang, Sukabumi",
+    "description": "Coffee shop santai bernuansa hangat di pusat kota Sukabumi, tempat favorit nongkrong sore hingga malam.",
+    "open_hours": "10.00 - 24.00 WIB",
+    "latitude": -6.919,
+    "longitude": 106.932,
+    "image_url": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
-      { "name": "Mie Ayam Pangsit Bakso", "price": 18000 },
-      { "name": "Es Jeruk Peras", "price": 8000 },
-      { "name": "Indomie Telur Kornet", "price": 14000 }
+      {
+        "name": "Es Kopi Veteran",
+        "price": 22000
+      },
+      {
+        "name": "French Toast Maple",
+        "price": 20000
+      },
+      {
+        "name": "Americano Ice",
+        "price": 18000
+      }
     ],
     "created_at": "2026-11-24T00:00:00.000Z",
-    "data_source": "database"
+    "data_source": "database",
+    "city": "Sukabumi"
   },
   {
     "id": "skb-6",
-    "name": "Bolu Pisang Ibu Onih Sukabumi",
-    "category": "Bakery",
-    "min_price": 25000,
-    "max_price": 65000,
-    "avg_price": 40000,
-    "rating": 4.9,
-    "review_count": 950,
-    "facilities": ["Takeaway", "Area Parkir"],
-    "address": "Jl. Zaenal Zakse, Gunungparang, Kec. Cikole, Kota Sukabumi",
-    "description": "Pusat oleh-oleh dan bakery khas Sukabumi dengan bolu pisang wangi lembut yang terkenal hingga ke berbagai kota.",
-    "open_hours": "07.00 - 20.00 WIB",
-    "latitude": -6.9220,
-    "longitude": 106.9280,
-    "image_url": "https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=800&q=80",
+    "name": "Guten Morgen Coffee Sukabumi",
+    "category": "Cafe",
+    "min_price": 20000,
+    "max_price": 48000,
+    "avg_price": 28000,
+    "rating": 4.7,
+    "review_count": 910,
+    "facilities": [
+      "AC",
+      "WiFi",
+      "Estetik",
+      "Indoor Nyaman"
+    ],
+    "address": "Jl. Surya Kencana No. 55, Sukabumi",
+    "description": "Coffee shop nyaman bernuansa floral dan hangat di Sukabumi kota, pas untuk santai ngopi bersama teman.",
+    "open_hours": "08.00 - 22.00 WIB",
+    "latitude": -6.921,
+    "longitude": 106.929,
+    "image_url": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80",
     "menu_highlights": [
-      { "name": "Bolu Pisang Original", "price": 38000 },
-      { "name": "Bolu Pisang Cokelat Keju", "price": 45000 }
+      {
+        "name": "Guten Morgen Kaffeelatte",
+        "price": 26000
+      },
+      {
+        "name": "Earl Grey Tea Latte",
+        "price": 24000
+      },
+      {
+        "name": "Cheesecake Slice",
+        "price": 28000
+      }
     ],
     "created_at": "2026-11-24T00:00:00.000Z",
-    "data_source": "database"
+    "data_source": "database",
+    "city": "Sukabumi"
   }
 ];

@@ -426,21 +426,49 @@ body {
   position: relative;
 }
 
-/* Catalog Scrollable Column (Left/Center) */
+/* Catalog Scrollable Column (Full Width) */
 .catalog-column {
-  flex: 1;
-  min-width: 480px;
-  max-width: 65%;
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   height: 100%;
   overflow-y: auto;
-  padding: 24px;
+  padding: 24px 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  box-sizing: border-box;
 }
 
 .catalog-column > * {
   flex-shrink: 0;
+}
+
+/* Detail Modal & Map Underneath */
+#modal-place-detail .modal-card {
+  max-width: 660px;
+}
+
+.detail-map-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+}
+
+.detail-place-map-container {
+  height: 250px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.detail-place-map-container .leaflet-container {
+  font-family: inherit;
 }
 
 /* Live Map Sticky Column (Right) */

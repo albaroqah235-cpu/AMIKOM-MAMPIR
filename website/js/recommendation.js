@@ -163,25 +163,14 @@ const RecommendationService = {
       });
     }
 
-    // 2. Filter Kategori (Kategori resmi Google Maps)
-    if (selectedCategory && selectedCategory !== 'Semua') {
-      const sel = selectedCategory.toLowerCase();
-      const filtered = candidates.filter(p => {
-        const cat = (p.category || '').toLowerCase();
-        const name = (p.name || '').toLowerCase();
-        if (cat.includes(sel) || sel.includes(cat)) return true;
-        if (name.includes(sel)) return true;
-        if (sel === 'warung makan' && (cat.includes('warung') || cat.includes('restoran') || name.includes('warung') || name.includes('soto') || name.includes('bakso') || name.includes('makan'))) return true;
-        if (sel === 'coffee shop' && (cat.includes('cafe') || cat.includes('kopi') || name.includes('kopi') || name.includes('coffee'))) return true;
-        if (sel === 'warkop' && (cat.includes('warkop') || name.includes('warkop') || name.includes('kopi'))) return true;
-        if (sel === 'fast food' && (cat.includes('fast food') || name.includes('burger') || name.includes('pizza') || name.includes('fried chicken') || name.includes('cepat saji'))) return true;
-        if (sel === 'bakery' && (cat.includes('bakery') || cat.includes('roti') || name.includes('roti') || name.includes('kue') || name.includes('getuk') || name.includes('serabi'))) return true;
-        if (sel === 'bar' && (cat.includes('bar') || name.includes('bar') || name.includes('lounge'))) return true;
-        const facs = Array.isArray(p.facilities) ? p.facilities.map(f => f.toLowerCase()) : [];
-        return facs.some(f => f.includes(sel));
-      });
-      candidates = filtered;
-    }
+    // 2. Khusus Cafe & Coffee Shop (Aplikasi Khusus Cafe)
+    candidates = candidates.filter(p => {
+      const cat = (p.category || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      return cat.includes('cafe') || cat.includes('coffee') ||
+             name.includes('cafe') || name.includes('coffee') || name.includes('kopi') || name.includes('kafe') ||
+             name.includes('bistro') || name.includes('roastery');
+    });
 
     // 3. Saring Pencarian Kata Kunci secara ketat (Feedback Client 1)
     if (searchQuery && searchQuery.trim().length > 0) {
@@ -366,6 +355,14 @@ const RecommendationService = {
   getActivityBasedRecommendations({ allPlaces = [], maxItems = 6 }) {
     if (!allPlaces || allPlaces.length === 0) return [];
 
+    // Filter ketat khusus cafe & coffee shop
+    const cafeList = allPlaces.filter(p => {
+      const cat = (p.category || '').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      return cat.includes('cafe') || cat.includes('coffee') || name.includes('cafe') || name.includes('coffee') || name.includes('kopi');
+    });
+    const placesPool = cafeList.length > 0 ? cafeList : allPlaces;
+
     const activity = StorageService.getActivityHistory();
     const catCounts = activity.categoryCounts || {};
     const regCounts = activity.regionCounts || {};
@@ -397,7 +394,7 @@ const RecommendationService = {
         ? I18nService.translateCategory(topCategory)
         : topCategory;
 
-      const scored = allPlaces.map(place => {
+      const scored = placesPool.map(place => {
         let affinityScore = 0;
         const placeCat = place.category || '';
         const placeCity = place.city || '';
@@ -451,7 +448,7 @@ const RecommendationService = {
 
     // KASUS 2 (FALLBACK): Belum ada riwayat aktivitas (Pengguna Baru)
     // Ambil kafe dengan rating & jumlah ulasan tertinggi
-    const fallbackList = [...allPlaces].map(place => {
+    const fallbackList = [...placesPool].map(place => {
       const distance = this.calculateDistance(place.latitude, place.longitude);
       const rating = place.rating || 4.8;
       const tag = typeof window.t === 'function'

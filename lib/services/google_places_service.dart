@@ -27,28 +27,16 @@ class GooglePlacesService {
   static const String _nearbyEndpoint =
       'https://places.googleapis.com/v1/places:searchNearby';
 
-  /// Tipe yang dipakai saat filter kategori = "Semua", supaya hasil
-  /// tetap relevan (tempat makan/minum/nongkrong), bukan tempat acak.
+  /// Tipe khusus cafe & coffee shop
   static const List<String> nearbyAllTypes = [
-    'restaurant',
     'cafe',
     'coffee_shop',
-    'fast_food_restaurant',
-    'meal_takeaway',
-    'bar',
   ];
 
-  /// Pemetaan kategori UI MAMPIR -> tipe Google Places API (New).
+  /// Pemetaan kategori UI MAMPIR -> tipe Google Places API (New). Khusus Cafe.
   static const Map<String, List<String>> nearbyCategoryTypes = {
-    'Restoran': ['restaurant'],
-    'Resto': ['restaurant'],
-    'Warung Makan/Warkop': ['restaurant', 'meal_takeaway', 'cafe'],
-    'Warung Makan': ['restaurant', 'meal_takeaway'],
     'Cafe': ['cafe', 'coffee_shop'],
     'Coffee Shop': ['coffee_shop'],
-    'Bakery': ['bakery'],
-    'Tempat Nongkrong': ['cafe', 'bar'],
-    'Fast Food': ['fast_food_restaurant'],
   };
 
   final http.Client _client;
@@ -89,6 +77,9 @@ class GooglePlacesService {
         } else {
           effectiveQuery = '$trimmed Purwokerto';
         }
+      }
+      if (!lower.contains('cafe') && !lower.contains('kopi') && !lower.contains('coffee')) {
+        effectiveQuery = '$effectiveQuery cafe';
       }
 
       final centerLat = lat ?? -7.4244;
@@ -324,28 +315,11 @@ class GooglePlacesService {
         ...rawTypes,
       ].join(' ');
 
-      String category = 'Restoran';
-      if (typeLower.contains('fast_food_restaurant') ||
-          nameLower.contains('fast food') ||
-          nameLower.contains('kfc') ||
-          nameLower.contains('mcdonald')) {
-        category = 'Fast Food';
-      } else if (typeLower.contains('coffee_shop')) {
+      String category = 'Cafe';
+      if (typeLower.contains('coffee_shop') || nameLower.contains('coffee') || nameLower.contains('kopi')) {
         category = 'Coffee Shop';
-      } else if (nameLower.contains('warkop') ||
-          nameLower.contains('angkringan') ||
-          nameLower.contains('wedangan') ||
-          nameLower.contains('warung kopi') ||
-          nameLower.contains('warung makan') ||
-          nameLower.contains('warteg')) {
-        category = 'Warung Makan';
-      } else if (typeLower.contains('cafe') ||
-          nameLower.contains('kopi') ||
-          nameLower.contains('coffee') ||
-          nameLower.contains('cafe')) {
+      } else {
         category = 'Cafe';
-      } else if (typeLower.contains('bar')) {
-        category = 'Tempat Nongkrong';
       }
 
       // Estimasi Budget berdasarkan PriceLevel Google

@@ -65,9 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _nearbyRadiusKm = 5;
   StreamSubscription<Position>? _locationTrackingSub;
 
-  // Favorit tab category filter
-  String _selectedFavCategory = 'Semua';
-
   static const List<String> _purwokertoRegions = [
     'Semua Wilayah',
     'Purwokerto Kota',
@@ -544,8 +541,16 @@ class _HomeScreenState extends State<HomeScreen> {
   // TAB 1: BERANDA (SESUAI beranda.jpeg)
   // ===========================================================================
   Widget _buildHomeTab() {
-    // 1. Ambil tempat berdasarkan wilayah dan radius GPS
-    var visiblePlaces = List<PlaceModel>.from(_nearbyPlaces);
+    // 1. Ambil tempat berdasarkan wilayah dan radius GPS (Khusus Cafe & Coffee Shop)
+    var visiblePlaces = List<PlaceModel>.from(_nearbyPlaces).where((p) {
+      final cat = p.category.toLowerCase();
+      final name = p.name.toLowerCase();
+      return cat.contains('cafe') ||
+          cat.contains('coffee') ||
+          name.contains('cafe') ||
+          name.contains('coffee') ||
+          name.contains('kopi');
+    }).toList();
 
     // 2. Filter budget ketat jika user menetapkan budget tertentu (< 150.000)
     // Sesuai instruksi: jika budget maksimal 10k, maka HANYA tempat dengan harga <= 10k yang boleh muncul. Lebih dari 10k DILARANG muncul.
@@ -673,11 +678,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSearchBar(),
                   const SizedBox(height: 22),
 
-                  // 3. Section Kategori
-                  _buildCategorySection(),
-                  const SizedBox(height: 26),
-
-                  // 4. Section "Rekomendasi untuk kamu"
+                  // 3. Section "Rekomendasi untuk kamu"
                   _buildRecommendationSection(featured, recommendations),
                   const SizedBox(height: 26),
 
@@ -956,7 +957,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               behavior: HitTestBehavior.opaque,
               child: Text(
-                'Cari tempat makan / nongkrong...',
+                'Cari cafe / coffee shop...',
                 style: TextStyle(
                   color: colors.textMuted,
                   fontSize: 14,
@@ -978,7 +979,7 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               _openNearbyFilter();
             },
-            tooltip: 'Tempat terdekat dan radius',
+            tooltip: 'Cafe terdekat dan radius',
           ),
           IconButton(
             icon: const Icon(
@@ -987,107 +988,11 @@ class _HomeScreenState extends State<HomeScreen> {
               size: 22,
             ),
             onPressed: _openFilterModal,
-            tooltip: 'Filter Budget & Kategori',
+            tooltip: 'Filter Budget Cafe',
           ),
           const SizedBox(width: 4),
         ],
       ),
-    );
-  }
-
-  /// 3. Section Kategori: 5 Tombol Lingkaran Bergradasi Emas-Oranye
-  Widget _buildCategorySection() {
-    final colors = AppTheme.colors(context);
-    final categories = [
-      {'name': 'Cafe', 'icon': Icons.local_cafe_rounded},
-      {'name': 'Warkop', 'icon': Icons.emoji_food_beverage_rounded},
-      {'name': 'Restoran', 'icon': Icons.restaurant_rounded},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Kategori',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: colors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: categories.map((cat) {
-            final name = cat['name'] as String;
-            final isSelected = _selectedCategory == name;
-
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (_selectedCategory == name) {
-                    _selectedCategory = null;
-                  } else {
-                    _selectedCategory = name;
-                  }
-                });
-                if (_isNearMeActive) {
-                  _loadNearbyGooglePlaces();
-                }
-              },
-              child: Column(
-                children: [
-                  Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      gradient: isSelected
-                          ? AppTheme.warmGradient
-                          : LinearGradient(
-                              colors: [colors.surfaceNavy, colors.cardNavy],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? AppTheme.gold : colors.borderNavy,
-                        width: isSelected ? 2.5 : 1.2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isSelected
-                              ? AppTheme.orange.withValues(alpha: 0.5)
-                              : Colors.black.withValues(
-                                  alpha: colors.isDark ? 0.3 : 0.08,
-                                ),
-                          blurRadius: isSelected ? 12 : 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      cat['icon'] as IconData,
-                      size: 26,
-                      color: isSelected ? const Color(0xFF1A1A1A) : AppTheme.gold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    name,
-                    style: TextStyle(
-                      color: isSelected ? AppTheme.gold : colors.textPrimary,
-                      fontSize: 13,
-                      fontWeight: isSelected
-                          ? FontWeight.w900
-                          : FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
-      ],
     );
   }
 
@@ -1609,15 +1514,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .where((place) => _favoriteIds.contains(place.id))
         .toList();
 
-    final filtered = _selectedFavCategory == 'Semua'
-        ? savedPlaces
-        : savedPlaces
-              .where(
-                (p) => p.category.toLowerCase().contains(
-                  _selectedFavCategory.toLowerCase(),
-                ),
-              )
-              .toList();
+    final filtered = savedPlaces;
 
     return Stack(
       children: [
@@ -1650,7 +1547,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${savedPlaces.length} tempat disimpan',
+                          '${savedPlaces.length} cafe disimpan',
                           style: TextStyle(
                             fontSize: 13,
                             color: colors.textSecondary,
@@ -1670,49 +1567,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-
-              // Filter Chips: Semua, Cafe, Restoran (Scrollable Horizontal bebas overflow)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: ['Semua', 'Cafe', 'Warkop', 'Restoran'].map((cat) {
-                    final isSel = _selectedFavCategory == cat;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedFavCategory = cat),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: isSel ? AppTheme.primaryGradient : null,
-                          color: isSel ? null : colors.surfaceNavy,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSel
-                                ? Colors.transparent
-                                : colors.borderNavy,
-                          ),
-                        ),
-                        child: Text(
-                          cat,
-                          style: TextStyle(
-                            color: isSel ? Colors.white : colors.textSecondary,
-                            fontWeight: isSel
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 16),
 
               // Daftar Kartu Favorit
               Expanded(

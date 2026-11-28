@@ -248,26 +248,19 @@ class _SearchScreenState extends State<SearchScreen> {
       results = results.where((p) => p.minPrice <= _currentBudget).toList();
     }
 
-    // Saring berdasarkan jenis tempat (Kategori Google Maps) jika ada filter aktif
-    if (_currentPlaceTypes.isNotEmpty) {
-      final filtered = results.where((p) {
-        return _currentPlaceTypes.any((type) {
-          final t = type.toLowerCase();
-          final cat = p.category.toLowerCase();
-          final name = p.name.toLowerCase();
-          if (cat.contains(t) || t.contains(cat)) return true;
-          if (name.contains(t)) return true;
-          if (t == 'warung makan' && (cat.contains('warung') || cat.contains('restoran') || name.contains('warung') || name.contains('soto') || name.contains('bakso') || name.contains('makan'))) return true;
-          if (t == 'coffee shop' && (cat.contains('cafe') || cat.contains('kopi') || name.contains('kopi') || name.contains('coffee'))) return true;
-          if (t == 'warkop' && (cat.contains('warkop') || name.contains('warkop') || name.contains('kopi'))) return true;
-          if (t == 'fast food' && (cat.contains('fast food') || name.contains('burger') || name.contains('pizza') || name.contains('fried chicken') || name.contains('cepat saji'))) return true;
-          if (t == 'bakery' && (cat.contains('bakery') || cat.contains('roti') || name.contains('roti') || name.contains('kue') || name.contains('getuk') || name.contains('serabi'))) return true;
-          if (t == 'bar' && (cat.contains('bar') || name.contains('bar') || name.contains('lounge'))) return true;
-          return p.facilities.any((f) => f.toLowerCase().contains(t));
-        });
-      }).toList();
-      results = filtered;
-    }
+    // Khusus Cafe & Coffee Shop (Aplikasi Khusus Cafe)
+    results = results.where((p) {
+      final cat = p.category.toLowerCase();
+      final name = p.name.toLowerCase();
+      return cat.contains('cafe') ||
+          cat.contains('coffee') ||
+          name.contains('cafe') ||
+          name.contains('coffee') ||
+          name.contains('kopi') ||
+          name.contains('kafe') ||
+          name.contains('bistro') ||
+          name.contains('roastery');
+    }).toList();
 
     // Urutkan berdasarkan sortOption (0: Terdekat via GPS / Alun-alun, 1: Rating Tertinggi)
     _sortResults(results);
@@ -403,7 +396,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       focusNode: _focusNode,
                       style: TextStyle(color: colors.textPrimary, fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: 'Cari tempat makan / nongkrong...',
+                        hintText: 'Cari cafe / coffee shop...',
                         hintStyle: TextStyle(color: colors.textMuted),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
@@ -638,7 +631,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Menghubungkan ke warung makan asli di Purwokerto',
+                        'Menghubungkan ke cafe & coffee shop asli di Purwokerto',
                         style: TextStyle(
                           color: colors.textSecondary,
                           fontSize: 13,

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MAMPIR Web — Rekomendasi Kuliner & Nongkrong Purwokerto</title>
+  <title>MAMPIR Web — Rekomendasi Cafe & Coffee Shop Purwokerto</title>
   <meta name="description" content="Makan, Ampir, Pilih, dan Rekomendasi Tempat Makan & Nongkrong Autentik di Kota Purwokerto dan Sekitarnya (Baturraden, Sokaraja)." />
 
   <!-- Favicon -->
@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
   <!-- MAMPIR Web Custom Stylesheet -->
-  <link rel="stylesheet" href="css/style.css?v=2.0" />
+  <link rel="stylesheet" href="css/style.css?v=8.0" />
 
   <!-- Immediate Theme Initializer (Prevents FOUC & Follows System/Preference) -->
   <script>
@@ -108,14 +108,14 @@
         <div class="header-center">
           <div class="search-input-wrapper">
             <span class="search-icon">🔍</span>
-            <input type="text" id="global-search-input" data-i18n-placeholder="search_placeholder" placeholder="Cari kafe, mendoan, warkop, budget..." autocomplete="off" />
+            <input type="text" id="global-search-input" data-i18n-placeholder="search_placeholder" placeholder="Cari cafe, coffee shop, kopi, budget..." autocomplete="off" />
             <button class="search-clear-btn" id="global-search-clear">✕</button>
           </div>
         </div>
 
         <div class="header-right">
           <!-- Near Me CTA Button (Req Client Nearby) -->
-          <button class="btn-nearby-cta" id="btn-top-nearby" onclick="window.App.toggleNearMe()" title="Cari tempat makan terdekat dari lokasi Anda">
+          <button class="btn-nearby-cta" id="btn-top-nearby" onclick="window.App.toggleNearMe()" title="Cari cafe & coffee shop terdekat dari lokasi Anda">
             <span>📍</span>
             <span>Lokasi Terdekat</span>
           </button>
@@ -168,28 +168,11 @@
         </div>
       </header>
 
-      <!-- Split-Pane Body: Catalog + Live Interactive Map -->
+      <!-- Main Content Area: Catalog & Views (Full Width) -->
       <main class="content-body">
-        <!-- Catalog Column (Scrollable Left / Center) -->
+        <!-- Catalog Column (Full Width Scrollable) -->
         <section class="catalog-column" id="catalog-content-area">
           <!-- Diberikan konten secara dinamis oleh app.js -->
-        </section>
-
-        <!-- Live Map Column (Sticky Right) -->
-        <section class="map-column" id="map-column-area">
-          <div id="live-map-container"></div>
-          <div class="map-floating-controls">
-            <button class="btn-map-control" onclick="window.App.focusMap('pwt-center', -7.4243, 109.2303)" data-i18n="map_btn_center">
-              📍 Pusat Alun-Alun
-            </button>
-            <button class="btn-map-control" onclick="window.MapController && window.MapController.recenterUser()" title="Pusatkan ke Lokasi Saya">
-              🎯 Lokasi Saya
-            </button>
-            <div class="map-zoom-group" aria-label="Zoom Controls">
-              <button class="btn-map-zoom" onclick="window.MapController && window.MapController.zoomIn()" title="Perbesar (Zoom In)">+</button>
-              <button class="btn-map-zoom" onclick="window.MapController && window.MapController.zoomOut()" title="Perkecil (Zoom Out)">−</button>
-            </div>
-          </div>
         </section>
       </main>
     </div>
@@ -201,7 +184,7 @@
   <div class="modal-backdrop" id="modal-place-detail">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 data-i18n="detail_title">Detail Tempat Kuliner</h3>
+        <h3 data-i18n="detail_title">Detail Cafe & Coffee Shop</h3>
         <button class="modal-close-btn" onclick="window.App.closeModal('modal-place-detail')">✕</button>
       </div>
       <div class="modal-body" id="modal-place-detail-body">
@@ -214,7 +197,7 @@
   <div class="modal-backdrop" id="modal-budget-filter">
     <div class="modal-card" style="max-width: 440px;">
       <div class="modal-header">
-        <h3 data-i18n="budget_modal_title">💰 Filter Anggaran & Jenis Tempat</h3>
+        <h3 data-i18n="budget_modal_title">💰 Filter Anggaran Cafe</h3>
         <button class="modal-close-btn" onclick="window.App.closeModal('modal-budget-filter')">✕</button>
       </div>
       <div class="modal-body">
@@ -253,22 +236,6 @@
                 💻 <span data-i18n="budget_preset_wfc">Work from Cafe (40k+)</span>
               </button>
             </div>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-top: 18px;">
-          <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;" data-i18n="place_types_label">
-            Jenis Tempat (Kategori Google Maps):
-          </label>
-          <div class="category-pills" style="margin-top: 8px; flex-wrap: wrap; gap: 6px;" id="modal-category-pills">
-            <button type="button" class="category-pill active" data-cat="Semua" onclick="window.App.selectCategory('Semua')">✨ Semua</button>
-            <button type="button" class="category-pill" data-cat="Restoran" onclick="window.App.selectCategory('Restoran')">🍽️ Restoran</button>
-            <button type="button" class="category-pill" data-cat="Warung Makan" onclick="window.App.selectCategory('Warung Makan')">🍲 Warung Makan</button>
-            <button type="button" class="category-pill" data-cat="Cafe" onclick="window.App.selectCategory('Cafe')">☕ Cafe</button>
-            <button type="button" class="category-pill" data-cat="Coffee Shop" onclick="window.App.selectCategory('Coffee Shop')">🧋 Coffee Shop</button>
-            <button type="button" class="category-pill" data-cat="Warkop" onclick="window.App.selectCategory('Warkop')">🍵 Warkop</button>
-            <button type="button" class="category-pill" data-cat="Fast Food" onclick="window.App.selectCategory('Fast Food')">🍔 Fast Food</button>
-            <button type="button" class="category-pill" data-cat="Bakery" onclick="window.App.selectCategory('Bakery')">🥐 Bakery</button>
           </div>
         </div>
       </div>
@@ -399,14 +366,14 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <!-- MAMPIR Web Scripts -->
-  <script src="js/i18n.js?v=3.1"></script>
-  <script src="js/config.js?v=3.1"></script>
-  <script src="js/data.js?v=3.1"></script>
-  <script src="js/storage.js?v=3.1"></script>
-  <script src="js/auth.js?v=3.1"></script>
-  <script src="js/recommendation.js?v=3.1"></script>
-  <script src="js/map.js?v=3.1"></script>
-  <script src="js/nearby.js?v=3.1"></script>
-  <script src="js/app.js?v=3.1"></script>
+  <script src="js/i18n.js?v=8.0"></script>
+  <script src="js/config.js?v=8.0"></script>
+  <script src="js/data.js?v=8.0"></script>
+  <script src="js/storage.js?v=8.0"></script>
+  <script src="js/auth.js?v=8.0"></script>
+  <script src="js/recommendation.js?v=8.0"></script>
+  <script src="js/map.js?v=8.0"></script>
+  <script src="js/nearby.js?v=8.0"></script>
+  <script src="js/app.js?v=8.0"></script>
 </body>
 </html>
