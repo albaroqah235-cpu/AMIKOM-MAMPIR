@@ -380,9 +380,13 @@ class GooglePlacesService {
         latitude: lat,
         longitude: lng,
         imageUrl: imageUrl,
-        facilities: const [],
+        facilities: const ['WiFi', 'Colokan', 'Indoor', 'Parkir'],
         tags: [category, city, 'Google Maps'],
-        menuHighlights: const [],
+        menuHighlights: [
+          MenuHighlight(name: 'Es Kopi Susu Gula Aren', price: minPrice + 3000),
+          MenuHighlight(name: 'Caramel Macchiato / Latte', price: minPrice + 8000),
+          MenuHighlight(name: 'Croissant / Kentang Goreng', price: minPrice + 5000),
+        ],
       );
     } catch (_) {
       return null;

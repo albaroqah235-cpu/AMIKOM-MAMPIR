@@ -647,18 +647,44 @@ window.NearbyController = {
       else if (place.formattedAddress.includes('Purwokerto')) city = 'Purwokerto';
     }
 
+    const placeName = place.displayName?.text || 'Cafe Purwokerto';
+    const normName = placeName.toLowerCase().trim();
+    const adminMatch = (window.App && Array.isArray(window.App.places))
+      ? window.App.places.find(p =>
+          (p.google_place_id && p.google_place_id === place.id) ||
+          (p.name && p.name.toLowerCase().trim() === normName)
+        )
+      : null;
+
+    const defaultMenus = [
+      { name: 'Es Kopi Susu Gula Aren', price: Math.max(12000, minPrice + 3000) },
+      { name: 'Caramel Macchiato / Latte', price: Math.max(18000, minPrice + 8000) },
+      { name: 'Croissant / Kentang Goreng', price: Math.max(15000, minPrice + 5000) }
+    ];
+
+    const menuHighlights = (adminMatch && Array.isArray(adminMatch.menu_highlights) && adminMatch.menu_highlights.length > 0)
+      ? adminMatch.menu_highlights
+      : defaultMenus;
+
     return {
       id: place.id || 'gplace_' + Math.random().toString(36).substring(2, 9),
-      name: place.displayName?.text || 'Cafe Purwokerto',
+      name: placeName,
       city: city,
-      category: cat,
+      category: adminMatch?.category || cat,
       address: place.formattedAddress || `${city}, Jawa Barat`,
+      description: adminMatch?.description || place.editorialSummary?.text || `${placeName} — Cafe & coffee shop nyaman di kawasan ${city}, cocok untuk nugas, meeting, atau nongkrong santai.`,
+      facilities: (adminMatch && Array.isArray(adminMatch.facilities) && adminMatch.facilities.length > 0)
+        ? adminMatch.facilities
+        : ['WiFi', 'Colokan', 'Indoor', 'Parkir'],
+      menu_highlights: menuHighlights,
+      owner_phone: adminMatch?.owner_phone || '',
+      open_hours: adminMatch?.open_hours || (place.regularOpeningHours?.openNow ? 'Buka Sekarang' : '09.00 - 22.00 WIB'),
       latitude: lat,
       longitude: lng,
       rating: place.rating || 4.5,
       review_count: place.userRatingCount || 100,
-      min_price: minPrice,
-      max_price: maxPrice,
+      min_price: adminMatch?.min_price || minPrice,
+      max_price: adminMatch?.max_price || maxPrice,
       image_url: img,
       open_now: place.regularOpeningHours?.openNow ?? true,
       distance: distance,

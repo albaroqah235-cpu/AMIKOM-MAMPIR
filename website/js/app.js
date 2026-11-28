@@ -166,6 +166,26 @@ window.App = {
       raw = nPlaces.find(p => p.id === id) || nAll.find(p => p.id === id);
     }
     if (!raw) return null;
+
+    // Jika berasal dari live Google Places, cek apakah ada data admin Supabase yang cocok
+    if (raw.data_source === 'google_places_api' && Array.isArray(this.places)) {
+      const normName = (raw.name || '').toLowerCase().trim();
+      const adminMatch = this.places.find(p =>
+        (p.google_place_id && p.google_place_id === raw.id) ||
+        (p.name && p.name.toLowerCase().trim() === normName)
+      );
+      if (adminMatch) {
+        raw = {
+          ...raw,
+          description: adminMatch.description || raw.description,
+          facilities: (adminMatch.facilities && adminMatch.facilities.length > 0) ? adminMatch.facilities : raw.facilities,
+          menu_highlights: (adminMatch.menu_highlights && adminMatch.menu_highlights.length > 0) ? adminMatch.menu_highlights : raw.menu_highlights,
+          owner_phone: adminMatch.owner_phone || raw.owner_phone || '',
+          open_hours: adminMatch.open_hours || raw.open_hours
+        };
+      }
+    }
+
     const overrides = StorageService.getCafeOverrides(id) || {};
     return { ...raw, ...overrides };
   },
